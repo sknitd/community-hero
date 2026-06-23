@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Society Video Inspector</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card: #181b22;
+      --border: #262a33;
+      --text: #e7e9ee;
+      --muted: #9aa3b2;
+      --accent: #6aa6ff;
+      --high: #ff5a5a;
+      --med: #ffb547;
+      --low: #6bd49b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 28px 24px 12px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 { margin: 0 0 6px; font-size: 24px; }
+    header p { margin: 0; color: var(--muted); font-size: 14px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 80px; }
+    .upload {
+      background: var(--card);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      text-align: center;
+      transition: border-color .2s;
+    }
+    .upload.drag { border-color: var(--accent); }
+    .upload input[type=file] { display: none; }
+    .upload label {
+      display: inline-block;
+      padding: 10px 18px;
+      background: var(--accent);
+      color: #0a0c10;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .upload .hint { color: var(--muted); font-size: 13px; margin-top: 10px; }
+    .file-name { margin-top: 12px; font-size: 14px; color: var(--text); }
+    button.analyze {
+      margin-top: 14px;
+      background: #2a2f3a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.analyze:disabled { opacity: .5; cursor: not-allowed; }
+    .status {
+      margin: 18px 0;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+    }
+    .summary {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #000;
+    }
+    .card .body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .card h3 { margin: 0; font-size: 16px; }
+    .ts { color: var(--muted); font-size: 12px; }
+    .desc { font-size: 13px; color: #c8cdd6; line-height: 1.45; }
+    .issues { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+    .issue {
+      border-left: 3px solid var(--med);
+      padding: 6px 10px;
+      background: #1e222b;
+      border-radius: 4px;
+      font-size: 12.5px;
+    }
+    .issue.high { border-left-color: var(--high); }
+    .issue.medium { border-left-color: var(--med); }
+    .issue.low { border-left-color: var(--low); }
+    .issue .title { font-weight: 600; }
+    .issue .cat { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
+    .issue .detail { color: #c8cdd6; margin-top: 2px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .badge.high { background: rgba(255,90,90,.15); color: var(--high); }
+    .badge.medium { background: rgba(255,181,71,.15); color: var(--med); }
+    .badge.low { background: rgba(107,212,155,.15); color: var(--low); }
+    .clean { color: var(--low); font-size: 13px; }
+    .error {
+      background: rgba(255,90,90,.1);
+      border: 1px solid rgba(255,90,90,.3);
+      color: #ffb0b0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin: 14px 0;
+      font-size: 14px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--muted);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Society Video Inspector</h1>
+    <p>Upload a walkthrough video. Gemini identifies locations and flags maintenance, security, parking, and other society issues.</p>
+  </header>
+  <main>
+    <div class="upload" id="drop">
+      <input type="file" id="file" accept="video/*" />
+      <label for="file">Choose video</label>
+      <div class="hint">or drag &amp; drop here (mp4, mov, webm — up to 500 MB)</div>
+      <div class="file-name" id="fileName"></div>
+      <div><button class="analyze" id="analyzeBtn" disabled>Analyze video</button></div>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="error"></div>
+    <div id="summary"></div>
+    <div id="results" class="grid"></div>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById('file');
+    const drop = document.getElementById('drop');
+    const fileName = document.getElementById('fileName');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+    const summaryEl = document.getElementById('summary');
+    const resultsEl = document.getElementById('results');
+
+    let currentFile = null;
+
+    function setFile(f) {
+      currentFile = f;
+      fileName.textContent = f ? `${f.name} • ${(f.size/1024/1024).toFixed(1)} MB` : '';
+      analyzeBtn.disabled = !f;
+    }
+
+    fileInput.addEventListener('change', e => setFile(e.target.files[0]));
+    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
+      e.preventDefault(); drop.classList.add('drag');
+    }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
+      e.preventDefault(); drop.classList.remove('drag');
+    }));
+    drop.addEventListener('drop', e => {
+      const f = e.dataTransfer.files[0];
+      if (f) { fileInput.files = e.dataTransfer.files; setFile(f); }
+    });
+
+    analyzeBtn.addEventListener('click', async () => {
+      if (!currentFile) return;
+      errorEl.innerHTML = '';
+      summaryEl.innerHTML = '';
+      resultsEl.innerHTML = '';
+      analyzeBtn.disabled = true;
+      statusEl.innerHTML = '<span class="spinner"></span>Uploading and analyzing — this can take 1-3 minutes for longer videos…';
+
+      const fd = new FormData();
+      fd.append('video', currentFile);
+
+      try {
+        const res = await fetch('/analyze', { method: 'POST', body: fd });
+        const data = await res.json();
+        statusEl.innerHTML = '';
+        if (!res.ok) {
+          errorEl.innerHTML = `<div class="error">${data.error || 'Analysis failed'}</div>`;
+          analyzeBtn.disabled = false;
+          return;
+        }
+        render(data);
+      } catch (e) {
+        statusEl.innerHTML = '';
+        errorEl.innerHTML = `<div class="error">${e.message}</div>`;
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    });
+
+    function fmtTime(s) {
+      s = Number(s) || 0;
+      const m = Math.floor(s / 60);
+      const r = (s - m * 60).toFixed(1);
+      return `${m}:${r.padStart(4, '0')}`;
+    }
+
+    function render(data) {
+      if (data.summary) {
+        summaryEl.innerHTML = `<div class="summary"><strong>Overall:</strong> ${escapeHtml(data.summary)}</div>`;
+      }
+      const locs = data.locations || [];
+      if (!locs.length) {
+        resultsEl.innerHTML = '<div class="status">No locations detected.</div>';
+        return;
+      }
+      for (const loc of locs) {
+        const issues = loc.issues || [];
+        const issuesHtml = issues.length
+          ? `<div class="issues">${issues.map(i => `
+              <div class="issue ${escapeAttr((i.severity||'medium').toLowerCase())}">
+                <div class="cat">${escapeHtml(i.category||'')}</div>
+                <div class="title">${escapeHtml(i.title||'Issue')}
+                  <span class="badge ${escapeAttr((i.severity||'medium').toLowerCase())}">${escapeHtml(i.severity||'medium')}</span>
+                </div>
+                <div class="detail">${escapeHtml(i.detail||'')}</div>
+              </div>`).join('')}</div>`
+          : '<div class="clean">No issues detected ✓</div>';
+
+        const img = loc.image_url
+          ? `<img src="${escapeAttr(loc.image_url)}" alt="${escapeAttr(loc.name||'')}" />`
+          : '';
+
+        resultsEl.insertAdjacentHTML('beforeend', `
+          <div class="card">
+            ${img}
+            <div class="body">
+              <h3>${escapeHtml(loc.name||'Location')}</h3>
+              <div class="ts">@ ${fmtTime(loc.timestamp)}</div>
+              <div class="desc">${escapeHtml(loc.description||'')}</div>
+              ${issuesHtml}
+            </div>
+          </div>
+        `);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+  </script>
+</body>
+</html>
