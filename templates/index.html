@@ -61,7 +61,27 @@
       font-weight: 600;
       font-size: 12.5px;
     }
-    .who button {
+    .who .points-pill {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 12.5px;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .who .reports-btn {
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+      border: 0;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 12.5px;
+      cursor: pointer;
+    }
+    .who .reports-btn:hover { background: #dfeaff; }
+    .who #logoutBtn {
       background: transparent;
       color: var(--primary);
       border: none;
@@ -546,6 +566,292 @@
       cursor: pointer;
     }
     .chat-input-row button:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* Points badge on issue card */
+    .pts-badge {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 800;
+      margin-left: 6px;
+    }
+    .pts-badge.medium { background: #fef3c7; color: #92400e; }
+    .pts-badge.low { background: #e0f2fe; color: #075985; }
+
+    .dup-badge {
+      background: rgba(239,68,68,.12);
+      color: var(--high);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 800;
+      margin-left: 6px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .dup-note {
+      color: var(--high);
+      font-size: 11.5px;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .status-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #fef3c7;
+      color: #92400e;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    .status-tag::before { content: "⏳"; font-size: 11px; }
+
+    /* Report detail / timeline */
+    .report-detail-body {
+      padding: 16px 18px 22px;
+      overflow-y: auto;
+    }
+    .status-banner {
+      background: #fef3c7; color: #78350f;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .status-banner strong { color: #78350f; }
+    .timeline {
+      position: relative;
+      padding: 4px 0 4px 4px;
+      margin-bottom: 18px;
+    }
+    .timeline .tl-step {
+      position: relative;
+      padding-left: 36px;
+      padding-bottom: 14px;
+    }
+    .timeline .tl-step:last-child { padding-bottom: 0; }
+    .timeline .tl-step::before {
+      content: "";
+      position: absolute;
+      left: 11px; top: 22px; bottom: -6px;
+      width: 2px;
+      background: #e5e7eb;
+    }
+    .timeline .tl-step:last-child::before { display: none; }
+    .timeline .tl-dot {
+      position: absolute;
+      left: 0; top: 0;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      background: #fff;
+      border: 2px solid #d1d5db;
+      color: var(--muted-2);
+    }
+    .timeline .tl-step.done .tl-dot { background: #10b981; border-color: #10b981; color: #fff; }
+    .timeline .tl-step.done::before { background: #10b981; }
+    .timeline .tl-step.current .tl-dot {
+      background: #fef3c7; border-color: #f59e0b; color: #92400e;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,.55); }
+      50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+    }
+    .timeline .tl-title {
+      font-size: 13.5px; font-weight: 700;
+      color: var(--text);
+    }
+    .timeline .tl-step.future .tl-title { color: var(--muted); }
+    .timeline .tl-time {
+      font-size: 11.5px; color: var(--muted);
+      margin-top: 2px;
+    }
+    .timeline .tl-step.current .tl-time::after {
+      content: " (pending)"; color: #92400e; font-weight: 700;
+    }
+    .timeline .tl-step.future .tl-time::after {
+      content: " (pending)"; color: var(--muted-2); font-weight: 600;
+    }
+    .detail-meta {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .detail-meta .meta-line {
+      width: 100%; color: var(--muted); font-size: 12px;
+    }
+    .detail-meta .pts {
+      background: #d1fae5; color: #065f46;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+    }
+    .report-card.clickable { cursor: pointer; transition: border-color .15s, background .15s; }
+    .report-card.clickable:hover { border-color: var(--primary); background: #fff; }
+
+    /* Reports modal */
+    .reports-modal {
+      position: fixed; inset: 0;
+      background: rgba(15, 17, 21, .55);
+      z-index: 1800;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .reports-modal[data-open="1"] { display: flex; }
+    .reports-dialog {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+    .reports-head {
+      padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .reports-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+    .reports-head .head-points {
+      background: #d1fae5; color: #065f46;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+      margin-left: 10px;
+    }
+    .reports-head .close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--input-bg); color: var(--muted);
+      border: 0; cursor: pointer; font-size: 18px;
+    }
+    .reports-filters {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      background: #fbfbfd;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .filter-row .label {
+      font-size: 11px; color: var(--muted);
+      font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      min-width: 64px;
+    }
+    .filter-btn {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .filter-btn:hover { color: var(--text); border-color: var(--muted-2); }
+    .filter-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .reports-list {
+      padding: 12px 18px 18px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .reports-list:empty::before {
+      content: "No reports yet.";
+      color: var(--muted-2);
+      text-align: center; padding: 30px 0;
+      display: block; font-size: 13px;
+    }
+    .report-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fafbfc;
+    }
+    .report-card .top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .report-card .top .date {
+      color: var(--muted); font-size: 12px;
+    }
+    .report-card .top .pts {
+      background: #d1fae5; color: #065f46;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+    }
+    .report-card .id {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 11px; color: var(--muted-2);
+    }
+    .report-card .desc {
+      font-size: 12.5px; color: #374151; margin: 6px 0 8px;
+      line-height: 1.4;
+    }
+    .report-issue {
+      display: flex; gap: 10px;
+      padding: 8px 0;
+      border-top: 1px dashed var(--border);
+    }
+    .report-issue:first-child { border-top: 0; padding-top: 4px; }
+    .report-issue .thumb {
+      width: 96px; height: 64px;
+      border-radius: 6px;
+      background: #e9ecef; overflow: hidden;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: var(--muted);
+    }
+    .report-issue .thumb img, .report-issue .thumb video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .report-issue .info { flex: 1; min-width: 0; }
+    .report-issue .row-1 {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      margin-bottom: 3px;
+    }
+    .report-issue .title-text {
+      font-weight: 700; font-size: 13px;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .report-issue .cat-tag {
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+    .report-issue .sev-tag {
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .report-issue .sev-tag.high { background: rgba(239,68,68,.12); color: var(--high); }
+    .report-issue .sev-tag.medium { background: rgba(245,158,11,.15); color: var(--med); }
+    .report-issue .sev-tag.low { background: rgba(16,185,129,.15); color: var(--low); }
+    .report-issue .loc-text {
+      color: var(--muted); font-size: 11.5px; margin-top: 2px;
+    }
+    .report-issue .detail-text {
+      color: #374151; font-size: 11.5px; margin-top: 4px; line-height: 1.4;
+    }
+    .report-issue .comment-text {
+      color: #374151; font-size: 11.5px; margin-top: 4px;
+      font-style: italic;
+      border-left: 2px solid var(--primary-soft);
+      padding-left: 6px;
+    }
     .loc-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #000; display: block; }
     .loc-card .body { padding: 10px 12px; }
     .loc-card h4 { margin: 0 0 2px; font-size: 14px; }
@@ -629,6 +935,43 @@
   </style>
 </head>
 <body>
+  <div id="reportDetailModal" class="reports-modal" style="z-index: 1900;">
+    <div class="reports-dialog">
+      <div class="reports-head">
+        <h3>Report details</h3>
+        <button class="close" id="reportDetailClose" aria-label="Close">×</button>
+      </div>
+      <div class="report-detail-body" id="reportDetailBody"></div>
+    </div>
+  </div>
+
+  <div id="reportsModal" class="reports-modal">
+    <div class="reports-dialog">
+      <div class="reports-head">
+        <h3>My reports <span class="head-points" id="reportsHeadPoints">0 pts</span></h3>
+        <button class="close" id="reportsClose" aria-label="Close">×</button>
+      </div>
+      <div class="reports-filters">
+        <div class="filter-row">
+          <span class="label">Priority</span>
+          <button class="filter-btn" data-filter="priority" data-value="high">High</button>
+          <button class="filter-btn" data-filter="priority" data-value="medium">Medium</button>
+          <button class="filter-btn" data-filter="priority" data-value="low">Low</button>
+        </div>
+        <div class="filter-row" id="categoryFilterRow">
+          <span class="label">Category</span>
+          <div id="categoryFilters" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+        <div class="filter-row">
+          <span class="label">Sort</span>
+          <button class="filter-btn active" data-filter="sort" data-value="desc">Newest first</button>
+          <button class="filter-btn" data-filter="sort" data-value="asc">Oldest first</button>
+        </div>
+      </div>
+      <div class="reports-list" id="reportsList"></div>
+    </div>
+  </div>
+
   <div id="zoomModal" class="zoom-modal">
     <button class="zoom-close" id="zoomClose" aria-label="Close">×</button>
     <div class="stage" id="zoomStage">
@@ -646,6 +989,8 @@
     <div class="brand">REPORTER</div>
     <div class="who" id="whoBox">
       <span class="verified-pill" id="whoText"></span>
+      <span class="points-pill" id="pointsPill" style="display:none;">🪙 <span id="pointsValue">0</span></span>
+      <button id="reportsBtn" type="button" class="reports-btn" style="display:none;">📋 My reports</button>
       <button id="logoutBtn">Logout</button>
     </div>
 
@@ -831,8 +1176,11 @@
       if (headerLabel) {
         whoBox.classList.add('show');
         whoText.textContent = 'Verified: ' + headerLabel;
+        document.getElementById('reportsBtn').style.display = 'inline-flex';
       } else {
         whoBox.classList.remove('show');
+        document.getElementById('reportsBtn').style.display = 'none';
+        document.getElementById('pointsPill').style.display = 'none';
       }
       window.scrollTo({ top: 0, behavior: 'instant' });
       if (typeof updateActionButtons === 'function') updateActionButtons();
@@ -849,6 +1197,7 @@
         showView('signup', s.phone);
       }
       if (s.verified) {
+        setTotalPoints(s.total_points || 0);
         try {
           const r = await fetch('/describe/analyse/running');
           const d = await r.json();
@@ -1390,7 +1739,7 @@
     function renderDescribeResults(data) {
       describeResults.classList.add('has-content');
       detectedIssues = Array.isArray(data.issues) ? data.issues : [];
-      issueSelected = detectedIssues.map(() => true);
+      issueSelected = detectedIssues.map(it => !it.is_duplicate);
       issueComments = detectedIssues.map(() => '');
       issueLocations = detectedIssues.map(() => '');
 
@@ -1433,18 +1782,23 @@
         const tsLine = (typeof it.start_time === 'number' && it.end_time > it.start_time)
           ? `<div class="ts">media #${it.media_index ?? 0} · clip ${fmtTime(it.start_time)} → ${fmtTime(it.end_time)}</div>`
           : `<div class="ts">media #${it.media_index ?? 0}</div>`;
-        html += `<div class="loc-card" data-i="${i}">
+        const isDup = !!it.is_duplicate;
+        const dupRef = it.duplicate_of_report_id ? `Duplicate of report #${escapeHtml(it.duplicate_of_report_id)}` : 'Looks like a duplicate of an earlier report';
+        html += `<div class="loc-card${isDup ? ' unselected' : ''}" data-i="${i}">
           <label class="issue-check" title="Include in report">
-            <input type="checkbox" data-i="${i}" checked /> Report
+            <input type="checkbox" data-i="${i}" ${issueSelected[i] ? 'checked' : ''} /> Report
           </label>
           ${mediaHtml}
           <div class="body">
             <h4>${escapeHtml(it.title || it.category || 'Issue')}
               <span class="chip" style="margin-left:6px;text-transform:uppercase;font-size:10.5px;">${escapeHtml(sev)}</span>
+              <span class="pts-badge ${sev}">+${pointsFor(sev)} pts</span>
+              ${isDup ? '<span class="dup-badge">Duplicate</span>' : ''}
             </h4>
             ${tsLine}
             <div class="cat" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:4px;">${escapeHtml(it.category || '')}</div>
             <div class="desc">${escapeHtml(it.detail || '')}</div>
+            ${isDup ? `<div class="dup-note">⚠ ${dupRef} — unchecked by default.</div>` : ''}
             <div style="margin-top:8px;">
               <textarea class="textarea issue-comment" data-i="${i}" rows="2"
                 placeholder="Add your comment (optional, max 100 words)"
@@ -1625,11 +1979,13 @@
         const data = await res.json();
         if (!res.ok) { banner('reportBanner', data.error || 'Submit failed', 'error'); return; }
         const issuePart = data.issue_count > 0 ? `, ${data.issue_count} issue${data.issue_count===1?'':'s'}` : '';
-        let msg = `Report submitted ✓ (#${data.report_id}, ${data.evidence_count} file${data.evidence_count===1?'':'s'}${issuePart})`;
+        const ptsPart = data.points_awarded > 0 ? ` · +${data.points_awarded} pts 🪙` : '';
+        let msg = `Report submitted ✓ (#${data.report_id}, ${data.evidence_count} file${data.evidence_count===1?'':'s'}${issuePart})${ptsPart}`;
         if (data.analysis_running && data.analysis_job_id) {
           msg += ` — AI analysis running against ${data.analysis_job_id} in background.`;
         }
         banner('reportBanner', msg, 'ok');
+        if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
         if (data.analysis_running) {
           // keep the analysis spinner / polling alive so the user can still see results land
           evidenceList = []; renderThumbs();
@@ -1645,6 +2001,246 @@
         }
         updateActionButtons();
       });
+    });
+
+    // ============ REWARD POINTS & REPORTS ============
+    const POINTS_BY_SEV = { high: 15, medium: 10, low: 5 };
+    function pointsFor(sev) {
+      return POINTS_BY_SEV[(sev || 'medium').toLowerCase()] ?? 5;
+    }
+
+    const pointsPill = document.getElementById('pointsPill');
+    const pointsValue = document.getElementById('pointsValue');
+    const reportsBtn = document.getElementById('reportsBtn');
+
+    function setTotalPoints(n) {
+      pointsValue.textContent = (n || 0);
+      pointsPill.style.display = (n > 0) ? 'inline-flex' : 'none';
+    }
+
+    const reportsModal = document.getElementById('reportsModal');
+    const reportsList = document.getElementById('reportsList');
+    const reportsHeadPoints = document.getElementById('reportsHeadPoints');
+    const categoryFiltersEl = document.getElementById('categoryFilters');
+
+    let allReports = [];
+    let activeFilters = { priority: null, category: null, sort: 'desc' };
+
+    function fmtReportDate(ts) {
+      try {
+        const d = new Date(ts * 1000);
+        return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+      } catch { return ''; }
+    }
+
+    function applyReportFilters() {
+      let list = allReports.slice();
+      if (activeFilters.priority) {
+        list = list.filter(r => (r.issues || []).some(i => (i.severity || 'medium').toLowerCase() === activeFilters.priority));
+      }
+      if (activeFilters.category) {
+        list = list.filter(r => (r.issues || []).some(i => (i.category || '') === activeFilters.category));
+      }
+      list.sort((a, b) => {
+        const da = a.created_at || 0, db = b.created_at || 0;
+        return activeFilters.sort === 'asc' ? da - db : db - da;
+      });
+      renderReportsList(list);
+    }
+
+    function renderReportsList(list) {
+      reportsList.innerHTML = '';
+      list.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'report-card clickable';
+        card.dataset.id = r.id || '';
+        let issuesHtml = '';
+        (r.issues || []).forEach(it => {
+          const sev = (it.severity || 'medium').toLowerCase();
+          if (activeFilters.priority && sev !== activeFilters.priority) return;
+          if (activeFilters.category && (it.category || '') !== activeFilters.category) return;
+          let thumb = '<div style="color:var(--muted-2)">no media</div>';
+          if (it.media_kind === 'video' && it.media_url) {
+            thumb = `<video src="${escapeHtml(it.media_url)}" muted preload="metadata"></video>`;
+          } else if (it.media_url || it.annotated_url) {
+            const src = it.annotated_url || it.media_url;
+            thumb = `<img src="${escapeHtml(src)}" alt="">`;
+          }
+          issuesHtml += `<div class="report-issue">
+            <div class="thumb">${thumb}</div>
+            <div class="info">
+              <div class="row-1">
+                <span class="title-text">${escapeHtml(it.title || it.category || 'Issue')}</span>
+                <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
+                <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
+                <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
+                <span class="status-tag">Wait for admin approval</span>
+              </div>
+              ${it.location ? `<div class="loc-text">📍 ${escapeHtml(it.location)}</div>` : ''}
+              ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
+              ${it.comment ? `<div class="comment-text">"${escapeHtml(it.comment)}"</div>` : ''}
+            </div>
+          </div>`;
+        });
+        if (!issuesHtml) return; // hide reports whose issues are all filtered out
+        card.innerHTML = `
+          <div class="top">
+            <div>
+              <div class="date">${fmtReportDate(r.created_at)}</div>
+              <div class="id">#${escapeHtml(r.id || '')}</div>
+            </div>
+            <span class="pts">+${r.points || 0} pts</span>
+          </div>
+          ${r.description ? `<div class="desc">${escapeHtml(r.description)}</div>` : ''}
+          ${issuesHtml}
+        `;
+        card.addEventListener('click', () => openReportDetail(r));
+        reportsList.appendChild(card);
+      });
+    }
+
+    // ============ REPORT DETAIL MODAL ============
+    const reportDetailModal = document.getElementById('reportDetailModal');
+    const reportDetailBody = document.getElementById('reportDetailBody');
+
+    function defaultTimeline(createdAt) {
+      return [
+        { step: 'submitted', label: 'Submitted', ts: createdAt, done: true, current: false },
+        { step: 'approval', label: 'Waiting for admin / moderator approval', ts: null, done: false, current: true },
+        { step: 'assigned', label: 'Service partner assigned', ts: null, done: false, current: false },
+        { step: 'started', label: 'Task started', ts: null, done: false, current: false },
+        { step: 'completed', label: 'Task complete', ts: null, done: false, current: false },
+      ];
+    }
+
+    function renderTimeline(steps) {
+      return `<div class="timeline">${steps.map(s => {
+        const cls = s.done ? 'done' : (s.current ? 'current' : 'future');
+        const icon = s.done ? '✓' : (s.current ? '⏳' : '·');
+        const ts = s.ts ? fmtReportDate(s.ts) : '—';
+        return `<div class="tl-step ${cls}">
+          <div class="tl-dot">${icon}</div>
+          <div class="tl-title">${escapeHtml(s.label || s.step)}</div>
+          <div class="tl-time">${ts}</div>
+        </div>`;
+      }).join('')}</div>`;
+    }
+
+    function openReportDetail(r) {
+      const timeline = (r.timeline && r.timeline.length) ? r.timeline : defaultTimeline(r.created_at);
+      const statusLabel = r.status_label || 'Waiting for approval from admin';
+      let issuesHtml = '';
+      (r.issues || []).forEach(it => {
+        const sev = (it.severity || 'medium').toLowerCase();
+        let thumb = '<div style="color:var(--muted-2)">no media</div>';
+        if (it.media_kind === 'video' && it.media_url) {
+          thumb = `<video src="${escapeHtml(it.media_url)}" controls playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+        } else if (it.media_url || it.annotated_url) {
+          const src = it.annotated_url || it.media_url;
+          thumb = `<img src="${escapeHtml(src)}" alt="">`;
+        }
+        issuesHtml += `<div class="report-issue">
+          <div class="thumb" style="width:140px;height:90px;">${thumb}</div>
+          <div class="info">
+            <div class="row-1">
+              <span class="title-text">${escapeHtml(it.title || it.category || 'Issue')}</span>
+              <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
+              <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
+              <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
+              <span class="status-tag">Wait for admin approval</span>
+            </div>
+            ${it.location ? `<div class="loc-text">📍 ${escapeHtml(it.location)}</div>` : ''}
+            ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
+            ${it.comment ? `<div class="comment-text">"${escapeHtml(it.comment)}"</div>` : ''}
+          </div>
+        </div>`;
+      });
+
+      reportDetailBody.innerHTML = `
+        <div class="detail-meta">
+          <span class="pts">+${r.points || 0} pts</span>
+          <span style="color:var(--muted);font-size:12px;">${fmtReportDate(r.created_at)}</span>
+          <span class="id" style="font-family:ui-monospace,monospace;font-size:11px;color:var(--muted-2);">#${escapeHtml(r.id || '')}</span>
+          <div class="meta-line">${r.evidence_count || 0} evidence file${(r.evidence_count||0)===1?'':'s'} · ${(r.issues||[]).length} issue${(r.issues||[]).length===1?'':'s'}</div>
+        </div>
+        <div class="status-banner">Current status: <strong>${escapeHtml(statusLabel)}</strong></div>
+        ${renderTimeline(timeline)}
+        ${r.description ? `<div class="desc" style="font-size:13px;color:#374151;margin:6px 0 12px;line-height:1.45;">${escapeHtml(r.description)}</div>` : ''}
+        <div class="reports-list" style="padding:0;">${issuesHtml}</div>
+      `;
+      reportDetailModal.setAttribute('data-open', '1');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeReportDetail() {
+      reportDetailModal.removeAttribute('data-open');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('reportDetailClose').addEventListener('click', closeReportDetail);
+    reportDetailModal.addEventListener('click', e => { if (e.target === reportDetailModal) closeReportDetail(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && reportDetailModal.getAttribute('data-open')) closeReportDetail();
+    });
+
+    function openReportsModal() {
+      reportsModal.setAttribute('data-open', '1');
+      document.body.style.overflow = 'hidden';
+      loadReports();
+    }
+    function closeReportsModal() {
+      reportsModal.removeAttribute('data-open');
+      document.body.style.overflow = '';
+    }
+    async function loadReports() {
+      reportsList.innerHTML = '<div style="color:var(--muted-2);padding:14px;text-align:center;font-size:13px;"><span class="spinner" style="color:var(--muted)"></span>Loading…</div>';
+      try {
+        const res = await fetch('/reports');
+        const data = await res.json();
+        if (!res.ok) { reportsList.innerHTML = `<div style="color:var(--high);padding:14px;text-align:center;">${escapeHtml(data.error || 'Failed to load')}</div>`; return; }
+        allReports = data.reports || [];
+        reportsHeadPoints.textContent = `${data.total_points || 0} pts`;
+        setTotalPoints(data.total_points || 0);
+        // build category filter buttons
+        categoryFiltersEl.innerHTML = '';
+        (data.categories || []).forEach(cat => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'filter-btn' + (activeFilters.category === cat ? ' active' : '');
+          b.dataset.filter = 'category';
+          b.dataset.value = cat;
+          b.textContent = cat;
+          b.addEventListener('click', () => toggleFilter('category', cat, b));
+          categoryFiltersEl.appendChild(b);
+        });
+        applyReportFilters();
+      } catch (e) {
+        reportsList.innerHTML = `<div style="color:var(--high);padding:14px;text-align:center;">${escapeHtml(e.message)}</div>`;
+      }
+    }
+    function toggleFilter(kind, value, btn) {
+      if (kind === 'sort') {
+        activeFilters.sort = value;
+      } else {
+        activeFilters[kind] = (activeFilters[kind] === value) ? null : value;
+      }
+      // update active state on buttons of this kind
+      document.querySelectorAll(`#reportsModal .filter-btn[data-filter="${kind}"]`).forEach(b => {
+        const isActive = (kind === 'sort')
+          ? (b.dataset.value === activeFilters.sort)
+          : (b.dataset.value === activeFilters[kind]);
+        b.classList.toggle('active', isActive);
+      });
+      applyReportFilters();
+    }
+
+    reportsBtn.addEventListener('click', openReportsModal);
+    document.getElementById('reportsClose').addEventListener('click', closeReportsModal);
+    reportsModal.addEventListener('click', e => { if (e.target === reportsModal) closeReportsModal(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && reportsModal.getAttribute('data-open')) closeReportsModal();
+    });
+    document.querySelectorAll('#reportsModal .filter-btn[data-filter="priority"], #reportsModal .filter-btn[data-filter="sort"]').forEach(b => {
+      b.addEventListener('click', () => toggleFilter(b.dataset.filter, b.dataset.value, b));
     });
 
     // ============ CHAT PANEL ============

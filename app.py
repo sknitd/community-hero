@@ -12,6 +12,7 @@ import urllib.error
 from pathlib import Path
 
 import cv2
+import numpy as np
 from flask import Flask, request, jsonify, render_template, send_from_directory, session
 from google import genai
 from google.genai import types
@@ -43,6 +44,104 @@ app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
 app.secret_key = os.environ.get("FLASK_SECRET", "society-inspector-dev-secret-change-me")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
+
+# Reward points per issue severity.
+POINTS_BY_SEVERITY = {"high": 15, "medium": 10, "low": 5}
+
+
+def _points_for(severity: str | None) -> int:
+    return POINTS_BY_SEVERITY.get((severity or "medium").lower(), 5)
+
+
+# Reports persistence (phone -> list[report])
+REPORTS_FILE = BASE_DIR / "data" / "reports.json"
+REPORTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+_reports_lock = threading.Lock()
+_reports_data: dict = {}
+
+
+def _load_reports():
+    global _reports_data
+    if REPORTS_FILE.exists():
+        try:
+            with open(REPORTS_FILE) as f:
+                payload = json.load(f) or {}
+            if isinstance(payload, dict):
+                _reports_data = payload
+        except Exception:
+            _reports_data = {}
+
+
+def _save_reports():
+    tmp = REPORTS_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(_reports_data, f)
+    tmp.replace(REPORTS_FILE)
+
+
+def _url_to_path(url: str | None) -> Path | None:
+    if not url or not isinstance(url, str) or not url.startswith("/static/"):
+        return None
+    rel = url[len("/static/"):]
+    return BASE_DIR / "static" / rel
+
+
+def image_phash(path: Path | None) -> str | None:
+    if not path or not path.exists():
+        return None
+    try:
+        img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            return None
+        img = cv2.resize(img, (32, 32), interpolation=cv2.INTER_AREA)
+        dct = cv2.dct(np.float32(img))
+        dct_low = dct[:8, :8]
+        med = np.median(dct_low)
+        bits = (dct_low > med).flatten()
+        h = 0
+        for b in bits:
+            h = (h << 1) | int(b)
+        return f"{h:016x}"
+    except Exception:
+        return None
+
+
+def hamming_distance(a: str | None, b: str | None) -> int:
+    if not a or not b or len(a) != len(b):
+        return 999
+    try:
+        return bin(int(a, 16) ^ int(b, 16)).count("1")
+    except ValueError:
+        return 999
+
+
+def text_jaccard(a: str | None, b: str | None) -> float:
+    ta = set(re.findall(r"\w+", (a or "").lower()))
+    tb = set(re.findall(r"\w+", (b or "").lower()))
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+
+def _build_timeline(submitted_ts: float) -> list:
+    return [
+        {"step": "submitted", "label": "Submitted", "ts": submitted_ts, "done": True, "current": False},
+        {"step": "approval", "label": "Waiting for admin / moderator approval", "ts": None, "done": False, "current": True},
+        {"step": "assigned", "label": "Service partner assigned", "ts": None, "done": False, "current": False},
+        {"step": "started", "label": "Task started", "ts": None, "done": False, "current": False},
+        {"step": "completed", "label": "Task complete", "ts": None, "done": False, "current": False},
+    ]
+
+
+def _total_points_for(phone: str | None) -> int:
+    if not phone:
+        return 0
+    with _reports_lock:
+        return sum(int(r.get("points", 0)) for r in _reports_data.get(phone, []))
+
+
+_load_reports()
+
 
 # In-memory store for background analysis jobs.
 # job_id -> {status: running|done|failed, phone, started_at, result, error}
@@ -320,11 +419,13 @@ def otp_verify():
 @app.route("/session")
 def session_state():
     reporter = session.get("reporter")
+    phone = session.get("otp_phone")
     return jsonify({
         "verified": bool(session.get("otp_verified")),
-        "phone": session.get("otp_phone"),
+        "phone": phone,
         "reporter": reporter,
         "first_name": (reporter.get("full_name", "").split() or [""])[0] if reporter else None,
+        "total_points": _total_points_for(phone),
     })
 
 
@@ -603,6 +704,47 @@ def _run_describe_analyse(job_id: str, description: str, saved_files: list, tmp_
                     if annotate_issue_image(out_path, issue.get("title") or "", issue.get("detail") or "", ann_path):
                         issue["annotated_url"] = f"/static/frames/report/{job_id}/{ann_name}"
 
+        # Duplicate detection against this user's existing submitted issues.
+        with _analysis_lock:
+            job_meta = _analysis_jobs.get(job_id) or {}
+        phone = job_meta.get("phone")
+        with _reports_lock:
+            existing_reports = list(_reports_data.get(phone, [])) if phone else []
+        # cache hash for previously-stored image-issues
+        existing_records = []
+        for r in existing_reports:
+            for prev in (r.get("issues") or []):
+                text = ((prev.get("title") or "") + " " + (prev.get("detail") or "")).strip()
+                if prev.get("media_kind") == "image":
+                    p = _url_to_path(prev.get("annotated_url") or prev.get("media_url"))
+                    h = image_phash(p)
+                else:
+                    h = None
+                existing_records.append({
+                    "report_id": r.get("id"),
+                    "text": text,
+                    "phash": h,
+                    "kind": prev.get("media_kind"),
+                })
+
+        for i, issue in enumerate(issues):
+            issue_text = ((issue.get("title") or "") + " " + (issue.get("detail") or "")).strip()
+            new_path = _url_to_path(issue.get("annotated_url") or issue.get("media_url"))
+            new_hash = image_phash(new_path) if issue.get("media_kind") == "image" else None
+            dup_report = None
+            for rec in existing_records:
+                if rec["text"] and text_jaccard(issue_text, rec["text"]) >= 0.55:
+                    dup_report = rec["report_id"]
+                    break
+                if new_hash and rec["phash"] and hamming_distance(new_hash, rec["phash"]) <= 10:
+                    dup_report = rec["report_id"]
+                    break
+            if dup_report:
+                issue["is_duplicate"] = True
+                issue["duplicate_of_report_id"] = dup_report
+            else:
+                issue["is_duplicate"] = False
+
         result["issues"] = issues
         with _analysis_lock:
             _analysis_jobs[job_id].update({"status": "done", "result": result})
@@ -840,7 +982,37 @@ def submit_report():
             f.save(evidence_dir / safe_name)
             saved.append(safe_name)
 
-    running_job_id = _get_running_job_for_phone(session.get("otp_phone"))
+    phone = session.get("otp_phone")
+    running_job_id = _get_running_job_for_phone(phone)
+
+    # Award points and persist the report.
+    awarded = 0
+    enriched_issues = []
+    for it in selected_issues:
+        pts = _points_for(it.get("severity"))
+        awarded += pts
+        enriched = dict(it)
+        enriched["points"] = pts
+        enriched_issues.append(enriched)
+
+    now_ts = time.time()
+    report_entry = {
+        "id": report_id,
+        "created_at": now_ts,
+        "phone": phone,
+        "description": description,
+        "evidence_count": len(saved),
+        "evidence_files": saved,
+        "issues": enriched_issues,
+        "points": awarded,
+        "analysis_job_id": running_job_id,
+        "status": "waiting_for_approval",
+        "status_label": "Waiting for approval from admin",
+        "timeline": _build_timeline(now_ts),
+    }
+    with _reports_lock:
+        _reports_data.setdefault(phone, []).append(report_entry)
+        _save_reports()
 
     return jsonify({
         "ok": True,
@@ -849,9 +1021,31 @@ def submit_report():
         "description": description,
         "evidence_count": len(saved),
         "issue_count": len(selected_issues),
-        "selected_issues": selected_issues,
+        "selected_issues": enriched_issues,
+        "points_awarded": awarded,
+        "total_points": _total_points_for(phone),
         "analysis_running": running_job_id is not None,
         "analysis_job_id": running_job_id,
+    })
+
+
+@app.route("/reports")
+def list_reports():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    with _reports_lock:
+        reports = [dict(r) for r in _reports_data.get(phone, [])]
+    reports.sort(key=lambda r: r.get("created_at", 0), reverse=True)
+    categories = sorted({
+        (i.get("category") or "").strip()
+        for r in reports for i in (r.get("issues") or [])
+        if (i.get("category") or "").strip()
+    })
+    return jsonify({
+        "reports": reports,
+        "total_points": sum(int(r.get("points", 0)) for r in reports),
+        "categories": categories,
     })
 
 
