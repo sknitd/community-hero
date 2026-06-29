@@ -20,6 +20,13 @@ GEMINI_API_KEY = os.environ.get(
     "REDACTED_GEMINI_KEY",
 )
 
+# Image generation / editing model (Nano Banana 2 → fallback to Nano Banana).
+# Override with IMAGE_GEN_MODELS env, e.g. "gemini-3-pro-image-preview,gemini-2.5-flash-image"
+IMAGE_GEN_MODELS = os.environ.get(
+    "IMAGE_GEN_MODELS",
+    "gemini-3-pro-image-preview,gemini-2.5-flash-image,gemini-2.5-flash-image-preview",
+).split(",")
+
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "REDACTED_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "REDACTED_TOKEN")
 TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID", "REDACTED_SERVICE")
@@ -116,6 +123,46 @@ def video_duration(video_path: Path) -> float:
     frames = cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0
     cap.release()
     return float(frames / fps) if fps else 0.0
+
+
+def annotate_issue_image(src_path: Path, title: str, detail: str, out_path: Path) -> bool:
+    try:
+        with open(src_path, "rb") as f:
+            data = f.read()
+        image_part = types.Part.from_bytes(data=data, mime_type="image/jpeg")
+        prompt = (
+            "Edit this photo: draw ONE thick bright GREEN rectangular border (outline only, "
+            "no fill, ~6 pixels thick) tightly around the area that shows the following issue. "
+            "Keep the rest of the image perfectly identical — same colors, lighting, content, "
+            "framing. Return the modified image only.\n\n"
+            f"Issue title: {title}\n"
+            f"Issue detail: {detail}"
+        )
+        for model_id in IMAGE_GEN_MODELS:
+            model_id = model_id.strip()
+            if not model_id:
+                continue
+            try:
+                response = client.models.generate_content(
+                    model=model_id,
+                    contents=[image_part, prompt],
+                    config=types.GenerateContentConfig(
+                        response_modalities=["IMAGE", "TEXT"],
+                    ),
+                )
+            except Exception:
+                continue
+            for cand in (response.candidates or []):
+                content = getattr(cand, "content", None)
+                for part in (getattr(content, "parts", None) or []):
+                    inline = getattr(part, "inline_data", None)
+                    if inline and getattr(inline, "data", None):
+                        with open(out_path, "wb") as f:
+                            f.write(inline.data)
+                        return True
+        return False
+    except Exception:
+        return False
 
 
 def trim_video_clip(src: Path, start: float, end: float, out_path: Path) -> bool:
@@ -506,6 +553,11 @@ def describe_analyse():
                     ok = cv2.imwrite(str(out_path), img, [cv2.IMWRITE_JPEG_QUALITY, 88])
                 issue["media_kind"] = "image" if ok else None
                 issue["media_url"] = f"/static/frames/report/{job_id}/{jpg_name}" if ok else None
+                if ok:
+                    ann_name = f"issue_{i}_annotated.jpg"
+                    ann_path = frames_dir / ann_name
+                    if annotate_issue_image(out_path, issue.get("title") or "", issue.get("detail") or "", ann_path):
+                        issue["annotated_url"] = f"/static/frames/report/{job_id}/{ann_name}"
 
         result["issues"] = issues
         return jsonify(result)
