@@ -4,6 +4,7 @@ import time
 import uuid
 import re
 import base64
+import subprocess
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -91,14 +92,54 @@ def extract_frame(video_path: Path, timestamp_sec: float, out_path: Path) -> boo
         return False
     fps = cap.get(cv2.CAP_PROP_FPS) or 30
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    target_frame = min(int(timestamp_sec * fps), max(int(total_frames) - 1, 0))
-    cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
+    duration = total_frames / fps if fps else 0
+    ts = max(0.0, min(float(timestamp_sec), max(duration - 0.05, 0.0)))
+
+    # try msec seek first, then frame seek
+    cap.set(cv2.CAP_PROP_POS_MSEC, ts * 1000.0)
     ok, frame = cap.read()
+    if not ok or frame is None:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, min(int(ts * fps), max(int(total_frames) - 1, 0)))
+        ok, frame = cap.read()
     cap.release()
     if not ok or frame is None:
         return False
     cv2.imwrite(str(out_path), frame, [cv2.IMWRITE_JPEG_QUALITY, 88])
     return True
+
+
+def video_duration(video_path: Path) -> float:
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        return 0.0
+    fps = cap.get(cv2.CAP_PROP_FPS) or 0
+    frames = cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0
+    cap.release()
+    return float(frames / fps) if fps else 0.0
+
+
+def trim_video_clip(src: Path, start: float, end: float, out_path: Path) -> bool:
+    if end <= start:
+        return False
+    try:
+        result = subprocess.run(
+            [
+                "ffmpeg", "-y", "-loglevel", "error",
+                "-ss", f"{max(0.0, start):.2f}",
+                "-to", f"{end:.2f}",
+                "-i", str(src),
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "26",
+                "-c:a", "aac", "-b:a", "96k",
+                "-movflags", "+faststart",
+                "-pix_fmt", "yuv420p",
+                str(out_path),
+            ],
+            capture_output=True,
+            timeout=90,
+        )
+        return result.returncode == 0 and out_path.exists() and out_path.stat().st_size > 0
+    except Exception:
+        return False
 
 
 def parse_json_response(text: str) -> dict:
@@ -215,9 +256,315 @@ def otp_verify():
 
 @app.route("/session")
 def session_state():
+    reporter = session.get("reporter")
     return jsonify({
         "verified": bool(session.get("otp_verified")),
         "phone": session.get("otp_phone"),
+        "reporter": reporter,
+        "first_name": (reporter.get("full_name", "").split() or [""])[0] if reporter else None,
+    })
+
+
+EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+NAME_RE = re.compile(r"^[A-Za-z][A-Za-z\s.'-]{1,59}$")
+
+
+@app.route("/signup", methods=["POST"])
+def signup():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    data = request.get_json(silent=True) or {}
+    full_name = (data.get("full_name") or "").strip()
+    age_raw = data.get("age")
+    email = (data.get("email") or "").strip()
+    address = (data.get("address") or "").strip()
+    home_zones = data.get("home_zones") or []
+
+    errors = {}
+    if not NAME_RE.fullmatch(full_name):
+        errors["full_name"] = "Enter a valid full name"
+    try:
+        age = int(age_raw)
+        if not (1 <= age <= 120):
+            errors["age"] = "Age must be 1–120"
+    except (TypeError, ValueError):
+        errors["age"] = "Enter a valid age"
+        age = None
+    if not EMAIL_RE.match(email):
+        errors["email"] = "Enter a valid email"
+    if len(address) < 5:
+        errors["address"] = "Enter a valid address"
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    cleaned_zones = []
+    seen = set()
+    for z in home_zones:
+        z = str(z).strip()[:60]
+        if z and z.lower() not in seen:
+            cleaned_zones.append(z)
+            seen.add(z.lower())
+
+    session["reporter"] = {
+        "full_name": full_name,
+        "age": age,
+        "email": email,
+        "address": address,
+        "home_zones": cleaned_zones,
+    }
+    return jsonify({"ok": True, "first_name": full_name.split()[0]})
+
+
+@app.route("/homezone/analyse", methods=["POST"])
+def homezone_analyse():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    data = request.get_json(silent=True) or {}
+    address = (data.get("address") or "").strip()
+    if len(address) < 5:
+        return jsonify({"error": "Enter the address first"}), 400
+
+    prompt = (
+        f'Address: "{address}"\n\n'
+        "Suggest 3 short home-zone labels describing the kind of neighbourhood / property this likely is "
+        '(e.g. "gated apartment complex", "urban high-rise", "suburban township", "row-house colony"). '
+        'Return ONLY a JSON array of 3 short string labels, max 4 words each.'
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                temperature=0.3,
+                response_mime_type="application/json",
+            ),
+        )
+        zones = json.loads(response.text)
+        if not isinstance(zones, list):
+            zones = []
+        zones = [str(z).strip()[:60] for z in zones if str(z).strip()][:5]
+        return jsonify({"zones": zones})
+    except Exception as e:
+        return jsonify({"error": f"Gemini failed: {e}"}), 500
+
+
+@app.route("/describe/analyse", methods=["POST"])
+def describe_analyse():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+
+    description = (request.form.get("description") or "").strip()
+    evidence_files = request.files.getlist("evidence")
+    evidence_files = [f for f in evidence_files if f and f.filename]
+    if not evidence_files:
+        return jsonify({"error": "Attach at least one media file"}), 400
+
+    job_id = uuid.uuid4().hex[:12]
+    tmp_dir = UPLOAD_DIR / "analyse" / job_id
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    media_records = []  # [{tmp_path, is_video, ref}]
+    try:
+        for f in evidence_files[:8]:
+            safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", f.filename)[:120]
+            tmp_path = tmp_dir / safe_name
+            f.save(tmp_path)
+            mime = (f.mimetype or "").lower()
+            is_video = mime.startswith("video/") or tmp_path.suffix.lower() in {".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv"}
+            try:
+                ref = client.files.upload(file=str(tmp_path))
+                while ref.state and ref.state.name == "PROCESSING":
+                    time.sleep(2)
+                    ref = client.files.get(name=ref.name)
+                if ref.state and ref.state.name == "FAILED":
+                    continue
+                media_records.append({"tmp_path": tmp_path, "is_video": is_video, "ref": ref})
+            except Exception:
+                continue
+
+        if not media_records:
+            return jsonify({"error": "Gemini could not process any of the uploaded files"}), 500
+
+        n = len(media_records)
+        index_lines = []
+        for i, r in enumerate(media_records):
+            if r["is_video"]:
+                dur = video_duration(r["tmp_path"])
+                index_lines.append(f"  index {i}: VIDEO, duration {dur:.2f} seconds")
+            else:
+                index_lines.append(f"  index {i}: IMAGE")
+        index_desc = "\n".join(index_lines)
+
+        prompt = (
+            "You are reviewing media (images and/or videos) attached to a society / "
+            "neighbourhood issue report.\n\n"
+            f'Optional user description: "{description}"\n\n'
+            "Attached media:\n"
+            f"{index_desc}\n\n"
+            "Identify each DISTINCT issue visible across the media. "
+            f"Classify using ONLY these top-level categories:\n{ISSUE_CATEGORIES}\n\n"
+            "Return ONLY valid JSON in this exact schema (numbers below are examples — replace them):\n"
+            "{\n"
+            '  "summary": "1-2 sentence overall summary",\n'
+            '  "suggested_action": "1 sentence overall action",\n'
+            '  "issues": [\n'
+            "    {\n"
+            '      "category": "top-level category name",\n'
+            '      "title": "short issue title",\n'
+            '      "detail": "what is visible and why it is an issue",\n'
+            '      "severity": "low|medium|high",\n'
+            '      "media_index": 1,\n'
+            '      "start_time": 7.2,\n'
+            '      "end_time": 11.8\n'
+            "    }\n"
+            "  ]\n"
+            "}\n\n"
+            "CRITICAL rules:\n"
+            f"- media_index MUST be an integer between 0 and {n - 1} (the media that best shows the issue).\n"
+            "- For an IMAGE media, set start_time = 0 and end_time = 0.\n"
+            "- For a VIDEO media, start_time and end_time MUST mark the SHORTEST window (in seconds) "
+            "  that clearly captures the issue. Both values are decimal seconds from the start of "
+            "  THAT video. Constraints:\n"
+            "    * 0 <= start_time < end_time <= video duration shown above.\n"
+            "    * The window should be 2 to 8 seconds long (extend slightly for context if needed).\n"
+            "    * Different issues from the same video MUST have different windows that point to "
+            "      where each specific issue is most visible.\n"
+            "    * NEVER default to 0.0–0.0 for a video unless the issue is genuinely at the very start.\n"
+            "- If no issues are visible, return an empty issues array."
+        )
+        contents = [r["ref"] for r in media_records] + [prompt]
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                response_mime_type="application/json",
+            ),
+        )
+        result = parse_json_response(response.text)
+
+        frames_dir = FRAMES_DIR / "report" / job_id
+        frames_dir.mkdir(parents=True, exist_ok=True)
+        issues = result.get("issues", []) or []
+
+        def _f(v, default=0.0):
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return default
+
+        for i, issue in enumerate(issues):
+            mi = issue.get("media_index", 0)
+            try:
+                mi = int(mi)
+            except (TypeError, ValueError):
+                mi = 0
+            if mi < 0 or mi >= n:
+                mi = 0
+            rec = media_records[mi]
+            issue["media_index"] = mi
+            ok = False
+
+            if rec["is_video"]:
+                dur = video_duration(rec["tmp_path"])
+                start = _f(issue.get("start_time"))
+                end = _f(issue.get("end_time"))
+                # sanity defaults if Gemini omitted or gave junk
+                if dur > 0:
+                    start = max(0.0, min(start, max(dur - 0.5, 0.0)))
+                    if end <= start:
+                        end = min(start + 4.0, dur)
+                    end = max(start + 1.0, min(end, dur))
+                    # cap clip length to 10s for sanity
+                    if end - start > 10.0:
+                        end = start + 10.0
+                clip_name = f"issue_{i}.mp4"
+                clip_path = frames_dir / clip_name
+                ok = trim_video_clip(rec["tmp_path"], start, end, clip_path)
+                if ok:
+                    issue["media_kind"] = "video"
+                    issue["media_url"] = f"/static/frames/report/{job_id}/{clip_name}"
+                    issue["start_time"] = round(start, 2)
+                    issue["end_time"] = round(end, 2)
+                else:
+                    # fallback: a still frame at start_time
+                    jpg_name = f"issue_{i}.jpg"
+                    if extract_frame(rec["tmp_path"], start, frames_dir / jpg_name):
+                        issue["media_kind"] = "image"
+                        issue["media_url"] = f"/static/frames/report/{job_id}/{jpg_name}"
+                    else:
+                        issue["media_kind"] = None
+                        issue["media_url"] = None
+            else:
+                jpg_name = f"issue_{i}.jpg"
+                out_path = frames_dir / jpg_name
+                img = cv2.imread(str(rec["tmp_path"]))
+                if img is not None:
+                    h, w = img.shape[:2]
+                    if max(h, w) > 1200:
+                        scale = 1200 / max(h, w)
+                        img = cv2.resize(img, (int(w * scale), int(h * scale)))
+                    ok = cv2.imwrite(str(out_path), img, [cv2.IMWRITE_JPEG_QUALITY, 88])
+                issue["media_kind"] = "image" if ok else None
+                issue["media_url"] = f"/static/frames/report/{job_id}/{jpg_name}" if ok else None
+
+        result["issues"] = issues
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": f"Gemini failed: {e}"}), 500
+    finally:
+        for rec in media_records:
+            try:
+                client.files.delete(name=rec["ref"].name)
+            except Exception:
+                pass
+            try:
+                rec["tmp_path"].unlink()
+            except Exception:
+                pass
+        try:
+            tmp_dir.rmdir()
+        except Exception:
+            pass
+
+
+@app.route("/report", methods=["POST"])
+def submit_report():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    reporter = session.get("reporter")
+    if not reporter:
+        return jsonify({"error": "Complete sign-up first"}), 400
+
+    description = (request.form.get("description") or "").strip()
+    evidence_files = request.files.getlist("evidence")
+    selected_issues_raw = request.form.get("selected_issues") or "[]"
+    try:
+        selected_issues = json.loads(selected_issues_raw)
+        if not isinstance(selected_issues, list):
+            selected_issues = []
+    except json.JSONDecodeError:
+        selected_issues = []
+
+    report_id = uuid.uuid4().hex[:12]
+    saved = []
+    if evidence_files:
+        evidence_dir = UPLOAD_DIR / "reports" / report_id
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+        for f in evidence_files[:20]:
+            if not f.filename:
+                continue
+            safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", f.filename)[:120]
+            f.save(evidence_dir / safe_name)
+            saved.append(safe_name)
+
+    return jsonify({
+        "ok": True,
+        "report_id": report_id,
+        "reporter": reporter,
+        "description": description,
+        "evidence_count": len(saved),
+        "issue_count": len(selected_issues),
+        "selected_issues": selected_issues,
     })
 
 

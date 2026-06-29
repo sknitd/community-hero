@@ -3,341 +3,667 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Society Video Inspector</title>
+  <title>Reporter — Society Issues</title>
   <style>
     :root {
-      --bg: #0f1115;
-      --card: #181b22;
-      --border: #262a33;
-      --text: #e7e9ee;
-      --muted: #9aa3b2;
-      --accent: #6aa6ff;
-      --high: #ff5a5a;
-      --med: #ffb547;
-      --low: #6bd49b;
+      --bg: #ececef;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --border-strong: #d1d5db;
+      --text: #0d1220;
+      --muted: #6b7280;
+      --muted-2: #9ca3af;
+      --input-bg: #f3f4f6;
+      --primary: #2f5cff;
+      --primary-2: #4d77ff;
+      --primary-soft: #eaf0ff;
+      --primary-strong: #1f4ad6;
+      --high: #ef4444;
+      --med: #f59e0b;
+      --low: #10b981;
+      --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(15,23,42,.06);
     }
     * { box-sizing: border-box; }
+    html, body { background: var(--bg); }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       color: var(--text);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
-    header {
-      padding: 28px 24px 12px;
-      max-width: 1100px;
+    .page {
+      max-width: 520px;
       margin: 0 auto;
+      padding: 24px 16px 64px;
     }
-    h1 { margin: 0 0 6px; font-size: 24px; }
-    header p { margin: 0; color: var(--muted); font-size: 14px; }
-    .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
-    .who { color: var(--muted); font-size: 13px; }
+    .brand {
+      font-size: 11px;
+      letter-spacing: .14em;
+      color: var(--muted);
+      font-weight: 700;
+      margin: 0 4px 10px;
+    }
+    .who {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin: 0 4px 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .who.show { display: flex; }
+    .who .verified-pill {
+      background: #e8f4ec;
+      color: #0a7f43;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 12.5px;
+    }
     .who button {
-      margin-left: 8px;
       background: transparent;
-      color: var(--accent);
+      color: var(--primary);
       border: none;
       cursor: pointer;
+      font-weight: 600;
       font-size: 13px;
-      padding: 0;
+      padding: 4px 8px;
+      margin-left: auto;
     }
-    main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 80px; }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #2f5cff, #6aa6ff);
+    }
+    .card-body { padding: 22px 20px; }
+
+    .head-row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .avatar {
+      width: 38px; height: 38px;
+      background: #eef2ff;
+      color: var(--primary);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .head-row h2 { margin: 0; font-size: 18px; font-weight: 700; }
+    .head-row p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+
     .view { display: none; }
     .view.active { display: block; }
 
-    /* OTP view */
-    .otp-wrap {
-      max-width: 420px;
-      margin: 40px auto;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px 24px;
-    }
-    .otp-wrap h2 { margin: 0 0 6px; font-size: 20px; }
-    .otp-wrap .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    /* Form fields */
     .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
-    .phone-input {
-      display: flex;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-      background: #0e1116;
+    .field-row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; }
+    .label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
     }
-    .phone-input .prefix {
-      padding: 12px 12px;
-      background: #20242d;
+    .label .opt { color: var(--muted); font-weight: 500; }
+    .label .info {
+      display: inline-flex;
+      align-items: center; justify-content: center;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 1px solid var(--muted-2);
       color: var(--muted);
-      font-weight: 600;
-      border-right: 1px solid var(--border);
+      font-size: 9.5px;
+      margin-left: 4px;
+      font-weight: 700;
     }
-    .phone-input input {
-      flex: 1;
-      background: transparent;
-      border: 0;
-      color: var(--text);
-      padding: 12px;
-      font-size: 15px;
-      outline: none;
-      letter-spacing: .02em;
-    }
-    .otp-input {
+    .input, .textarea {
       width: 100%;
-      background: #0e1116;
+      background: var(--input-bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 14px;
       color: var(--text);
-      font-size: 18px;
+      outline: none;
+      transition: border-color .15s, background .15s;
+      font-family: inherit;
+    }
+    .textarea { resize: vertical; min-height: 76px; }
+    .input::placeholder, .textarea::placeholder { color: var(--muted-2); }
+    .input:focus, .textarea:focus { border-color: var(--primary); background: #fff; }
+    .input.invalid, .textarea.invalid { border-color: var(--high); background: #fff5f5; }
+    .input[readonly] { color: var(--muted); }
+    .err { color: var(--high); font-size: 12px; margin-top: 5px; min-height: 0; display: none; }
+    .err.show { display: block; }
+
+    .phone-input { display: flex; }
+    .phone-input .prefix {
+      padding: 11px 10px;
+      background: #e9ecef;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-right: 0;
+      border-radius: 10px 0 0 10px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .phone-input .input {
+      border-radius: 0 10px 10px 0;
+    }
+
+    /* OTP */
+    .otp-input {
       letter-spacing: .4em;
       text-align: center;
-      outline: none;
+      font-size: 18px;
     }
+    .resend-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 10px; font-size: 13px; color: var(--muted);
+    }
+    .resend-row button {
+      background: transparent; color: var(--primary); border: 0; cursor: pointer;
+      padding: 0; font-weight: 700; font-size: 13px;
+    }
+    .resend-row button:disabled { color: var(--muted-2); cursor: not-allowed; }
+
+    /* Buttons */
     .btn {
       width: 100%;
-      background: var(--accent);
-      color: #0a0c10;
+      background: var(--primary);
+      color: #fff;
       border: 0;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 13px;
+      border-radius: 10px;
       font-weight: 700;
+      font-size: 14.5px;
+      cursor: pointer;
+      transition: background .15s, transform .05s;
+    }
+    .btn:hover:not(:disabled) { background: var(--primary-strong); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn.ghost {
+      background: #fff;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+    }
+    .btn.ghost:hover:not(:disabled) { background: var(--primary-soft); }
+    .pill-btn {
+      background: #fff;
+      border: 1px dashed var(--border-strong);
+      color: var(--muted);
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .pill-btn:hover { color: var(--text); border-color: var(--muted-2); }
+
+    .sparkle::before { content: "✦"; margin-right: 6px; color: var(--primary); }
+
+    .section-spacer { height: 16px; }
+
+    /* Zone chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip {
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chip button {
+      background: transparent; border: 0; color: var(--primary-strong);
+      cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
+    }
+    .custom-zone-row { display: flex; gap: 8px; margin-top: 8px; }
+    .custom-zone-row .input { flex: 1; }
+    .custom-zone-row button {
+      background: var(--primary); color: #fff; border: 0; border-radius: 10px;
+      padding: 0 16px; cursor: pointer; font-weight: 700; font-size: 13px;
+    }
+
+    /* Walkthrough video upload */
+    .upload {
+      background: var(--input-bg);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: border-color .2s, background .2s;
+    }
+    .upload.drag { border-color: var(--primary); background: var(--primary-soft); }
+    .upload input[type=file] { display: none; }
+    .upload .choose {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
       font-size: 14px;
+    }
+    .upload .hint { color: var(--muted); font-size: 12.5px; margin: 10px 0; }
+    .upload .file-name { color: var(--text); font-size: 13px; margin-bottom: 8px; min-height: 16px; }
+    .upload .analyze {
+      background: #e9ecef;
+      color: var(--muted);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       margin-top: 6px;
     }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-    .btn.secondary { background: #2a2f3a; color: var(--text); border: 1px solid var(--border); margin-top: 10px; font-weight: 600; }
-    .resend-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
-    .resend-row button { background: transparent; color: var(--accent); border: 0; cursor: pointer; padding: 0; font-size: 13px; font-weight: 600; }
-    .resend-row button:disabled { color: var(--muted); cursor: not-allowed; }
-    .msg { margin-top: 12px; font-size: 13px; }
-    .msg.error { color: #ffb0b0; }
-    .msg.ok { color: var(--low); }
+    .upload .analyze.ready { background: var(--primary); color: #fff; }
+    .upload .analyze:disabled { cursor: not-allowed; opacity: .7; }
 
-    /* Inspector view (unchanged) */
-    .upload {
-      background: var(--card);
-      border: 1px dashed var(--border);
-      border-radius: 14px;
-      padding: 28px;
+    .ai-results {
+      background: #fff;
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13.5px;
       text-align: center;
-      transition: border-color .2s;
     }
-    .upload.drag { border-color: var(--accent); }
-    .upload input[type=file] { display: none; }
-    .upload label {
-      display: inline-block;
-      padding: 10px 18px;
-      background: var(--accent);
-      color: #0a0c10;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .upload .hint { color: var(--muted); font-size: 13px; margin-top: 10px; }
-    .file-name { margin-top: 12px; font-size: 14px; color: var(--text); }
-    button.analyze {
-      margin-top: 14px;
-      background: #2a2f3a;
+    .ai-results.has-content { text-align: left; padding: 14px; }
+
+    .summary-bar {
+      background: var(--primary-soft);
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
       color: var(--text);
-      border: 1px solid var(--border);
-      padding: 10px 22px;
-      border-radius: 8px;
-      cursor: pointer;
+      line-height: 1.45;
+      margin-bottom: 10px;
+    }
+
+    .loc-grid { display: grid; gap: 10px; }
+    .loc-card { background: #fafbfc; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; transition: opacity .15s, background .15s; }
+    .loc-card.unselected { opacity: .55; background: #f3f4f6; }
+    .issue-check {
+      position: absolute;
+      top: 10px; left: 10px;
+      z-index: 2;
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(4px);
+      border-radius: 6px;
+      padding: 4px 8px;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px;
       font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,.12);
     }
-    button.analyze:disabled { opacity: .5; cursor: not-allowed; }
-    .status { margin: 18px 0; color: var(--muted); font-size: 14px; text-align: center; }
-    .summary {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 18px;
-      margin: 18px 0;
-      font-size: 14px;
-      line-height: 1.5;
+    .issue-check input { margin: 0; cursor: pointer; }
+    .issues-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 6px 0 10px; font-size: 12.5px; color: var(--muted);
     }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+    .issues-toolbar button {
+      background: transparent; border: 0; color: var(--primary);
+      cursor: pointer; font-weight: 700; font-size: 12.5px; padding: 2px 6px;
     }
-    .card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #000; }
-    .card .body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-    .card h3 { margin: 0; font-size: 16px; }
-    .ts { color: var(--muted); font-size: 12px; }
-    .desc { font-size: 13px; color: #c8cdd6; line-height: 1.45; }
-    .issues { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
-    .issue { border-left: 3px solid var(--med); padding: 6px 10px; background: #1e222b; border-radius: 4px; font-size: 12.5px; }
+    .loc-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #000; display: block; }
+    .loc-card .body { padding: 10px 12px; }
+    .loc-card h4 { margin: 0 0 2px; font-size: 14px; }
+    .loc-card .ts { color: var(--muted); font-size: 11.5px; }
+    .loc-card .desc { color: #374151; font-size: 12.5px; margin: 6px 0; line-height: 1.4; }
+    .issues { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+    .issue { border-left: 3px solid var(--med); padding: 5px 8px; background: #fff; border-radius: 4px; font-size: 12px; }
     .issue.high { border-left-color: var(--high); }
     .issue.medium { border-left-color: var(--med); }
     .issue.low { border-left-color: var(--low); }
-    .issue .title { font-weight: 600; }
-    .issue .cat { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
-    .issue .detail { color: #c8cdd6; margin-top: 2px; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-left: 6px; }
-    .badge.high { background: rgba(255,90,90,.15); color: var(--high); }
-    .badge.medium { background: rgba(255,181,71,.15); color: var(--med); }
-    .badge.low { background: rgba(107,212,155,.15); color: var(--low); }
-    .clean { color: var(--low); font-size: 13px; }
-    .error-banner { background: rgba(255,90,90,.1); border: 1px solid rgba(255,90,90,.3); color: #ffb0b0; padding: 12px 14px; border-radius: 8px; margin: 14px 0; font-size: 14px; }
+    .issue .cat { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
+    .issue .title { font-weight: 700; }
+    .issue .detail { color: #374151; margin-top: 1px; }
+    .clean { color: var(--low); font-size: 12.5px; font-weight: 600; }
+
+    /* Evidence */
+    .evidence-area {
+      background: var(--input-bg);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .evidence-area .plus {
+      width: 32px; height: 32px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center; justify-content: center;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .evidence-area .label-main { font-weight: 700; color: var(--text); font-size: 14px; }
+    .evidence-area .hint { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+    .evidence-thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+    .thumb {
+      position: relative;
+      aspect-ratio: 1/1;
+      background: #e9ecef;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .thumb img, .thumb video { width: 100%; height: 100%; object-fit: cover; }
+    .thumb button {
+      position: absolute; top: 3px; right: 3px;
+      width: 18px; height: 18px;
+      background: rgba(0,0,0,.65);
+      color: #fff;
+      border: 0; border-radius: 50%;
+      cursor: pointer; font-size: 11px; line-height: 1;
+    }
+
+    /* Toast / banner */
+    .banner {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin: 10px 0;
+    }
+    .banner.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .banner.ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
     .spinner {
       display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid var(--muted);
+      width: 13px; height: 13px;
+      border: 2px solid currentColor;
       border-top-color: transparent;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      vertical-align: middle;
-      margin-right: 8px;
+      vertical-align: -2px;
+      margin-right: 6px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <header>
-    <div class="header-row">
-      <div>
-        <h1>Society Video Inspector</h1>
-        <p>Upload a walkthrough video. Gemini identifies locations and flags maintenance, security, parking, and other society issues.</p>
-      </div>
-      <div class="who" id="whoBox" style="display:none;">
-        <span id="whoText"></span>
-        <button id="logoutBtn">Logout</button>
-      </div>
+  <div class="page">
+    <div class="brand">REPORTER</div>
+    <div class="who" id="whoBox">
+      <span class="verified-pill" id="whoText"></span>
+      <button id="logoutBtn">Logout</button>
     </div>
-  </header>
-  <main>
-    <!-- OTP VIEW -->
+
+    <!-- ============ SCREEN 1: OTP ============ -->
     <section id="otpView" class="view active">
-      <div class="otp-wrap">
-        <h2>Verify your phone</h2>
-        <div class="sub">Enter your 10-digit Indian mobile number to receive an OTP.</div>
-
-        <div class="field">
-          <label for="phone">Mobile number</label>
-          <div class="phone-input">
-            <span class="prefix">+91</span>
-            <input id="phone" inputmode="numeric" maxlength="10" placeholder="10-digit number" autocomplete="tel-national" />
+      <div class="card">
+        <div class="card-body">
+          <div class="head-row">
+            <div class="avatar">R</div>
+            <div>
+              <h2>Verify your phone</h2>
+              <p>We'll send a one-time code over SMS.</p>
+            </div>
           </div>
-        </div>
 
-        <button id="sendBtn" class="btn">Send OTP</button>
-
-        <div id="otpBox" style="display:none; margin-top: 18px;">
           <div class="field">
-            <label for="otp">Enter OTP</label>
-            <input id="otp" class="otp-input" inputmode="numeric" maxlength="8" placeholder="• • • • • •" autocomplete="one-time-code" />
+            <label class="label" for="phone">Mobile number</label>
+            <div class="phone-input">
+              <span class="prefix">+91</span>
+              <input id="phone" class="input" inputmode="numeric" maxlength="10" placeholder="10-digit number" autocomplete="tel-national" />
+            </div>
+            <div class="err" id="phoneErr"></div>
           </div>
-          <button id="submitBtn" class="btn">Submit</button>
-          <div class="resend-row">
-            <span id="resendInfo">Resend available in <span id="timer">30</span>s</span>
-            <button id="resendBtn" disabled>Resend OTP</button>
+
+          <button id="sendBtn" class="btn">Send OTP</button>
+
+          <div id="otpBox" style="display:none; margin-top: 16px;">
+            <div class="field">
+              <label class="label" for="otp">Enter OTP</label>
+              <input id="otp" class="input otp-input" inputmode="numeric" maxlength="8" placeholder="• • • • • •" autocomplete="one-time-code" />
+              <div class="err" id="otpErr"></div>
+            </div>
+            <button id="submitOtpBtn" class="btn">Submit</button>
+            <div class="resend-row">
+              <span id="resendInfo">Resend available in <span id="timer">30</span>s</span>
+              <button id="resendBtn" disabled>Resend OTP</button>
+            </div>
           </div>
+
+          <div id="otpBanner"></div>
         </div>
-
-        <div id="otpMsg" class="msg"></div>
       </div>
     </section>
 
-    <!-- INSPECTOR VIEW -->
-    <section id="inspectorView" class="view">
-      <div class="upload" id="drop">
-        <input type="file" id="file" accept="video/*" />
-        <label for="file">Choose video</label>
-        <div class="hint">or drag &amp; drop here (mp4, mov, webm — up to 500 MB)</div>
-        <div class="file-name" id="fileName"></div>
-        <div><button class="analyze" id="analyzeBtn" disabled>Analyze video</button></div>
-      </div>
+    <!-- ============ SCREEN 2: SIGN-UP ============ -->
+    <section id="signupView" class="view">
+      <div class="card">
+        <div class="card-body">
+          <div class="head-row">
+            <div class="avatar">R</div>
+            <div>
+              <h2>Reporter sign-up</h2>
+              <p>Report issues in your neighbourhood</p>
+            </div>
+          </div>
 
-      <div id="status" class="status"></div>
-      <div id="errorBox"></div>
-      <div id="summary"></div>
-      <div id="results" class="grid"></div>
+          <div class="field">
+            <label class="label" for="fullName">Full name</label>
+            <input id="fullName" class="input" type="text" placeholder="e.g. Asha Menon" autocomplete="name" />
+            <div class="err" id="fullNameErr"></div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="age">Age</label>
+              <input id="age" class="input" type="number" min="1" max="120" placeholder="28" />
+              <div class="err" id="ageErr"></div>
+            </div>
+            <div class="field">
+              <label class="label" for="signupPhone">Mobile number</label>
+              <input id="signupPhone" class="input" type="text" readonly />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="email">Email</label>
+            <input id="email" class="input" type="email" placeholder="name@email.com" autocomplete="email" />
+            <div class="err" id="emailErr"></div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="address">Address</label>
+            <textarea id="address" class="textarea" placeholder="House / street / locality"></textarea>
+            <div class="err" id="addressErr"></div>
+          </div>
+
+          <div class="field">
+            <div class="label">Home zone <span class="opt">· optional</span><span class="info" title="Tag the kind of neighbourhood for better issue routing.">i</span></div>
+            <button id="analyseHomezoneBtn" class="btn ghost sparkle">Analyse homezone</button>
+            <button id="customZoneBtn" class="pill-btn" type="button">+ Custom</button>
+            <div id="customZoneRow" class="custom-zone-row" style="display:none;">
+              <input id="customZoneInput" class="input" placeholder="Custom zone label" maxlength="60" />
+              <button id="customZoneAdd" type="button">Add</button>
+            </div>
+            <div id="zoneChips" class="chips"></div>
+            <div class="err" id="homezoneErr"></div>
+          </div>
+
+          <div class="field">
+            <div class="label">Walkthrough video <span class="opt">· optional</span></div>
+            <p style="color: var(--muted); font-size: 13px; margin: 0 0 10px;">
+              Upload a walkthrough video. Gemini identifies locations and flags maintenance, security, parking, and other society issues.
+            </p>
+            <div class="upload" id="drop">
+              <input type="file" id="videoFile" accept="video/*" />
+              <label for="videoFile" class="choose">Choose video</label>
+              <div class="hint">or drag &amp; drop here (mp4, mov, webm — up to 500 MB)</div>
+              <div class="file-name" id="fileName"></div>
+              <button class="analyze" id="analyzeBtn" disabled>Analyze video</button>
+            </div>
+            <div class="ai-results" id="videoResults">AI analysis results will appear here</div>
+          </div>
+
+          <div id="signupBanner"></div>
+          <button id="signupBtn" class="btn" disabled>Signup</button>
+        </div>
+      </div>
     </section>
-  </main>
+
+    <!-- ============ SCREEN 3: REPORT ============ -->
+    <section id="reportView" class="view">
+      <div class="card">
+        <div class="card-body">
+          <div class="head-row">
+            <div class="avatar">R</div>
+            <div>
+              <h2>Report an issue</h2>
+              <p>Add evidence and describe what's wrong</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">Evidence <span class="opt">· photos &amp; video · optional</span></div>
+            <div class="evidence-area" id="evidenceArea">
+              <input type="file" id="evidenceFiles" accept="image/*,video/*" multiple style="display:none;" />
+              <div class="plus">+</div>
+              <div class="label-main">Add images or videos</div>
+              <div class="hint">Tap to upload multiple files</div>
+            </div>
+            <div class="evidence-thumbs" id="evidenceThumbs"></div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="description">Describe the issue <span class="opt">· optional</span></label>
+            <textarea id="description" class="textarea" placeholder="e.g. Large pothole near the bus stop, water collecting after rain — risk of accidents." style="min-height: 90px;"></textarea>
+          </div>
+
+          <button id="analyseAiBtn" class="btn ghost sparkle" disabled>Analyse with AI</button>
+          <div class="ai-results" id="describeResults">AI analysis results will appear here</div>
+
+          <div id="reportBanner"></div>
+          <button id="submitReportBtn" class="btn" style="margin-top: 14px;" disabled>Submit report</button>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <script>
-    // -------- View switching --------
-    const otpView = document.getElementById('otpView');
-    const inspectorView = document.getElementById('inspectorView');
+    // ============ VIEW SWITCHING ============
+    const views = {
+      otp: document.getElementById('otpView'),
+      signup: document.getElementById('signupView'),
+      report: document.getElementById('reportView'),
+    };
     const whoBox = document.getElementById('whoBox');
     const whoText = document.getElementById('whoText');
 
-    function showInspector(phone) {
-      otpView.classList.remove('active');
-      inspectorView.classList.add('active');
-      whoBox.style.display = 'block';
-      whoText.textContent = phone ? `Verified: ${phone}` : 'Verified';
-    }
-    function showOtp() {
-      inspectorView.classList.remove('active');
-      otpView.classList.add('active');
-      whoBox.style.display = 'none';
+    function showView(name, headerLabel) {
+      Object.entries(views).forEach(([k, el]) => el.classList.toggle('active', k === name));
+      if (headerLabel) {
+        whoBox.classList.add('show');
+        whoText.textContent = 'Verified: ' + headerLabel;
+      } else {
+        whoBox.classList.remove('show');
+      }
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      if (typeof updateActionButtons === 'function') updateActionButtons();
     }
 
     // restore session
     fetch('/session').then(r => r.json()).then(s => {
-      if (s.verified) showInspector(s.phone);
+      if (s.verified && s.reporter) {
+        prefillSignupPhone(s.phone);
+        prefillFromReporter(s.reporter);
+        showView('report', s.first_name || s.phone);
+      } else if (s.verified) {
+        prefillSignupPhone(s.phone);
+        showView('signup', s.phone);
+      }
     });
-
-    function resetToStart() {
-      // OTP view
-      clearInterval(timerHandle);
-      phoneInput.value = '';
-      phoneInput.disabled = false;
-      otpInput.value = '';
-      otpBox.style.display = 'none';
-      sendBtn.style.display = '';
-      sendBtn.disabled = false;
-      sendBtn.innerHTML = 'Send OTP';
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = 'Submit';
-      resendBtn.disabled = true;
-      otpMsg.textContent = '';
-      otpMsg.className = 'msg';
-
-      // Inspector view
-      currentFile = null;
-      fileInput.value = '';
-      fileName.textContent = '';
-      analyzeBtn.disabled = true;
-      statusEl.innerHTML = '';
-      errorBox.innerHTML = '';
-      summaryEl.innerHTML = '';
-      resultsEl.innerHTML = '';
-
-      showOtp();
-      phoneInput.focus();
-    }
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
-      try { await fetch('/logout', { method: 'POST' }); } catch (e) {}
-      resetToStart();
+      try { await fetch('/logout', { method: 'POST' }); } catch {}
+      resetAll();
+      showView('otp');
     });
 
-    // -------- OTP logic --------
+    function prefillSignupPhone(phoneE164) {
+      const el = document.getElementById('signupPhone');
+      if (el && phoneE164) el.value = phoneE164;
+    }
+    function prefillFromReporter(r) {
+      document.getElementById('fullName').value = r.full_name || '';
+      document.getElementById('age').value = r.age || '';
+      document.getElementById('email').value = r.email || '';
+      document.getElementById('address').value = r.address || '';
+      zones = Array.isArray(r.home_zones) ? r.home_zones.slice() : [];
+      renderZones();
+    }
+
+    // ============ HELPERS ============
+    function setError(elId, msg) {
+      const el = document.getElementById(elId);
+      if (msg) { el.textContent = msg; el.classList.add('show'); } else { el.textContent = ''; el.classList.remove('show'); }
+    }
+    function setInvalid(elId, bad) {
+      document.getElementById(elId).classList.toggle('invalid', !!bad);
+    }
+    function banner(boxId, msg, kind) {
+      const box = document.getElementById(boxId);
+      if (!msg) { box.innerHTML = ''; return; }
+      box.innerHTML = `<div class="banner ${kind || 'error'}">${escapeHtml(msg)}</div>`;
+    }
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    async function withBusy(btn, label, fn) {
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span>${label}`;
+      try { return await fn(); }
+      finally { btn.disabled = false; btn.innerHTML = orig; }
+    }
+
+    // ============ SCREEN 1: OTP ============
     const phoneInput = document.getElementById('phone');
     const sendBtn = document.getElementById('sendBtn');
     const otpBox = document.getElementById('otpBox');
     const otpInput = document.getElementById('otp');
-    const submitBtn = document.getElementById('submitBtn');
+    const submitOtpBtn = document.getElementById('submitOtpBtn');
     const resendBtn = document.getElementById('resendBtn');
     const resendInfo = document.getElementById('resendInfo');
     const timerEl = document.getElementById('timer');
-    const otpMsg = document.getElementById('otpMsg');
 
     phoneInput.addEventListener('input', () => {
       phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+      setError('phoneErr', '');
+      setInvalid('phone', false);
     });
     otpInput.addEventListener('input', () => {
       otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 8);
+      setError('otpErr', '');
+      setInvalid('otp', false);
     });
 
     let timerHandle = null;
@@ -353,149 +679,216 @@
           clearInterval(timerHandle);
           resendBtn.disabled = false;
           resendInfo.style.display = 'none';
-        } else {
-          timerEl.textContent = remaining;
-        }
+        } else timerEl.textContent = remaining;
       }, 1000);
     }
 
-    function setMsg(text, kind = '') {
-      otpMsg.textContent = text || '';
-      otpMsg.className = 'msg' + (kind ? ' ' + kind : '');
-    }
-
-    async function sendOtp(isResend = false) {
-      const phone = phoneInput.value;
-      if (phone.length !== 10) {
-        setMsg('Please enter a 10-digit number', 'error');
+    async function sendOtp(isResend) {
+      if (phoneInput.value.length !== 10) {
+        setError('phoneErr', 'Enter a 10-digit number');
+        setInvalid('phone', true);
         return;
       }
+      banner('otpBanner', '');
       const btn = isResend ? resendBtn : sendBtn;
-      const originalText = btn.textContent;
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Sending…';
-      setMsg('');
-      try {
+      await withBusy(btn, 'Sending…', async () => {
         const res = await fetch('/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone })
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phoneInput.value })
         });
         const data = await res.json();
-        if (!res.ok) {
-          setMsg(data.error || 'Failed to send OTP', 'error');
-          btn.disabled = false;
-        } else {
-          setMsg(`OTP sent to +91 ${phone}`, 'ok');
-          otpBox.style.display = 'block';
-          phoneInput.disabled = true;
-          sendBtn.style.display = 'none';
-          otpInput.focus();
-          startResendTimer(30);
-        }
-      } catch (e) {
-        setMsg(e.message, 'error');
-        btn.disabled = false;
-      } finally {
-        btn.innerHTML = originalText;
-      }
+        if (!res.ok) { banner('otpBanner', data.error || 'Failed to send OTP', 'error'); return; }
+        banner('otpBanner', `OTP sent to +91 ${phoneInput.value}`, 'ok');
+        otpBox.style.display = 'block';
+        phoneInput.disabled = true;
+        sendBtn.style.display = 'none';
+        otpInput.focus();
+        startResendTimer(30);
+      });
     }
 
     sendBtn.addEventListener('click', () => sendOtp(false));
     resendBtn.addEventListener('click', () => sendOtp(true));
+    phoneInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
 
-    submitBtn.addEventListener('click', async () => {
-      const code = otpInput.value;
-      if (code.length < 4) {
-        setMsg('Enter the OTP', 'error');
+    submitOtpBtn.addEventListener('click', async () => {
+      if (otpInput.value.length < 4) {
+        setError('otpErr', 'Enter the OTP');
+        setInvalid('otp', true);
         return;
       }
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="spinner"></span>Verifying…';
-      setMsg('');
-      try {
+      banner('otpBanner', '');
+      await withBusy(submitOtpBtn, 'Verifying…', async () => {
         const res = await fetch('/otp/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: phoneInput.value, code })
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phoneInput.value, code: otpInput.value })
         });
         const data = await res.json();
         if (!res.ok || !data.ok) {
-          setMsg(data.error || 'Incorrect OTP', 'error');
-          submitBtn.disabled = false;
-        } else {
-          setMsg('Verified ✓', 'ok');
-          setTimeout(() => showInspector(data.phone), 400);
+          banner('otpBanner', data.error || 'Incorrect OTP', 'error');
+          return;
         }
-      } catch (e) {
-        setMsg(e.message, 'error');
-        submitBtn.disabled = false;
-      } finally {
-        submitBtn.innerHTML = 'Submit';
-      }
+        banner('otpBanner', 'Verified ✓', 'ok');
+        prefillSignupPhone(data.phone);
+        setTimeout(() => showView('signup', data.phone), 350);
+      });
     });
+    otpInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitOtpBtn.click(); });
 
-    otpInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBtn.click(); });
-    phoneInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+    // ============ SCREEN 2: SIGN-UP ============
+    const fullName = document.getElementById('fullName');
+    const age = document.getElementById('age');
+    const email = document.getElementById('email');
+    const address = document.getElementById('address');
 
-    // -------- Inspector logic --------
-    const fileInput = document.getElementById('file');
-    const drop = document.getElementById('drop');
-    const fileName = document.getElementById('fileName');
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const statusEl = document.getElementById('status');
-    const errorBox = document.getElementById('errorBox');
-    const summaryEl = document.getElementById('summary');
-    const resultsEl = document.getElementById('results');
+    const NAME_RE = /^[A-Za-z][A-Za-z\s.'-]{1,59}$/;
+    const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
-    let currentFile = null;
-
-    function setFile(f) {
-      currentFile = f;
-      fileName.textContent = f ? `${f.name} • ${(f.size/1024/1024).toFixed(1)} MB` : '';
-      analyzeBtn.disabled = !f;
+    function isSignupValid() {
+      const a = parseInt(age.value, 10);
+      return NAME_RE.test(fullName.value.trim())
+          && Number.isFinite(a) && a >= 1 && a <= 120
+          && EMAIL_RE.test(email.value.trim())
+          && address.value.trim().length >= 5;
+    }
+    function hasEvidence() {
+      return evidenceList.length >= 1;
+    }
+    function canSubmitReport() {
+      if (!hasEvidence()) return false;
+      if (detectedIssues && detectedIssues.length > 0) {
+        if (!issueSelected.some(Boolean)) return false;
+        if (!commentsAllValid()) return false;
+      }
+      return true;
+    }
+    function updateActionButtons() {
+      document.getElementById('signupBtn').disabled = !isSignupValid();
+      document.getElementById('analyseAiBtn').disabled = !hasEvidence();
+      document.getElementById('submitReportBtn').disabled = !canSubmitReport();
     }
 
-    fileInput.addEventListener('change', e => setFile(e.target.files[0]));
-    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
-      e.preventDefault(); drop.classList.add('drag');
-    }));
-    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
-      e.preventDefault(); drop.classList.remove('drag');
-    }));
+    function validateSignup() {
+      let ok = true;
+      // name
+      if (!NAME_RE.test(fullName.value.trim())) {
+        setError('fullNameErr', 'Enter a valid full name');
+        setInvalid('fullName', true); ok = false;
+      } else { setError('fullNameErr', ''); setInvalid('fullName', false); }
+      // age
+      const a = parseInt(age.value, 10);
+      if (!Number.isFinite(a) || a < 1 || a > 120) {
+        setError('ageErr', 'Age 1–120');
+        setInvalid('age', true); ok = false;
+      } else { setError('ageErr', ''); setInvalid('age', false); }
+      // email
+      if (!EMAIL_RE.test(email.value.trim())) {
+        setError('emailErr', 'Enter a valid email');
+        setInvalid('email', true); ok = false;
+      } else { setError('emailErr', ''); setInvalid('email', false); }
+      // address
+      if (address.value.trim().length < 5) {
+        setError('addressErr', 'Enter a valid address');
+        setInvalid('address', true); ok = false;
+      } else { setError('addressErr', ''); setInvalid('address', false); }
+      return ok;
+    }
+
+    [fullName, age, email, address].forEach(el => {
+      el.addEventListener('blur', validateSignup);
+      el.addEventListener('input', () => {
+        if (el.classList.contains('invalid')) validateSignup();
+        updateActionButtons();
+      });
+    });
+
+    // Home zones
+    let zones = [];
+    const zoneChips = document.getElementById('zoneChips');
+    function renderZones() {
+      zoneChips.innerHTML = zones.map((z, i) =>
+        `<span class="chip">${escapeHtml(z)} <button data-i="${i}" aria-label="remove">×</button></span>`
+      ).join('');
+      zoneChips.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', () => { zones.splice(+b.dataset.i, 1); renderZones(); });
+      });
+    }
+    function addZone(z) {
+      z = (z || '').trim().slice(0, 60);
+      if (!z) return;
+      if (zones.some(x => x.toLowerCase() === z.toLowerCase())) return;
+      zones.push(z); renderZones();
+    }
+
+    document.getElementById('analyseHomezoneBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (address.value.trim().length < 5) {
+        setError('homezoneErr', 'Fill in the address first');
+        return;
+      }
+      setError('homezoneErr', '');
+      const btn = e.currentTarget;
+      await withBusy(btn, 'Analysing…', async () => {
+        const res = await fetch('/homezone/analyse', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: address.value.trim() })
+        });
+        const data = await res.json();
+        if (!res.ok) { setError('homezoneErr', data.error || 'Failed'); return; }
+        (data.zones || []).forEach(addZone);
+      });
+    });
+
+    document.getElementById('customZoneBtn').addEventListener('click', () => {
+      const row = document.getElementById('customZoneRow');
+      row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+      if (row.style.display === 'flex') document.getElementById('customZoneInput').focus();
+    });
+    document.getElementById('customZoneAdd').addEventListener('click', () => {
+      const inp = document.getElementById('customZoneInput');
+      addZone(inp.value);
+      inp.value = '';
+    });
+    document.getElementById('customZoneInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('customZoneAdd').click(); }
+    });
+
+    // Walkthrough video
+    const videoFile = document.getElementById('videoFile');
+    const drop = document.getElementById('drop');
+    const fileNameEl = document.getElementById('fileName');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const videoResults = document.getElementById('videoResults');
+    let currentVideo = null;
+
+    function setVideo(f) {
+      currentVideo = f;
+      fileNameEl.textContent = f ? `${f.name} • ${(f.size/1024/1024).toFixed(1)} MB` : '';
+      analyzeBtn.disabled = !f;
+      analyzeBtn.classList.toggle('ready', !!f);
+    }
+    videoFile.addEventListener('change', e => setVideo(e.target.files[0]));
+    ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
     drop.addEventListener('drop', e => {
       const f = e.dataTransfer.files[0];
-      if (f) { fileInput.files = e.dataTransfer.files; setFile(f); }
+      if (f) { videoFile.files = e.dataTransfer.files; setVideo(f); }
     });
 
     analyzeBtn.addEventListener('click', async () => {
-      if (!currentFile) return;
-      errorBox.innerHTML = '';
-      summaryEl.innerHTML = '';
-      resultsEl.innerHTML = '';
+      if (!currentVideo) return;
+      videoResults.classList.remove('has-content');
+      videoResults.innerHTML = '<span class="spinner" style="color: var(--muted)"></span>Uploading and analyzing — this can take 1–3 minutes…';
       analyzeBtn.disabled = true;
-      statusEl.innerHTML = '<span class="spinner"></span>Uploading and analyzing — this can take 1-3 minutes for longer videos…';
-
-      const fd = new FormData();
-      fd.append('video', currentFile);
-
+      const fd = new FormData(); fd.append('video', currentVideo);
       try {
         const res = await fetch('/analyze', { method: 'POST', body: fd });
         const data = await res.json();
-        statusEl.innerHTML = '';
-        if (res.status === 401) {
-          showOtp();
-          return;
-        }
-        if (!res.ok) {
-          errorBox.innerHTML = `<div class="error-banner">${data.error || 'Analysis failed'}</div>`;
-          analyzeBtn.disabled = false;
-          return;
-        }
-        render(data);
+        if (res.status === 401) { showView('otp'); return; }
+        if (!res.ok) { videoResults.textContent = data.error || 'Analysis failed'; analyzeBtn.disabled = false; return; }
+        renderVideoResults(data);
       } catch (e) {
-        statusEl.innerHTML = '';
-        errorBox.innerHTML = `<div class="error-banner">${e.message}</div>`;
+        videoResults.textContent = e.message;
       } finally {
         analyzeBtn.disabled = false;
       }
@@ -507,53 +900,314 @@
       const r = (s - m * 60).toFixed(1);
       return `${m}:${r.padStart(4, '0')}`;
     }
-
-    function render(data) {
-      if (data.summary) {
-        summaryEl.innerHTML = `<div class="summary"><strong>Overall:</strong> ${escapeHtml(data.summary)}</div>`;
-      }
+    function renderVideoResults(data) {
+      videoResults.classList.add('has-content');
+      let html = '';
+      if (data.summary) html += `<div class="summary-bar"><strong>Overall:</strong> ${escapeHtml(data.summary)}</div>`;
       const locs = data.locations || [];
-      if (!locs.length) {
-        resultsEl.innerHTML = '<div class="status">No locations detected.</div>';
-        return;
-      }
+      if (!locs.length) { html += '<div style="text-align:center;color:var(--muted)">No locations detected.</div>'; videoResults.innerHTML = html; return; }
+      html += '<div class="loc-grid">';
       for (const loc of locs) {
         const issues = loc.issues || [];
         const issuesHtml = issues.length
           ? `<div class="issues">${issues.map(i => `
-              <div class="issue ${escapeAttr((i.severity||'medium').toLowerCase())}">
+              <div class="issue ${escapeHtml((i.severity||'medium').toLowerCase())}">
                 <div class="cat">${escapeHtml(i.category||'')}</div>
-                <div class="title">${escapeHtml(i.title||'Issue')}
-                  <span class="badge ${escapeAttr((i.severity||'medium').toLowerCase())}">${escapeHtml(i.severity||'medium')}</span>
-                </div>
+                <div class="title">${escapeHtml(i.title||'Issue')}</div>
                 <div class="detail">${escapeHtml(i.detail||'')}</div>
               </div>`).join('')}</div>`
           : '<div class="clean">No issues detected ✓</div>';
+        const img = loc.image_url ? `<img src="${escapeHtml(loc.image_url)}" alt="">` : '';
+        html += `<div class="loc-card">${img}<div class="body">
+          <h4>${escapeHtml(loc.name||'Location')}</h4>
+          <div class="ts">@ ${fmtTime(loc.timestamp)}</div>
+          <div class="desc">${escapeHtml(loc.description||'')}</div>
+          ${issuesHtml}
+        </div></div>`;
+      }
+      html += '</div>';
+      videoResults.innerHTML = html;
+    }
 
-        const img = loc.image_url
-          ? `<img src="${escapeAttr(loc.image_url)}" alt="${escapeAttr(loc.name||'')}" />`
-          : '';
+    // Signup submit
+    document.getElementById('signupBtn').addEventListener('click', async (e) => {
+      banner('signupBanner', '');
+      if (!validateSignup()) {
+        banner('signupBanner', 'Please fix the highlighted fields', 'error');
+        return;
+      }
+      const btn = e.currentTarget;
+      await withBusy(btn, 'Signing up…', async () => {
+        const res = await fetch('/signup', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            full_name: fullName.value.trim(),
+            age: parseInt(age.value, 10),
+            email: email.value.trim(),
+            address: address.value.trim(),
+            home_zones: zones,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.errors) {
+            Object.entries(data.errors).forEach(([k, v]) => {
+              const map = { full_name: 'fullName', age: 'age', email: 'email', address: 'address' };
+              const id = map[k] || k;
+              setError(id + 'Err', v); setInvalid(id, true);
+            });
+          }
+          banner('signupBanner', data.error || 'Sign-up failed', 'error');
+          return;
+        }
+        showView('report', data.first_name);
+      });
+    });
 
-        resultsEl.insertAdjacentHTML('beforeend', `
-          <div class="card">
-            ${img}
-            <div class="body">
-              <h3>${escapeHtml(loc.name||'Location')}</h3>
-              <div class="ts">@ ${fmtTime(loc.timestamp)}</div>
-              <div class="desc">${escapeHtml(loc.description||'')}</div>
-              ${issuesHtml}
+    // ============ SCREEN 3: REPORT ============
+    const evidenceArea = document.getElementById('evidenceArea');
+    const evidenceFiles = document.getElementById('evidenceFiles');
+    const evidenceThumbs = document.getElementById('evidenceThumbs');
+    let evidenceList = [];
+
+    evidenceArea.addEventListener('click', () => evidenceFiles.click());
+    evidenceFiles.addEventListener('change', e => {
+      const incoming = Array.from(e.target.files || []);
+      for (const f of incoming) {
+        if (evidenceList.length >= 20) break;
+        evidenceList.push(f);
+      }
+      renderThumbs();
+      evidenceFiles.value = '';
+      updateActionButtons();
+    });
+    function renderThumbs() {
+      evidenceThumbs.innerHTML = '';
+      evidenceList.forEach((f, i) => {
+        const url = URL.createObjectURL(f);
+        const isVideo = f.type.startsWith('video/');
+        const node = document.createElement('div');
+        node.className = 'thumb';
+        node.innerHTML = isVideo
+          ? `<video src="${url}" muted></video><button data-i="${i}">×</button>`
+          : `<img src="${url}" alt=""><button data-i="${i}">×</button>`;
+        node.querySelector('button').addEventListener('click', ev => {
+          ev.stopPropagation();
+          evidenceList.splice(i, 1);
+          renderThumbs();
+          updateActionButtons();
+        });
+        evidenceThumbs.appendChild(node);
+      });
+    }
+
+    const description = document.getElementById('description');
+    const describeResults = document.getElementById('describeResults');
+    description.addEventListener('input', updateActionButtons);
+
+    document.getElementById('analyseAiBtn').addEventListener('click', async (e) => {
+      if (!hasEvidence()) { describeResults.textContent = 'Add at least one media file first'; return; }
+      describeResults.classList.remove('has-content');
+      describeResults.innerHTML = '<span class="spinner" style="color: var(--muted)"></span>Analysing media — this can take a minute…';
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        const fd = new FormData();
+        fd.append('description', description.value.trim());
+        evidenceList.forEach(f => fd.append('evidence', f));
+        const res = await fetch('/describe/analyse', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) { describeResults.textContent = data.error || 'Analysis failed'; return; }
+        renderDescribeResults(data);
+      } finally {
+        btn.disabled = !hasEvidence();
+      }
+    });
+
+    let detectedIssues = [];
+    let issueSelected = [];
+    let issueComments = [];
+
+    function wordCount(s) {
+      const t = (s || '').trim();
+      return t ? t.split(/\s+/).length : 0;
+    }
+    function commentsAllValid() {
+      return issueComments.every(c => wordCount(c) <= 100);
+    }
+
+    function renderDescribeResults(data) {
+      describeResults.classList.add('has-content');
+      detectedIssues = Array.isArray(data.issues) ? data.issues : [];
+      issueSelected = detectedIssues.map(() => true);
+      issueComments = detectedIssues.map(() => '');
+
+      let html = '';
+      if (data.summary) {
+        html += `<div class="summary-bar"><strong>Overall:</strong> ${escapeHtml(data.summary)}</div>`;
+      }
+      if (data.suggested_action) {
+        html += `<div style="font-size:13px;color:#374151;margin-bottom:10px;"><strong>Suggested:</strong> ${escapeHtml(data.suggested_action)}</div>`;
+      }
+      if (!detectedIssues.length) {
+        html += '<div class="clean">No issues detected ✓</div>';
+        describeResults.innerHTML = html;
+        updateActionButtons();
+        return;
+      }
+      html += `<div class="issues-toolbar">
+        <span id="issueSelCount"></span>
+        <span>
+          <button type="button" data-act="all">Select all</button>
+          <button type="button" data-act="none">Clear</button>
+        </span>
+      </div>`;
+      html += '<div class="loc-grid" id="issueGrid">';
+      for (let i = 0; i < detectedIssues.length; i++) {
+        const it = detectedIssues[i];
+        const sev = (it.severity || 'medium').toLowerCase();
+        let mediaHtml = '';
+        if (it.media_kind === 'video' && it.media_url) {
+          mediaHtml = `<video src="${escapeHtml(it.media_url)}" controls playsinline preload="metadata" style="width:100%;aspect-ratio:16/9;object-fit:cover;background:#000;display:block;"></video>`;
+        } else if (it.media_url) {
+          mediaHtml = `<img src="${escapeHtml(it.media_url)}" alt="">`;
+        }
+        const tsLine = (typeof it.start_time === 'number' && it.end_time > it.start_time)
+          ? `<div class="ts">media #${it.media_index ?? 0} · clip ${fmtTime(it.start_time)} → ${fmtTime(it.end_time)}</div>`
+          : `<div class="ts">media #${it.media_index ?? 0}</div>`;
+        html += `<div class="loc-card" data-i="${i}">
+          <label class="issue-check" title="Include in report">
+            <input type="checkbox" data-i="${i}" checked /> Report
+          </label>
+          ${mediaHtml}
+          <div class="body">
+            <h4>${escapeHtml(it.title || it.category || 'Issue')}
+              <span class="chip" style="margin-left:6px;text-transform:uppercase;font-size:10.5px;">${escapeHtml(sev)}</span>
+            </h4>
+            ${tsLine}
+            <div class="cat" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:4px;">${escapeHtml(it.category || '')}</div>
+            <div class="desc">${escapeHtml(it.detail || '')}</div>
+            <div style="margin-top:8px;">
+              <textarea class="textarea issue-comment" data-i="${i}" rows="2"
+                placeholder="Add your comment (optional, max 100 words)"
+                style="min-height:54px;font-size:12.5px;"></textarea>
+              <div class="word-counter" data-i="${i}" style="font-size:11.5px;color:var(--muted);text-align:right;margin-top:3px;">0 / 100 words</div>
             </div>
           </div>
-        `);
+        </div>`;
       }
+      html += '</div>';
+      describeResults.innerHTML = html;
+
+      describeResults.querySelectorAll('.issue-check input').forEach(cb => {
+        cb.addEventListener('change', e => {
+          const i = +e.target.dataset.i;
+          issueSelected[i] = e.target.checked;
+          syncIssueCards();
+          updateActionButtons();
+        });
+      });
+      describeResults.querySelectorAll('.issue-comment').forEach(ta => {
+        ta.addEventListener('input', e => {
+          const i = +e.target.dataset.i;
+          issueComments[i] = e.target.value;
+          const wc = wordCount(e.target.value);
+          const counter = describeResults.querySelector(`.word-counter[data-i="${i}"]`);
+          if (counter) {
+            counter.textContent = `${wc} / 100 words`;
+            counter.style.color = wc > 100 ? 'var(--high)' : 'var(--muted)';
+          }
+          e.target.classList.toggle('invalid', wc > 100);
+          updateActionButtons();
+        });
+      });
+      describeResults.querySelectorAll('.issues-toolbar button').forEach(b => {
+        b.addEventListener('click', () => {
+          const val = b.dataset.act === 'all';
+          issueSelected = detectedIssues.map(() => val);
+          describeResults.querySelectorAll('.issue-check input').forEach((cb, idx) => cb.checked = issueSelected[idx]);
+          syncIssueCards();
+          updateActionButtons();
+        });
+      });
+      syncIssueCards();
+      updateActionButtons();
     }
 
-    function escapeHtml(s) {
-      return String(s ?? '').replace(/[&<>"']/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      }[c]));
+    function syncIssueCards() {
+      const cards = describeResults.querySelectorAll('.loc-card');
+      cards.forEach(card => {
+        const i = +card.dataset.i;
+        card.classList.toggle('unselected', !issueSelected[i]);
+      });
+      const count = issueSelected.filter(Boolean).length;
+      const lbl = describeResults.querySelector('#issueSelCount');
+      if (lbl) lbl.textContent = `${count} of ${detectedIssues.length} issue${detectedIssues.length === 1 ? '' : 's'} selected`;
     }
-    function escapeAttr(s) { return escapeHtml(s); }
+
+    document.getElementById('submitReportBtn').addEventListener('click', async (e) => {
+      banner('reportBanner', '');
+      const btn = e.currentTarget;
+      await withBusy(btn, 'Submitting…', async () => {
+        const fd = new FormData();
+        fd.append('description', description.value.trim());
+        evidenceList.forEach(f => fd.append('evidence', f));
+        const selected = [];
+        detectedIssues.forEach((it, i) => {
+          if (issueSelected[i]) {
+            selected.push({ ...it, comment: (issueComments[i] || '').trim() });
+          }
+        });
+        fd.append('selected_issues', JSON.stringify(selected));
+        const res = await fetch('/report', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) { banner('reportBanner', data.error || 'Submit failed', 'error'); return; }
+        const issuePart = data.issue_count > 0 ? `, ${data.issue_count} issue${data.issue_count===1?'':'s'}` : '';
+        banner('reportBanner', `Report submitted ✓ (#${data.report_id}, ${data.evidence_count} file${data.evidence_count===1?'':'s'}${issuePart})`, 'ok');
+        evidenceList = []; renderThumbs();
+        description.value = '';
+        detectedIssues = []; issueSelected = []; issueComments = [];
+        describeResults.classList.remove('has-content');
+        describeResults.textContent = 'AI analysis results will appear here';
+        updateActionButtons();
+      });
+    });
+
+    // ============ RESET ============
+    function resetAll() {
+      // OTP
+      clearInterval(timerHandle);
+      phoneInput.value = ''; phoneInput.disabled = false;
+      otpInput.value = '';
+      otpBox.style.display = 'none';
+      sendBtn.style.display = ''; sendBtn.disabled = false;
+      sendBtn.innerHTML = 'Send OTP';
+      submitOtpBtn.innerHTML = 'Submit'; submitOtpBtn.disabled = false;
+      resendBtn.disabled = true;
+      banner('otpBanner', '');
+      setError('phoneErr',''); setError('otpErr','');
+      setInvalid('phone', false); setInvalid('otp', false);
+      // Signup
+      ['fullName','age','email','address','signupPhone'].forEach(id => document.getElementById(id).value = '');
+      ['fullName','age','email','address'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
+      zones = []; renderZones();
+      document.getElementById('customZoneRow').style.display = 'none';
+      document.getElementById('customZoneInput').value = '';
+      setError('homezoneErr','');
+      currentVideo = null; videoFile.value = ''; fileNameEl.textContent = '';
+      analyzeBtn.disabled = true; analyzeBtn.classList.remove('ready');
+      videoResults.classList.remove('has-content');
+      videoResults.textContent = 'AI analysis results will appear here';
+      banner('signupBanner', '');
+      // Report
+      evidenceList = []; renderThumbs();
+      description.value = '';
+      detectedIssues = []; issueSelected = []; issueComments = [];
+      describeResults.classList.remove('has-content');
+      describeResults.textContent = 'AI analysis results will appear here';
+      banner('reportBanner', '');
+      updateActionButtons();
+    }
   </script>
 </body>
 </html>
