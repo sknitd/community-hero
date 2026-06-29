@@ -143,6 +143,68 @@ def _total_points_for(phone: str | None) -> int:
 _load_reports()
 
 
+# Reporter profiles persistence (phone -> reporter)
+REPORTERS_FILE = BASE_DIR / "data" / "reporters.json"
+_reporters_lock = threading.Lock()
+_reporters_data: dict = {}
+
+
+def _load_reporters():
+    global _reporters_data
+    if REPORTERS_FILE.exists():
+        try:
+            with open(REPORTERS_FILE) as f:
+                payload = json.load(f) or {}
+            if isinstance(payload, dict):
+                _reporters_data = payload
+        except Exception:
+            _reporters_data = {}
+
+
+def _save_reporters():
+    tmp = REPORTERS_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(_reporters_data, f)
+    tmp.replace(REPORTERS_FILE)
+
+
+_load_reporters()
+
+
+# Admin profiles persistence (phone -> admin)
+ADMINS_FILE = BASE_DIR / "data" / "admins.json"
+_admins_lock = threading.Lock()
+_admins_data: dict = {}
+
+
+def _load_admins():
+    global _admins_data
+    if ADMINS_FILE.exists():
+        try:
+            with open(ADMINS_FILE) as f:
+                payload = json.load(f) or {}
+            if isinstance(payload, dict):
+                _admins_data = payload
+        except Exception:
+            _admins_data = {}
+
+
+def _save_admins():
+    tmp = ADMINS_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(_admins_data, f)
+    tmp.replace(ADMINS_FILE)
+
+
+_load_admins()
+
+
+ADMIN_CATEGORIES = [
+    "Infrastructure", "Waste Disposal", "Water & Drainage",
+    "Street Lighting", "Roads & Potholes", "Public Safety", "Parks & Greenery",
+]
+
+
 # In-memory store for background analysis jobs.
 # job_id -> {status: running|done|failed, phone, started_at, result, error}
 _analysis_jobs: dict = {}
@@ -411,7 +473,21 @@ def otp_verify():
     if payload.get("status") == "approved" and payload.get("valid"):
         session["otp_verified"] = True
         session["otp_phone"] = phone
-        return jsonify({"ok": True, "status": "approved", "phone": phone})
+        with _reporters_lock:
+            stored = _reporters_data.get(phone)
+        if stored:
+            session["reporter"] = stored
+            first_name = (stored.get("full_name", "").split() or [""])[0]
+        else:
+            session.pop("reporter", None)
+            first_name = None
+        return jsonify({
+            "ok": True,
+            "status": "approved",
+            "phone": phone,
+            "reporter": stored,
+            "first_name": first_name,
+        })
 
     return jsonify({"ok": False, "status": payload.get("status", "pending"), "error": "Incorrect OTP"}), 400
 
@@ -469,14 +545,136 @@ def signup():
             cleaned_zones.append(z)
             seen.add(z.lower())
 
-    session["reporter"] = {
+    reporter = {
         "full_name": full_name,
         "age": age,
         "email": email,
         "address": address,
         "home_zones": cleaned_zones,
     }
+    session["reporter"] = reporter
+    phone = session.get("otp_phone")
+    if phone:
+        with _reporters_lock:
+            _reporters_data[phone] = reporter
+            _save_reporters()
     return jsonify({"ok": True, "first_name": full_name.split()[0]})
+
+
+@app.route("/admin/signup", methods=["POST"])
+def admin_signup():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    data = request.get_json(silent=True) or {}
+    full_name = (data.get("full_name") or "").strip()
+    age_raw = data.get("age")
+    email = (data.get("email") or "").strip()
+    area = (data.get("area") or "").strip()
+    categories = data.get("categories") or []
+
+    errors = {}
+    if not NAME_RE.fullmatch(full_name):
+        errors["full_name"] = "Enter a valid full name"
+    try:
+        age = int(age_raw)
+        if not (1 <= age <= 120):
+            errors["age"] = "Age must be 1–120"
+    except (TypeError, ValueError):
+        errors["age"] = "Enter a valid age"
+        age = None
+    if not EMAIL_RE.match(email):
+        errors["email"] = "Enter a valid email"
+    if len(area) < 5:
+        errors["area"] = "Enter the area under your concern"
+    if not isinstance(categories, list) or not categories:
+        errors["categories"] = "Pick at least one category"
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    cleaned_cats = []
+    seen = set()
+    for c in categories:
+        c = str(c).strip()[:60]
+        if c and c.lower() not in seen:
+            cleaned_cats.append(c)
+            seen.add(c.lower())
+
+    admin = {
+        "full_name": full_name,
+        "age": age,
+        "email": email,
+        "area": area,
+        "categories": cleaned_cats,
+    }
+    session["admin"] = admin
+    if phone:
+        with _admins_lock:
+            _admins_data[phone] = admin
+            _save_admins()
+    return jsonify({"ok": True, "first_name": full_name.split()[0], "admin": admin})
+
+
+@app.route("/admin/addresses")
+def admin_addresses_lookup():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    q = (request.args.get("q") or "").strip().lower()
+    addresses: set[str] = set()
+    with _reports_lock:
+        for _, reports in _reports_data.items():
+            for r in reports:
+                for it in (r.get("issues") or []):
+                    loc = (it.get("location") or "").strip()
+                    if loc:
+                        addresses.add(loc)
+    with _reporters_lock:
+        for _, rep in _reporters_data.items():
+            addr = (rep.get("address") or "").strip()
+            if addr:
+                addresses.add(addr)
+    items = list(addresses)
+    if q:
+        items = [a for a in items if q in a.lower()]
+    items.sort()
+    return jsonify({"addresses": items[:10]})
+
+
+@app.route("/profile", methods=["POST"])
+def update_profile():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    reporter = session.get("reporter")
+    phone = session.get("otp_phone")
+    if not reporter or not phone:
+        return jsonify({"error": "Not registered yet"}), 400
+
+    data = request.get_json(silent=True) or {}
+    address = (data.get("address") or "").strip()
+    home_zones = data.get("home_zones") or []
+
+    errors = {}
+    if len(address) < 5:
+        errors["address"] = "Enter a valid address"
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    cleaned_zones = []
+    seen = set()
+    for z in home_zones:
+        z = str(z).strip()[:60]
+        if z and z.lower() not in seen:
+            cleaned_zones.append(z)
+            seen.add(z.lower())
+
+    reporter["address"] = address
+    reporter["home_zones"] = cleaned_zones
+    session["reporter"] = reporter
+    with _reporters_lock:
+        _reporters_data[phone] = reporter
+        _save_reporters()
+
+    return jsonify({"ok": True, "reporter": reporter})
 
 
 @app.route("/homezone/analyse", methods=["POST"])

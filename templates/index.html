@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reporter — Society Issues</title>
+  <title>Community Hero</title>
   <style>
     :root {
       --bg: #ececef;
@@ -44,6 +44,150 @@
       font-weight: 700;
       margin: 0 4px 10px;
     }
+
+    /* Role selection (screen 1) */
+    .ch-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .ch-avatar {
+      width: 40px; height: 40px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px;
+    }
+    .ch-title { font-weight: 700; font-size: 16px; }
+    .ch-h { margin: 4px 0 6px; font-size: 22px; font-weight: 800; }
+    .ch-sub { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+
+    .role-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .role-card {
+      width: 100%;
+      display: flex; align-items: center; gap: 14px;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color .15s, background .15s, transform .05s;
+      font-family: inherit;
+    }
+    .role-card:hover { border-color: var(--muted-2); }
+    .role-card:active { transform: scale(.99); }
+    .role-card.selected { border-color: var(--primary); background: var(--primary-soft); }
+    .role-avatar {
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 20px;
+      flex-shrink: 0;
+    }
+    .role-avatar.reporter { background: #e0e7ff; color: var(--primary-strong); }
+    .role-avatar.admin    { background: #ede9fe; color: #6d28d9; }
+    .role-avatar.partner  { background: #ffedd5; color: #c2410c; }
+    .role-info { flex: 1; min-width: 0; }
+    .role-title { font-weight: 700; font-size: 15.5px; color: var(--text); }
+    .role-desc { color: var(--muted); font-size: 13px; line-height: 1.4; margin-top: 2px; }
+    .role-radio {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid #d1d5db;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .role-card.selected .role-radio { border-color: var(--primary); }
+    .role-card.selected .role-radio::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    /* Coming soon */
+    .cs-wrap { text-align: center; padding: 8px 4px 4px; }
+    .cs-icon {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 26px;
+      margin-bottom: 14px;
+    }
+    .cs-title { margin: 0; font-size: 20px; font-weight: 800; }
+    .cs-badge {
+      display: inline-block;
+      background: #fef3c7; color: #92400e;
+      padding: 4px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+      margin-top: 8px;
+    }
+    .cs-msg { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 18px 0 22px; }
+
+    /* Admin sign-up theme */
+    .card.admin-card::before { background: linear-gradient(90deg, #6d28d9, #a78bfa); }
+    .btn.admin {
+      background: #6d28d9;
+    }
+    .btn.admin:hover:not(:disabled) { background: #5b21b6; }
+    .cat-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .cat-pill {
+      background: #fff;
+      border: 1.5px solid #d1d5db;
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .cat-pill:hover { border-color: #a78bfa; }
+    .cat-pill.selected {
+      background: #6d28d9;
+      border-color: #6d28d9;
+      color: #fff;
+    }
+
+    .area-input-wrap { position: relative; }
+    .area-row { display: flex; gap: 8px; }
+    .area-row .input { flex: 1; }
+    .auto-detect-btn {
+      background: #fff;
+      border: 1px solid #d1d5db;
+      color: #6d28d9;
+      border-radius: 10px;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .auto-detect-btn:hover { background: #f5f3ff; border-color: #a78bfa; }
+    .auto-detect-btn:disabled { opacity: .6; cursor: wait; }
+
+    .autocomplete-list {
+      position: absolute;
+      left: 0; right: 0;
+      top: calc(100% + 4px);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.08);
+      z-index: 100;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .autocomplete-list[hidden] { display: none; }
+    .autocomplete-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .autocomplete-item:last-child { border-bottom: 0; }
+    .autocomplete-item:hover { background: var(--primary-soft); }
     .who {
       display: none;
       align-items: center;
@@ -163,6 +307,12 @@
     .input:focus, .textarea:focus { border-color: var(--primary); background: #fff; }
     .input.invalid, .textarea.invalid { border-color: var(--high); background: #fff5f5; }
     .input[readonly] { color: var(--muted); }
+    .input.locked {
+      background: #eef0f5;
+      color: var(--muted);
+      cursor: not-allowed;
+      border-color: var(--border);
+    }
     .err { color: var(--high); font-size: 12px; margin-top: 5px; min-height: 0; display: none; }
     .err.show { display: block; }
 
@@ -986,15 +1136,16 @@
   </div>
 
   <div class="page">
-    <div class="brand">REPORTER</div>
+    <div class="brand" id="brandLabel">COMMUNITY HERO</div>
     <div class="who" id="whoBox">
       <span class="verified-pill" id="whoText"></span>
       <span class="points-pill" id="pointsPill" style="display:none;">🪙 <span id="pointsValue">0</span></span>
+      <button id="profileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
       <button id="reportsBtn" type="button" class="reports-btn" style="display:none;">📋 My reports</button>
       <button id="logoutBtn">Logout</button>
     </div>
 
-    <!-- ============ SCREEN 1: OTP ============ -->
+    <!-- ============ SCREEN 0: PHONE / OTP ============ -->
     <section id="otpView" class="view active">
       <div class="card">
         <div class="card-body">
@@ -1035,16 +1186,132 @@
       </div>
     </section>
 
-    <!-- ============ SCREEN 2: SIGN-UP ============ -->
+    <!-- ============ SCREEN 1: ROLE SELECTION ============ -->
+    <section id="roleSelectView" class="view">
+      <div class="card">
+        <div class="card-body">
+          <div class="ch-head">
+            <div class="ch-avatar">CH</div>
+            <div class="ch-title">Community Hero</div>
+          </div>
+          <h2 class="ch-h">How will you help?</h2>
+          <p class="ch-sub">Pick your role to set up the right account.</p>
+
+          <div class="role-list">
+            <button type="button" class="role-card" data-role="reporter">
+              <div class="role-avatar reporter">R</div>
+              <div class="role-info">
+                <div class="role-title">Reporter</div>
+                <div class="role-desc">Spot &amp; report local issues</div>
+              </div>
+              <div class="role-radio"></div>
+            </button>
+            <button type="button" class="role-card" data-role="admin">
+              <div class="role-avatar admin">A</div>
+              <div class="role-info">
+                <div class="role-title">Admin</div>
+                <div class="role-desc">Oversee zones &amp; assignments · verify and route reported issues</div>
+              </div>
+              <div class="role-radio"></div>
+            </button>
+            <button type="button" class="role-card" data-role="partner">
+              <div class="role-avatar partner">S</div>
+              <div class="role-info">
+                <div class="role-title">Service Partner</div>
+                <div class="role-desc">Resolve issues on the ground</div>
+              </div>
+              <div class="role-radio"></div>
+            </button>
+          </div>
+
+          <button id="roleContinueBtn" class="btn" disabled>Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCREEN 2b: ADMIN SIGN-UP ============ -->
+    <section id="adminSignupView" class="view">
+      <div class="card admin-card">
+        <div class="card-body">
+          <div class="head-row">
+            <div class="role-avatar admin" style="width:42px;height:42px;border-radius:10px;font-size:17px;">A</div>
+            <div style="flex:1;">
+              <h2>Admin sign-up</h2>
+              <p>Oversee zones &amp; assignments</p>
+            </div>
+            <button id="adminBackBtn" type="button" class="reports-btn">← Back</button>
+          </div>
+
+          <div class="field">
+            <label class="label" for="adminFullName">Full name</label>
+            <input id="adminFullName" class="input" type="text" placeholder="e.g. Meera Krishnan" autocomplete="name" />
+            <div class="err" id="adminFullNameErr"></div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="adminAge">Age</label>
+              <input id="adminAge" class="input" type="number" min="1" max="120" placeholder="41" />
+              <div class="err" id="adminAgeErr"></div>
+            </div>
+            <div class="field">
+              <label class="label" for="adminEmail">Email</label>
+              <input id="adminEmail" class="input" type="email" placeholder="name@email.com" autocomplete="email" />
+              <div class="err" id="adminEmailErr"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="adminArea">Area under concern</label>
+            <div class="area-input-wrap">
+              <div class="area-row">
+                <input id="adminArea" class="input" type="text" placeholder="e.g. North District · Zones A–C" autocomplete="off" />
+                <button id="adminAutoDetectBtn" type="button" class="auto-detect-btn">📍 Auto detect</button>
+              </div>
+              <div id="areaSuggestions" class="autocomplete-list" hidden></div>
+            </div>
+            <div class="err" id="adminAreaErr"></div>
+          </div>
+
+          <div class="field">
+            <div class="label">Admin for</div>
+            <p style="color: var(--muted); font-size: 13px; margin: 0 0 6px;">Select all categories you'll oversee</p>
+            <div id="adminCategories" class="cat-pills"></div>
+            <div class="err" id="adminCategoriesErr"></div>
+          </div>
+
+          <div id="adminBanner"></div>
+          <button id="createAdminBtn" class="btn admin" disabled>Create admin account</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMING SOON (Service Partner) ============ -->
+    <section id="comingSoonView" class="view">
+      <div class="card">
+        <div class="card-body">
+          <div class="cs-wrap">
+            <div class="cs-icon" id="csIcon">A</div>
+            <h2 class="cs-title" id="csTitle">Admin</h2>
+            <div class="cs-badge">Coming soon</div>
+            <p class="cs-msg" id="csMsg">We're still building this experience. Hang tight — it'll be available shortly.</p>
+            <button id="comingSoonBackBtn" type="button" class="btn ghost">← Choose a different role</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCREEN 2a: SIGN-UP (reporter) ============ -->
     <section id="signupView" class="view">
       <div class="card">
         <div class="card-body">
           <div class="head-row">
             <div class="avatar">R</div>
-            <div>
-              <h2>Reporter sign-up</h2>
-              <p>Report issues in your neighbourhood</p>
+            <div style="flex:1;">
+              <h2 id="signupTitle">Reporter sign-up</h2>
+              <p id="signupSubtitle">Report issues in your neighbourhood</p>
             </div>
+            <button id="profileBackBtn" type="button" class="reports-btn" style="display:none;">← Back</button>
           </div>
 
           <div class="field">
@@ -1110,7 +1377,7 @@
       </div>
     </section>
 
-    <!-- ============ SCREEN 3: REPORT ============ -->
+    <!-- ============ SCREEN 3a: REPORT (reporter) ============ -->
     <section id="reportView" class="view">
       <div class="card">
         <div class="card-body">
@@ -1165,6 +1432,9 @@
     // ============ VIEW SWITCHING ============
     const views = {
       otp: document.getElementById('otpView'),
+      roleSelect: document.getElementById('roleSelectView'),
+      adminSignup: document.getElementById('adminSignupView'),
+      comingSoon: document.getElementById('comingSoonView'),
       signup: document.getElementById('signupView'),
       report: document.getElementById('reportView'),
     };
@@ -1173,13 +1443,18 @@
 
     function showView(name, headerLabel) {
       Object.entries(views).forEach(([k, el]) => el.classList.toggle('active', k === name));
+      const reportsBtn = document.getElementById('reportsBtn');
+      const profileBtn = document.getElementById('profileBtn');
       if (headerLabel) {
         whoBox.classList.add('show');
         whoText.textContent = 'Verified: ' + headerLabel;
-        document.getElementById('reportsBtn').style.display = 'inline-flex';
+        reportsBtn.style.display = 'inline-flex';
+        // profile chip only when user already has a reporter on record (i.e. on report view)
+        profileBtn.style.display = (name === 'report') ? 'inline-flex' : 'none';
       } else {
         whoBox.classList.remove('show');
-        document.getElementById('reportsBtn').style.display = 'none';
+        reportsBtn.style.display = 'none';
+        profileBtn.style.display = 'none';
         document.getElementById('pointsPill').style.display = 'none';
       }
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1194,7 +1469,7 @@
         showView('report', s.first_name || s.phone);
       } else if (s.verified) {
         prefillSignupPhone(s.phone);
-        showView('signup', s.phone);
+        showView('roleSelect', s.phone);
       }
       if (s.verified) {
         setTotalPoints(s.total_points || 0);
@@ -1252,7 +1527,59 @@
       finally { btn.disabled = false; btn.innerHTML = orig; }
     }
 
-    // ============ SCREEN 1: OTP ============
+    // ============ ROLE SELECT + COMING SOON ============
+    let selectedRole = null;
+    const roleContinueBtn = document.getElementById('roleContinueBtn');
+
+    function setRoleSelection(role) {
+      selectedRole = role;
+      document.querySelectorAll('#roleSelectView .role-card').forEach(c => {
+        c.classList.toggle('selected', c.dataset.role === role);
+      });
+      roleContinueBtn.disabled = !role;
+    }
+
+    document.querySelectorAll('#roleSelectView .role-card').forEach(card => {
+      card.addEventListener('click', () => setRoleSelection(card.dataset.role));
+    });
+
+    roleContinueBtn.addEventListener('click', () => {
+      if (!selectedRole) return;
+      const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
+      const label = phone ? phone : '';
+      if (selectedRole === 'reporter') {
+        setFormMode('signup');
+        showView('signup', label);
+      } else if (selectedRole === 'admin') {
+        showView('adminSignup', label);
+      } else {
+        renderComingSoon(selectedRole);
+        showView('comingSoon', label);
+      }
+    });
+
+    function renderComingSoon(role) {
+      const icon = document.getElementById('csIcon');
+      const title = document.getElementById('csTitle');
+      const msg = document.getElementById('csMsg');
+      if (role === 'admin') {
+        icon.textContent = 'A'; icon.className = 'cs-icon role-avatar admin';
+        title.textContent = 'Admin';
+        msg.textContent = "Admin features are on the way — verifying reports, routing issues, and managing zones will be available soon.";
+      } else {
+        icon.textContent = 'S'; icon.className = 'cs-icon role-avatar partner';
+        title.textContent = 'Service Partner';
+        msg.textContent = "Service Partner workflows are on the way — accepting jobs and resolving issues on the ground will be available soon.";
+      }
+    }
+
+    document.getElementById('comingSoonBackBtn').addEventListener('click', () => {
+      setRoleSelection(null);
+      const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
+      showView('roleSelect', phone || '');
+    });
+
+    // ============ SCREEN 0: OTP ============
     const phoneInput = document.getElementById('phone');
     const sendBtn = document.getElementById('sendBtn');
     const otpBox = document.getElementById('otpBox');
@@ -1337,7 +1664,13 @@
         }
         banner('otpBanner', 'Verified ✓', 'ok');
         prefillSignupPhone(data.phone);
-        setTimeout(() => showView('signup', data.phone), 350);
+        if (data.reporter) {
+          prefillFromReporter(data.reporter);
+          setTimeout(() => showView('report', data.first_name || data.phone), 350);
+        } else {
+          setFormMode('signup');
+          setTimeout(() => showView('roleSelect', data.phone), 350);
+        }
       });
     });
     otpInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitOtpBtn.click(); });
@@ -1350,6 +1683,22 @@
 
     const NAME_RE = /^[A-Za-z][A-Za-z\s.'-]{1,59}$/;
     const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    let formMode = 'signup'; // 'signup' | 'profile'
+
+    function setFormMode(mode) {
+      formMode = mode;
+      const isProfile = mode === 'profile';
+      const title = document.getElementById('signupTitle');
+      const subtitle = document.getElementById('signupSubtitle');
+      const backBtn = document.getElementById('profileBackBtn');
+      const signupBtn = document.getElementById('signupBtn');
+      title.textContent = isProfile ? 'My profile' : 'Reporter sign-up';
+      subtitle.textContent = isProfile ? 'Your registered details' : 'Report issues in your neighbourhood';
+      backBtn.style.display = isProfile ? 'inline-flex' : 'none';
+      signupBtn.textContent = isProfile ? 'Save changes' : 'Signup';
+      [fullName, age, email].forEach(el => { el.readOnly = isProfile; el.classList.toggle('locked', isProfile); });
+    }
 
     function isSignupValid() {
       const a = parseInt(age.value, 10);
@@ -1544,16 +1893,22 @@
         return;
       }
       const btn = e.currentTarget;
-      await withBusy(btn, 'Signing up…', async () => {
-        const res = await fetch('/signup', {
+      const isProfile = formMode === 'profile';
+      const url = isProfile ? '/profile' : '/signup';
+      const busyLabel = isProfile ? 'Saving…' : 'Signing up…';
+      await withBusy(btn, busyLabel, async () => {
+        const payload = isProfile
+          ? { address: address.value.trim(), home_zones: zones }
+          : {
+              full_name: fullName.value.trim(),
+              age: parseInt(age.value, 10),
+              email: email.value.trim(),
+              address: address.value.trim(),
+              home_zones: zones,
+            };
+        const res = await fetch(url, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            full_name: fullName.value.trim(),
-            age: parseInt(age.value, 10),
-            email: email.value.trim(),
-            address: address.value.trim(),
-            home_zones: zones,
-          })
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -1564,10 +1919,14 @@
               setError(id + 'Err', v); setInvalid(id, true);
             });
           }
-          banner('signupBanner', data.error || 'Sign-up failed', 'error');
+          banner('signupBanner', data.error || (isProfile ? 'Save failed' : 'Sign-up failed'), 'error');
           return;
         }
-        showView('report', data.first_name);
+        if (isProfile) {
+          banner('signupBanner', 'Profile updated ✓', 'ok');
+        } else {
+          showView('report', data.first_name);
+        }
       });
     });
 
@@ -2234,6 +2593,26 @@
     }
 
     reportsBtn.addEventListener('click', openReportsModal);
+
+    document.getElementById('profileBtn').addEventListener('click', async () => {
+      try {
+        const r = await fetch('/session');
+        const s = await r.json();
+        if (s.reporter) prefillFromReporter(s.reporter);
+        if (s.phone) prefillSignupPhone(s.phone);
+      } catch {}
+      banner('signupBanner', '');
+      setFormMode('profile');
+      showView('signup', whoText.textContent.replace(/^Verified:\s*/, ''));
+    });
+
+    document.getElementById('profileBackBtn').addEventListener('click', () => {
+      banner('signupBanner', '');
+      setFormMode('signup');
+      // Use the user's first name if available from current verified label
+      const lbl = whoText.textContent.replace(/^Verified:\s*/, '');
+      showView('report', lbl);
+    });
     document.getElementById('reportsClose').addEventListener('click', closeReportsModal);
     reportsModal.addEventListener('click', e => { if (e.target === reportsModal) closeReportsModal(); });
     document.addEventListener('keydown', e => {
@@ -2461,6 +2840,213 @@
       if (btn) { e.stopPropagation(); openZoom(btn.dataset.src); }
     });
 
+    // ============ ADMIN SIGN-UP (Screen 2b) ============
+    const ADMIN_CATEGORIES = [
+      'Infrastructure', 'Waste Disposal', 'Water & Drainage',
+      'Street Lighting', 'Roads & Potholes', 'Public Safety', 'Parks & Greenery',
+    ];
+    const adminCategoriesEl = document.getElementById('adminCategories');
+    let adminSelectedCats = new Set();
+    const adminFullName = document.getElementById('adminFullName');
+    const adminAge = document.getElementById('adminAge');
+    const adminEmail = document.getElementById('adminEmail');
+    const adminArea = document.getElementById('adminArea');
+    const adminBackBtn = document.getElementById('adminBackBtn');
+    const adminAutoDetectBtn = document.getElementById('adminAutoDetectBtn');
+    const areaSuggestions = document.getElementById('areaSuggestions');
+    const createAdminBtn = document.getElementById('createAdminBtn');
+
+    function renderAdminCategories() {
+      adminCategoriesEl.innerHTML = '';
+      ADMIN_CATEGORIES.forEach(cat => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cat-pill' + (adminSelectedCats.has(cat) ? ' selected' : '');
+        b.dataset.cat = cat;
+        b.textContent = cat;
+        b.addEventListener('click', () => {
+          if (adminSelectedCats.has(cat)) {
+            adminSelectedCats.delete(cat);
+            b.classList.remove('selected');
+          } else {
+            adminSelectedCats.add(cat);
+            b.classList.add('selected');
+          }
+          setError('adminCategoriesErr', '');
+          validateAdmin();
+        });
+        adminCategoriesEl.appendChild(b);
+      });
+    }
+    renderAdminCategories();
+
+    function isAdminValid() {
+      const a = parseInt(adminAge.value, 10);
+      return NAME_RE.test(adminFullName.value.trim())
+          && Number.isFinite(a) && a >= 1 && a <= 120
+          && EMAIL_RE.test(adminEmail.value.trim())
+          && adminArea.value.trim().length >= 5
+          && adminSelectedCats.size > 0;
+    }
+    function validateAdmin() {
+      let ok = true;
+      if (!NAME_RE.test(adminFullName.value.trim())) {
+        if (adminFullName.classList.contains('invalid')) setError('adminFullNameErr', 'Enter a valid full name');
+        ok = false;
+      } else { setError('adminFullNameErr', ''); setInvalid('adminFullName', false); }
+      const a = parseInt(adminAge.value, 10);
+      if (!Number.isFinite(a) || a < 1 || a > 120) {
+        if (adminAge.classList.contains('invalid')) setError('adminAgeErr', 'Age 1–120');
+        ok = false;
+      } else { setError('adminAgeErr', ''); setInvalid('adminAge', false); }
+      if (!EMAIL_RE.test(adminEmail.value.trim())) {
+        if (adminEmail.classList.contains('invalid')) setError('adminEmailErr', 'Enter a valid email');
+        ok = false;
+      } else { setError('adminEmailErr', ''); setInvalid('adminEmail', false); }
+      if (adminArea.value.trim().length < 5) {
+        if (adminArea.classList.contains('invalid')) setError('adminAreaErr', 'Enter the area under your concern');
+        ok = false;
+      } else { setError('adminAreaErr', ''); setInvalid('adminArea', false); }
+      if (adminSelectedCats.size === 0) {
+        ok = false;
+      } else setError('adminCategoriesErr', '');
+      createAdminBtn.disabled = !isAdminValid();
+      return ok;
+    }
+    [adminFullName, adminAge, adminEmail, adminArea].forEach(el => {
+      el.addEventListener('blur', () => { el.classList.add('invalid'); validateAdmin(); });
+      el.addEventListener('input', () => {
+        if (el.classList.contains('invalid')) validateAdmin();
+        createAdminBtn.disabled = !isAdminValid();
+      });
+    });
+
+    // Type-ahead address suggestions
+    let areaTimer = null;
+    let areaAbort = null;
+    adminArea.addEventListener('input', () => {
+      clearTimeout(areaTimer);
+      areaTimer = setTimeout(async () => {
+        const q = adminArea.value.trim();
+        if (q.length < 2) { areaSuggestions.hidden = true; areaSuggestions.innerHTML = ''; return; }
+        if (areaAbort) areaAbort.abort();
+        areaAbort = new AbortController();
+        try {
+          const res = await fetch('/admin/addresses?q=' + encodeURIComponent(q), { signal: areaAbort.signal });
+          const data = await res.json();
+          const items = (data.addresses || []).filter(a => a.toLowerCase() !== q.toLowerCase());
+          if (!items.length) { areaSuggestions.hidden = true; areaSuggestions.innerHTML = ''; return; }
+          areaSuggestions.innerHTML = items.map(a => `<div class="autocomplete-item">${escapeHtml(a)}</div>`).join('');
+          areaSuggestions.hidden = false;
+          areaSuggestions.querySelectorAll('.autocomplete-item').forEach((item, idx) => {
+            item.addEventListener('click', () => {
+              adminArea.value = items[idx];
+              areaSuggestions.hidden = true;
+              areaSuggestions.innerHTML = '';
+              validateAdmin();
+            });
+          });
+        } catch (e) {
+          if (e.name !== 'AbortError') console.error(e);
+        }
+      }, 250);
+    });
+    document.addEventListener('click', e => {
+      if (!areaSuggestions.contains(e.target) && e.target !== adminArea) {
+        areaSuggestions.hidden = true;
+      }
+    });
+
+    // Auto detect location
+    adminAutoDetectBtn.addEventListener('click', () => {
+      setError('adminAreaErr', '');
+      if (!navigator.geolocation) {
+        setError('adminAreaErr', 'Geolocation not supported by this browser');
+        return;
+      }
+      const orig = adminAutoDetectBtn.innerHTML;
+      adminAutoDetectBtn.disabled = true;
+      adminAutoDetectBtn.innerHTML = '<span class="spinner" style="color:#6d28d9"></span>Detecting…';
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const res = await fetch('/geocode/reverse', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              setError('adminAreaErr', data.error || 'Could not get address');
+            } else {
+              adminArea.value = data.address;
+              setInvalid('adminArea', false);
+              validateAdmin();
+            }
+          } catch (e) {
+            setError('adminAreaErr', e.message);
+          } finally {
+            adminAutoDetectBtn.disabled = false;
+            adminAutoDetectBtn.innerHTML = orig;
+          }
+        },
+        (err) => {
+          adminAutoDetectBtn.disabled = false;
+          adminAutoDetectBtn.innerHTML = orig;
+          let msg = 'Could not get your location.';
+          if (err.code === err.PERMISSION_DENIED) msg = 'Location permission denied. Enable location access for this site, then try again.';
+          else if (err.code === err.POSITION_UNAVAILABLE) msg = 'Location unavailable. Make sure Location Services / GPS is enabled.';
+          else if (err.code === err.TIMEOUT) msg = 'Location request timed out. Try again.';
+          setError('adminAreaErr', msg);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      );
+    });
+
+    // Submit
+    createAdminBtn.addEventListener('click', async (e) => {
+      // force-show all errors on submit
+      [adminFullName, adminAge, adminEmail, adminArea].forEach(el => el.classList.add('invalid'));
+      validateAdmin();
+      if (!isAdminValid()) {
+        if (adminSelectedCats.size === 0) setError('adminCategoriesErr', 'Pick at least one category');
+        banner('adminBanner', 'Please fix the highlighted fields', 'error');
+        return;
+      }
+      banner('adminBanner', '');
+      const btn = e.currentTarget;
+      await withBusy(btn, 'Creating…', async () => {
+        const res = await fetch('/admin/signup', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            full_name: adminFullName.value.trim(),
+            age: parseInt(adminAge.value, 10),
+            email: adminEmail.value.trim(),
+            area: adminArea.value.trim(),
+            categories: Array.from(adminSelectedCats),
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.errors) {
+            const map = { full_name: 'adminFullName', age: 'adminAge', email: 'adminEmail', area: 'adminArea', categories: 'adminCategories' };
+            Object.entries(data.errors).forEach(([k, v]) => {
+              const id = map[k]; if (id) { setError(id + 'Err', v); if (id !== 'adminCategories') setInvalid(id, true); }
+            });
+          }
+          banner('adminBanner', data.error || 'Sign-up failed', 'error');
+          return;
+        }
+        banner('adminBanner', `Admin account created ✓ Welcome ${data.first_name}! Admin dashboard coming soon.`, 'ok');
+      });
+    });
+
+    adminBackBtn.addEventListener('click', () => {
+      banner('adminBanner', '');
+      const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
+      setRoleSelection(null);
+      showView('roleSelect', phone || '');
+    });
+
     // ============ RESET ============
     function resetAll() {
       // OTP
@@ -2478,6 +3064,7 @@
       // Signup
       ['fullName','age','email','address','signupPhone'].forEach(id => document.getElementById(id).value = '');
       ['fullName','age','email','address'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
+      setFormMode('signup');
       zones = []; renderZones();
       document.getElementById('customZoneRow').style.display = 'none';
       document.getElementById('customZoneInput').value = '';
