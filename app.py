@@ -3,10 +3,14 @@ import json
 import time
 import uuid
 import re
+import base64
+import urllib.request
+import urllib.parse
+import urllib.error
 from pathlib import Path
 
 import cv2
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, session
 from google import genai
 from google.genai import types
 
@@ -14,6 +18,10 @@ GEMINI_API_KEY = os.environ.get(
     "GEMINI_API_KEY",
     "REDACTED_GEMINI_KEY",
 )
+
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "REDACTED_SID")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "REDACTED_TOKEN")
+TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID", "REDACTED_SERVICE")
 
 BASE_DIR = Path(__file__).parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -23,6 +31,7 @@ FRAMES_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
+app.secret_key = os.environ.get("FLASK_SECRET", "society-inspector-dev-secret-change-me")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -132,9 +141,90 @@ def analyze_video_with_gemini(video_path: Path) -> dict:
     return parse_json_response(response.text)
 
 
+def twilio_post(path: str, data: dict) -> tuple[int, dict]:
+    url = f"https://verify.twilio.com/v2/Services/{TWILIO_SERVICE_SID}/{path}"
+    body = urllib.parse.urlencode(data).encode()
+    creds = base64.b64encode(f"{TWILIO_ACCOUNT_SID}:{TWILIO_AUTH_TOKEN}".encode()).decode()
+    req = urllib.request.Request(url, data=body, method="POST")
+    req.add_header("Authorization", f"Basic {creds}")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.status, json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        try:
+            payload = json.loads(e.read())
+        except Exception:
+            payload = {"error": str(e)}
+        return e.code, payload
+    except Exception as e:
+        return 502, {"error": str(e)}
+
+
+def normalize_phone(raw: str) -> str | None:
+    digits = re.sub(r"\D", "", raw or "")
+    if len(digits) != 10:
+        return None
+    return f"+91{digits}"
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/otp/send", methods=["POST"])
+def otp_send():
+    data = request.get_json(silent=True) or {}
+    phone = normalize_phone(data.get("phone", ""))
+    if not phone:
+        return jsonify({"error": "Enter a valid 10-digit number"}), 400
+
+    status, payload = twilio_post("Verifications", {"To": phone, "Channel": "sms"})
+    if status >= 400:
+        msg = payload.get("message") or payload.get("error") or "Failed to send OTP"
+        return jsonify({"error": msg}), 502
+
+    session["otp_phone"] = phone
+    session["otp_verified"] = False
+    return jsonify({"ok": True, "phone": phone, "status": payload.get("status")})
+
+
+@app.route("/otp/verify", methods=["POST"])
+def otp_verify():
+    data = request.get_json(silent=True) or {}
+    phone = session.get("otp_phone") or normalize_phone(data.get("phone", ""))
+    code = (data.get("code") or "").strip()
+    if not phone:
+        return jsonify({"error": "No phone number on record. Resend OTP."}), 400
+    if not re.fullmatch(r"\d{4,8}", code):
+        return jsonify({"error": "Enter the OTP code"}), 400
+
+    status, payload = twilio_post("VerificationCheck", {"To": phone, "Code": code})
+    if status >= 400:
+        msg = payload.get("message") or payload.get("error") or "Verification failed"
+        return jsonify({"error": msg}), 502
+
+    if payload.get("status") == "approved" and payload.get("valid"):
+        session["otp_verified"] = True
+        session["otp_phone"] = phone
+        return jsonify({"ok": True, "status": "approved", "phone": phone})
+
+    return jsonify({"ok": False, "status": payload.get("status", "pending"), "error": "Incorrect OTP"}), 400
+
+
+@app.route("/session")
+def session_state():
+    return jsonify({
+        "verified": bool(session.get("otp_verified")),
+        "phone": session.get("otp_phone"),
+    })
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"ok": True})
 
 
 @app.route("/static/frames/<path:filename>")
@@ -144,6 +234,8 @@ def serve_frame(filename):
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone number not verified"}), 401
     if "video" not in request.files:
         return jsonify({"error": "No video file uploaded"}), 400
 

@@ -31,7 +31,92 @@
     }
     h1 { margin: 0 0 6px; font-size: 24px; }
     header p { margin: 0; color: var(--muted); font-size: 14px; }
+    .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .who { color: var(--muted); font-size: 13px; }
+    .who button {
+      margin-left: 8px;
+      background: transparent;
+      color: var(--accent);
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0;
+    }
     main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 80px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* OTP view */
+    .otp-wrap {
+      max-width: 420px;
+      margin: 40px auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 24px;
+    }
+    .otp-wrap h2 { margin: 0 0 6px; font-size: 20px; }
+    .otp-wrap .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+    .phone-input {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0e1116;
+    }
+    .phone-input .prefix {
+      padding: 12px 12px;
+      background: #20242d;
+      color: var(--muted);
+      font-weight: 600;
+      border-right: 1px solid var(--border);
+    }
+    .phone-input input {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      color: var(--text);
+      padding: 12px;
+      font-size: 15px;
+      outline: none;
+      letter-spacing: .02em;
+    }
+    .otp-input {
+      width: 100%;
+      background: #0e1116;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text);
+      font-size: 18px;
+      letter-spacing: .4em;
+      text-align: center;
+      outline: none;
+    }
+    .btn {
+      width: 100%;
+      background: var(--accent);
+      color: #0a0c10;
+      border: 0;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn.secondary { background: #2a2f3a; color: var(--text); border: 1px solid var(--border); margin-top: 10px; font-weight: 600; }
+    .resend-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+    .resend-row button { background: transparent; color: var(--accent); border: 0; cursor: pointer; padding: 0; font-size: 13px; font-weight: 600; }
+    .resend-row button:disabled { color: var(--muted); cursor: not-allowed; }
+    .msg { margin-top: 12px; font-size: 13px; }
+    .msg.error { color: #ffb0b0; }
+    .msg.ok { color: var(--low); }
+
+    /* Inspector view (unchanged) */
     .upload {
       background: var(--card);
       border: 1px dashed var(--border);
@@ -64,12 +149,7 @@
       font-weight: 600;
     }
     button.analyze:disabled { opacity: .5; cursor: not-allowed; }
-    .status {
-      margin: 18px 0;
-      color: var(--muted);
-      font-size: 14px;
-      text-align: center;
-    }
+    .status { margin: 18px 0; color: var(--muted); font-size: 14px; text-align: center; }
     .summary {
       background: var(--card);
       border: 1px solid var(--border);
@@ -79,11 +159,7 @@
       font-size: 14px;
       line-height: 1.5;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px;
-    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -92,51 +168,25 @@
       display: flex;
       flex-direction: column;
     }
-    .card img {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      background: #000;
-    }
+    .card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #000; }
     .card .body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
     .card h3 { margin: 0; font-size: 16px; }
     .ts { color: var(--muted); font-size: 12px; }
     .desc { font-size: 13px; color: #c8cdd6; line-height: 1.45; }
     .issues { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
-    .issue {
-      border-left: 3px solid var(--med);
-      padding: 6px 10px;
-      background: #1e222b;
-      border-radius: 4px;
-      font-size: 12.5px;
-    }
+    .issue { border-left: 3px solid var(--med); padding: 6px 10px; background: #1e222b; border-radius: 4px; font-size: 12.5px; }
     .issue.high { border-left-color: var(--high); }
     .issue.medium { border-left-color: var(--med); }
     .issue.low { border-left-color: var(--low); }
     .issue .title { font-weight: 600; }
     .issue .cat { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
     .issue .detail { color: #c8cdd6; margin-top: 2px; }
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      margin-left: 6px;
-    }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; margin-left: 6px; }
     .badge.high { background: rgba(255,90,90,.15); color: var(--high); }
     .badge.medium { background: rgba(255,181,71,.15); color: var(--med); }
     .badge.low { background: rgba(107,212,155,.15); color: var(--low); }
     .clean { color: var(--low); font-size: 13px; }
-    .error {
-      background: rgba(255,90,90,.1);
-      border: 1px solid rgba(255,90,90,.3);
-      color: #ffb0b0;
-      padding: 12px 14px;
-      border-radius: 8px;
-      margin: 14px 0;
-      font-size: 14px;
-    }
+    .error-banner { background: rgba(255,90,90,.1); border: 1px solid rgba(255,90,90,.3); color: #ffb0b0; padding: 12px 14px; border-radius: 8px; margin: 14px 0; font-size: 14px; }
     .spinner {
       display: inline-block;
       width: 14px; height: 14px;
@@ -152,31 +202,249 @@
 </head>
 <body>
   <header>
-    <h1>Society Video Inspector</h1>
-    <p>Upload a walkthrough video. Gemini identifies locations and flags maintenance, security, parking, and other society issues.</p>
+    <div class="header-row">
+      <div>
+        <h1>Society Video Inspector</h1>
+        <p>Upload a walkthrough video. Gemini identifies locations and flags maintenance, security, parking, and other society issues.</p>
+      </div>
+      <div class="who" id="whoBox" style="display:none;">
+        <span id="whoText"></span>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </div>
   </header>
   <main>
-    <div class="upload" id="drop">
-      <input type="file" id="file" accept="video/*" />
-      <label for="file">Choose video</label>
-      <div class="hint">or drag &amp; drop here (mp4, mov, webm — up to 500 MB)</div>
-      <div class="file-name" id="fileName"></div>
-      <div><button class="analyze" id="analyzeBtn" disabled>Analyze video</button></div>
-    </div>
+    <!-- OTP VIEW -->
+    <section id="otpView" class="view active">
+      <div class="otp-wrap">
+        <h2>Verify your phone</h2>
+        <div class="sub">Enter your 10-digit Indian mobile number to receive an OTP.</div>
 
-    <div id="status" class="status"></div>
-    <div id="error"></div>
-    <div id="summary"></div>
-    <div id="results" class="grid"></div>
+        <div class="field">
+          <label for="phone">Mobile number</label>
+          <div class="phone-input">
+            <span class="prefix">+91</span>
+            <input id="phone" inputmode="numeric" maxlength="10" placeholder="10-digit number" autocomplete="tel-national" />
+          </div>
+        </div>
+
+        <button id="sendBtn" class="btn">Send OTP</button>
+
+        <div id="otpBox" style="display:none; margin-top: 18px;">
+          <div class="field">
+            <label for="otp">Enter OTP</label>
+            <input id="otp" class="otp-input" inputmode="numeric" maxlength="8" placeholder="• • • • • •" autocomplete="one-time-code" />
+          </div>
+          <button id="submitBtn" class="btn">Submit</button>
+          <div class="resend-row">
+            <span id="resendInfo">Resend available in <span id="timer">30</span>s</span>
+            <button id="resendBtn" disabled>Resend OTP</button>
+          </div>
+        </div>
+
+        <div id="otpMsg" class="msg"></div>
+      </div>
+    </section>
+
+    <!-- INSPECTOR VIEW -->
+    <section id="inspectorView" class="view">
+      <div class="upload" id="drop">
+        <input type="file" id="file" accept="video/*" />
+        <label for="file">Choose video</label>
+        <div class="hint">or drag &amp; drop here (mp4, mov, webm — up to 500 MB)</div>
+        <div class="file-name" id="fileName"></div>
+        <div><button class="analyze" id="analyzeBtn" disabled>Analyze video</button></div>
+      </div>
+
+      <div id="status" class="status"></div>
+      <div id="errorBox"></div>
+      <div id="summary"></div>
+      <div id="results" class="grid"></div>
+    </section>
   </main>
 
   <script>
+    // -------- View switching --------
+    const otpView = document.getElementById('otpView');
+    const inspectorView = document.getElementById('inspectorView');
+    const whoBox = document.getElementById('whoBox');
+    const whoText = document.getElementById('whoText');
+
+    function showInspector(phone) {
+      otpView.classList.remove('active');
+      inspectorView.classList.add('active');
+      whoBox.style.display = 'block';
+      whoText.textContent = phone ? `Verified: ${phone}` : 'Verified';
+    }
+    function showOtp() {
+      inspectorView.classList.remove('active');
+      otpView.classList.add('active');
+      whoBox.style.display = 'none';
+    }
+
+    // restore session
+    fetch('/session').then(r => r.json()).then(s => {
+      if (s.verified) showInspector(s.phone);
+    });
+
+    function resetToStart() {
+      // OTP view
+      clearInterval(timerHandle);
+      phoneInput.value = '';
+      phoneInput.disabled = false;
+      otpInput.value = '';
+      otpBox.style.display = 'none';
+      sendBtn.style.display = '';
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = 'Send OTP';
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Submit';
+      resendBtn.disabled = true;
+      otpMsg.textContent = '';
+      otpMsg.className = 'msg';
+
+      // Inspector view
+      currentFile = null;
+      fileInput.value = '';
+      fileName.textContent = '';
+      analyzeBtn.disabled = true;
+      statusEl.innerHTML = '';
+      errorBox.innerHTML = '';
+      summaryEl.innerHTML = '';
+      resultsEl.innerHTML = '';
+
+      showOtp();
+      phoneInput.focus();
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try { await fetch('/logout', { method: 'POST' }); } catch (e) {}
+      resetToStart();
+    });
+
+    // -------- OTP logic --------
+    const phoneInput = document.getElementById('phone');
+    const sendBtn = document.getElementById('sendBtn');
+    const otpBox = document.getElementById('otpBox');
+    const otpInput = document.getElementById('otp');
+    const submitBtn = document.getElementById('submitBtn');
+    const resendBtn = document.getElementById('resendBtn');
+    const resendInfo = document.getElementById('resendInfo');
+    const timerEl = document.getElementById('timer');
+    const otpMsg = document.getElementById('otpMsg');
+
+    phoneInput.addEventListener('input', () => {
+      phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+    });
+    otpInput.addEventListener('input', () => {
+      otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 8);
+    });
+
+    let timerHandle = null;
+    function startResendTimer(seconds = 30) {
+      clearInterval(timerHandle);
+      let remaining = seconds;
+      timerEl.textContent = remaining;
+      resendBtn.disabled = true;
+      resendInfo.style.display = '';
+      timerHandle = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(timerHandle);
+          resendBtn.disabled = false;
+          resendInfo.style.display = 'none';
+        } else {
+          timerEl.textContent = remaining;
+        }
+      }, 1000);
+    }
+
+    function setMsg(text, kind = '') {
+      otpMsg.textContent = text || '';
+      otpMsg.className = 'msg' + (kind ? ' ' + kind : '');
+    }
+
+    async function sendOtp(isResend = false) {
+      const phone = phoneInput.value;
+      if (phone.length !== 10) {
+        setMsg('Please enter a 10-digit number', 'error');
+        return;
+      }
+      const btn = isResend ? resendBtn : sendBtn;
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Sending…';
+      setMsg('');
+      try {
+        const res = await fetch('/otp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setMsg(data.error || 'Failed to send OTP', 'error');
+          btn.disabled = false;
+        } else {
+          setMsg(`OTP sent to +91 ${phone}`, 'ok');
+          otpBox.style.display = 'block';
+          phoneInput.disabled = true;
+          sendBtn.style.display = 'none';
+          otpInput.focus();
+          startResendTimer(30);
+        }
+      } catch (e) {
+        setMsg(e.message, 'error');
+        btn.disabled = false;
+      } finally {
+        btn.innerHTML = originalText;
+      }
+    }
+
+    sendBtn.addEventListener('click', () => sendOtp(false));
+    resendBtn.addEventListener('click', () => sendOtp(true));
+
+    submitBtn.addEventListener('click', async () => {
+      const code = otpInput.value;
+      if (code.length < 4) {
+        setMsg('Enter the OTP', 'error');
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span>Verifying…';
+      setMsg('');
+      try {
+        const res = await fetch('/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phoneInput.value, code })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setMsg(data.error || 'Incorrect OTP', 'error');
+          submitBtn.disabled = false;
+        } else {
+          setMsg('Verified ✓', 'ok');
+          setTimeout(() => showInspector(data.phone), 400);
+        }
+      } catch (e) {
+        setMsg(e.message, 'error');
+        submitBtn.disabled = false;
+      } finally {
+        submitBtn.innerHTML = 'Submit';
+      }
+    });
+
+    otpInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitBtn.click(); });
+    phoneInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+
+    // -------- Inspector logic --------
     const fileInput = document.getElementById('file');
     const drop = document.getElementById('drop');
     const fileName = document.getElementById('fileName');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const statusEl = document.getElementById('status');
-    const errorEl = document.getElementById('error');
+    const errorBox = document.getElementById('errorBox');
     const summaryEl = document.getElementById('summary');
     const resultsEl = document.getElementById('results');
 
@@ -202,7 +470,7 @@
 
     analyzeBtn.addEventListener('click', async () => {
       if (!currentFile) return;
-      errorEl.innerHTML = '';
+      errorBox.innerHTML = '';
       summaryEl.innerHTML = '';
       resultsEl.innerHTML = '';
       analyzeBtn.disabled = true;
@@ -215,15 +483,19 @@
         const res = await fetch('/analyze', { method: 'POST', body: fd });
         const data = await res.json();
         statusEl.innerHTML = '';
+        if (res.status === 401) {
+          showOtp();
+          return;
+        }
         if (!res.ok) {
-          errorEl.innerHTML = `<div class="error">${data.error || 'Analysis failed'}</div>`;
+          errorBox.innerHTML = `<div class="error-banner">${data.error || 'Analysis failed'}</div>`;
           analyzeBtn.disabled = false;
           return;
         }
         render(data);
       } catch (e) {
         statusEl.innerHTML = '';
-        errorEl.innerHTML = `<div class="error">${e.message}</div>`;
+        errorBox.innerHTML = `<div class="error-banner">${e.message}</div>`;
       } finally {
         analyzeBtn.disabled = false;
       }
