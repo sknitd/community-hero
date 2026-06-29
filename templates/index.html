@@ -396,6 +396,156 @@
       background: transparent; border: 0; color: var(--primary);
       cursor: pointer; font-weight: 700; font-size: 12.5px; padding: 2px 6px;
     }
+    .loc-row { margin-top: 8px; }
+    .loc-btn-line {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .loc-btn {
+      background: #fff;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .loc-btn:hover { background: var(--primary-soft); }
+    .loc-btn:disabled { opacity: .6; cursor: wait; }
+    .loc-input-wrap {
+      display: flex; align-items: stretch; gap: 6px; margin-top: 6px;
+    }
+    .loc-input-wrap input {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12.5px;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+    }
+    .loc-input-wrap input:focus { border-color: var(--primary); background: #fff; }
+    .loc-clear {
+      background: #fff; border: 1px solid var(--border-strong);
+      color: var(--muted); border-radius: 8px;
+      width: 30px; cursor: pointer; font-size: 14px;
+    }
+    .loc-err {
+      margin-top: 6px;
+      color: var(--high);
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+
+    /* Chat panel */
+    .chat-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 20px;
+    }
+    .chat-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .chat-head h4 {
+      margin: 0; font-size: 14.5px; color: var(--text);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .chat-head h4::before { content: "✦"; color: var(--primary); }
+    .chat-reset {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      padding: 4px 10px; font-size: 12px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .chat-reset:hover { color: var(--text); border-color: var(--muted-2); }
+    .chat-suggestions {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 10px;
+    }
+    .chat-suggestions .sug {
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+      border: 0;
+      border-radius: 999px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+    }
+    .chat-suggestions .sug:hover { background: #dfeaff; }
+    .chat-suggestions .sug.loading {
+      background: #eef0f5; color: var(--muted-2); cursor: default;
+    }
+    .chat-messages {
+      background: #fbfbfd;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 8px;
+      font-size: 13px;
+      min-height: 60px;
+    }
+    .chat-messages:empty::before {
+      content: "Ask a question or pick a suggestion above.";
+      color: var(--muted-2);
+      font-size: 12.5px;
+      align-self: center;
+      padding: 10px;
+    }
+    .msg {
+      max-width: 86%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--primary);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: #eef0f5;
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+    .msg.bot.loading { color: var(--muted); font-style: italic; }
+    .chat-input-row {
+      display: flex; gap: 6px; margin-top: 10px;
+    }
+    .chat-input-row input {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+    }
+    .chat-input-row input:focus { border-color: var(--primary); background: #fff; }
+    .chat-input-row button {
+      background: var(--primary); color: #fff; border: 0;
+      border-radius: 10px;
+      padding: 0 16px;
+      font-size: 13.5px; font-weight: 700;
+      cursor: pointer;
+    }
+    .chat-input-row button:disabled { opacity: .55; cursor: not-allowed; }
     .loc-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #000; display: block; }
     .loc-card .body { padding: 10px 12px; }
     .loc-card h4 { margin: 0 0 2px; font-size: 14px; }
@@ -633,7 +783,7 @@
               <input type="file" id="evidenceFiles" accept="image/*,video/*" multiple style="display:none;" />
               <div class="plus">+</div>
               <div class="label-main">Add images or videos</div>
-              <div class="hint">Tap to upload multiple files</div>
+              <div class="hint">Tap to choose, or drag &amp; drop files here</div>
             </div>
             <div class="evidence-thumbs" id="evidenceThumbs"></div>
           </div>
@@ -645,6 +795,19 @@
 
           <button id="analyseAiBtn" class="btn ghost sparkle" disabled>Analyse with AI</button>
           <div class="ai-results" id="describeResults">AI analysis results will appear here</div>
+
+          <div id="chatPanel" class="chat-panel" style="display:none;">
+            <div class="chat-head">
+              <h4>Ask questions about your issues?</h4>
+              <button id="chatReset" type="button" class="chat-reset">↻ Reset</button>
+            </div>
+            <div id="chatSuggestions" class="chat-suggestions"></div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-row">
+              <input id="chatInput" type="text" placeholder="Type your question…" maxlength="500" />
+              <button id="chatSend" type="button" disabled>Send</button>
+            </div>
+          </div>
 
           <div id="reportBanner"></div>
           <button id="submitReportBtn" class="btn" style="margin-top: 14px;" disabled>Submit report</button>
@@ -676,7 +839,7 @@
     }
 
     // restore session
-    fetch('/session').then(r => r.json()).then(s => {
+    fetch('/session').then(r => r.json()).then(async s => {
       if (s.verified && s.reporter) {
         prefillSignupPhone(s.phone);
         prefillFromReporter(s.reporter);
@@ -684,6 +847,16 @@
       } else if (s.verified) {
         prefillSignupPhone(s.phone);
         showView('signup', s.phone);
+      }
+      if (s.verified) {
+        try {
+          const r = await fetch('/describe/analyse/running');
+          const d = await r.json();
+          if (d.running && d.job_id) {
+            showAnalysisRunningUI(d.job_id);
+            startAnalysisPolling(d.job_id);
+          }
+        } catch {}
       }
     });
 
@@ -1114,21 +1287,87 @@
     const describeResults = document.getElementById('describeResults');
     description.addEventListener('input', updateActionButtons);
 
+    function showAnalysisRunningUI(jobId) {
+      describeResults.classList.remove('has-content');
+      describeResults.innerHTML = `<span class="spinner" style="color: var(--muted)"></span>AI analysis running in background (id <code style="font-size:11.5px;background:#eef2ff;padding:2px 6px;border-radius:4px;">${escapeHtml(jobId)}</code>) — this can take a minute…`;
+    }
+
+    function startAnalysisPolling(jobId) {
+      analysisJobId = jobId;
+      if (analysisPoller) clearInterval(analysisPoller);
+      const btn = document.getElementById('analyseAiBtn');
+      btn.disabled = true;
+      const tick = async () => {
+        try {
+          const res = await fetch(`/describe/analyse/status/${jobId}`);
+          const data = await res.json();
+          if (!res.ok) {
+            stopAnalysisPolling();
+            describeResults.textContent = data.error || 'Analysis failed';
+            updateActionButtons();
+            return;
+          }
+          if (data.status === 'done') {
+            stopAnalysisPolling();
+            renderDescribeResults(data.result || {});
+            updateActionButtons();
+          } else if (data.status === 'failed') {
+            stopAnalysisPolling();
+            describeResults.textContent = data.error || 'Analysis failed';
+            updateActionButtons();
+          }
+          // else still running, keep polling
+        } catch (e) {
+          // network blip, keep polling
+        }
+      };
+      tick();
+      analysisPoller = setInterval(tick, 3000);
+    }
+
+    function stopAnalysisPolling() {
+      if (analysisPoller) { clearInterval(analysisPoller); analysisPoller = null; }
+      analysisJobId = null;
+      document.getElementById('analyseAiBtn').disabled = !hasEvidence();
+    }
+
     document.getElementById('analyseAiBtn').addEventListener('click', async (e) => {
       if (!hasEvidence()) { describeResults.textContent = 'Add at least one media file first'; return; }
-      describeResults.classList.remove('has-content');
-      describeResults.innerHTML = '<span class="spinner" style="color: var(--muted)"></span>Analysing media — this can take a minute…';
+      if (analysisJobId) {
+        // already polling — surface message
+        showAnalysisRunningUI(analysisJobId);
+        return;
+      }
       const btn = e.currentTarget;
       btn.disabled = true;
+      describeResults.classList.remove('has-content');
+      describeResults.innerHTML = '<span class="spinner" style="color: var(--muted)"></span>Starting analysis…';
       try {
         const fd = new FormData();
         fd.append('description', description.value.trim());
         evidenceList.forEach(f => fd.append('evidence', f));
         const res = await fetch('/describe/analyse', { method: 'POST', body: fd });
         const data = await res.json();
-        if (!res.ok) { describeResults.textContent = data.error || 'Analysis failed'; return; }
-        renderDescribeResults(data);
-      } finally {
+        if (res.status === 409) {
+          const jid = data.running_job_id;
+          if (jid) {
+            showAnalysisRunningUI(jid);
+            startAnalysisPolling(jid);
+          } else {
+            describeResults.textContent = data.error || 'AI analysis is already running. Wait for completion.';
+            btn.disabled = !hasEvidence();
+          }
+          return;
+        }
+        if (!res.ok) {
+          describeResults.textContent = data.error || 'Analysis failed';
+          btn.disabled = !hasEvidence();
+          return;
+        }
+        showAnalysisRunningUI(data.job_id);
+        startAnalysisPolling(data.job_id);
+      } catch (err) {
+        describeResults.textContent = err.message;
         btn.disabled = !hasEvidence();
       }
     });
@@ -1136,6 +1375,9 @@
     let detectedIssues = [];
     let issueSelected = [];
     let issueComments = [];
+    let issueLocations = [];
+    let analysisJobId = null;
+    let analysisPoller = null;
 
     function wordCount(s) {
       const t = (s || '').trim();
@@ -1150,6 +1392,7 @@
       detectedIssues = Array.isArray(data.issues) ? data.issues : [];
       issueSelected = detectedIssues.map(() => true);
       issueComments = detectedIssues.map(() => '');
+      issueLocations = detectedIssues.map(() => '');
 
       let html = '';
       if (data.summary) {
@@ -1208,6 +1451,17 @@
                 style="min-height:54px;font-size:12.5px;"></textarea>
               <div class="word-counter" data-i="${i}" style="font-size:11.5px;color:var(--muted);text-align:right;margin-top:3px;">0 / 100 words</div>
             </div>
+            <div class="loc-row" data-i="${i}">
+              <div class="loc-btn-line">
+                <button class="loc-btn" type="button" data-i="${i}">📍 Add location</button>
+                <span style="color:var(--muted);font-size:11.5px;">optional</span>
+              </div>
+              <div class="loc-input-wrap" data-i="${i}" style="display:none;">
+                <input type="text" class="loc-input" data-i="${i}" placeholder="Location" maxlength="200" />
+                <button class="loc-clear" type="button" data-i="${i}" aria-label="Clear location">×</button>
+              </div>
+              <div class="loc-err" data-i="${i}" style="display:none;"></div>
+            </div>
           </div>
         </div>`;
       }
@@ -1220,6 +1474,7 @@
           issueSelected[i] = e.target.checked;
           syncIssueCards();
           updateActionButtons();
+          scheduleSuggestionsRefresh();
         });
       });
       describeResults.querySelectorAll('.issue-comment').forEach(ta => {
@@ -1234,7 +1489,21 @@
           }
           e.target.classList.toggle('invalid', wc > 100);
           updateActionButtons();
+          scheduleSuggestionsRefresh();
         });
+      });
+      describeResults.querySelectorAll('.loc-btn').forEach(b => {
+        b.addEventListener('click', () => requestIssueLocation(+b.dataset.i));
+      });
+      describeResults.querySelectorAll('.loc-input').forEach(inp => {
+        inp.addEventListener('input', e => {
+          const i = +e.target.dataset.i;
+          issueLocations[i] = e.target.value;
+          scheduleSuggestionsRefresh();
+        });
+      });
+      describeResults.querySelectorAll('.loc-clear').forEach(b => {
+        b.addEventListener('click', () => clearIssueLocation(+b.dataset.i));
       });
       describeResults.querySelectorAll('.issues-toolbar button').forEach(b => {
         b.addEventListener('click', () => {
@@ -1243,10 +1512,84 @@
           describeResults.querySelectorAll('.issue-check input').forEach((cb, idx) => cb.checked = issueSelected[idx]);
           syncIssueCards();
           updateActionButtons();
+          scheduleSuggestionsRefresh();
         });
       });
       syncIssueCards();
       updateActionButtons();
+      // Chat panel: appear only after analysis with at least one issue
+      if (detectedIssues.length > 0) {
+        showChatPanel(true);
+        resetChat();
+      } else {
+        showChatPanel(false);
+        chatHistory = []; renderChat();
+      }
+    }
+
+    function showLocError(i, msg) {
+      const el = describeResults.querySelector(`.loc-err[data-i="${i}"]`);
+      if (!el) return;
+      if (msg) { el.textContent = msg; el.style.display = 'block'; }
+      else { el.textContent = ''; el.style.display = 'none'; }
+    }
+    function setIssueLocation(i, address) {
+      issueLocations[i] = address || '';
+      const wrap = describeResults.querySelector(`.loc-input-wrap[data-i="${i}"]`);
+      const btnLine = describeResults.querySelector(`.loc-row[data-i="${i}"] .loc-btn-line`);
+      const inp = describeResults.querySelector(`.loc-input[data-i="${i}"]`);
+      if (inp) inp.value = address || '';
+      if (wrap) wrap.style.display = address ? 'flex' : 'none';
+      if (btnLine) btnLine.style.display = address ? 'none' : 'flex';
+      showLocError(i, '');
+      scheduleSuggestionsRefresh();
+    }
+    function clearIssueLocation(i) {
+      setIssueLocation(i, '');
+    }
+    function requestIssueLocation(i) {
+      showLocError(i, '');
+      const btn = describeResults.querySelector(`.loc-btn[data-i="${i}"]`);
+      if (!navigator.geolocation) {
+        showLocError(i, 'Geolocation is not supported by this browser.');
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="color:var(--primary)"></span>Getting location…'; }
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            const res = await fetch('/geocode/reverse', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lat, lon })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              showLocError(i, data.error || 'Could not get address');
+              return;
+            }
+            setIssueLocation(i, data.address);
+          } catch (e) {
+            showLocError(i, e.message || 'Failed to fetch address');
+          } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '📍 Add location'; }
+          }
+        },
+        (err) => {
+          if (btn) { btn.disabled = false; btn.innerHTML = '📍 Add location'; }
+          let msg = 'Could not get your location.';
+          if (err.code === err.PERMISSION_DENIED) {
+            msg = 'Location permission denied. Please enable location access for this site in your browser settings, then tap "Add location" again.';
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            msg = 'Location unavailable. Make sure Location Services / GPS is enabled on your device.';
+          } else if (err.code === err.TIMEOUT) {
+            msg = 'Location request timed out. Try again.';
+          }
+          showLocError(i, msg);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      );
     }
 
     function syncIssueCards() {
@@ -1270,7 +1613,11 @@
         const selected = [];
         detectedIssues.forEach((it, i) => {
           if (issueSelected[i]) {
-            selected.push({ ...it, comment: (issueComments[i] || '').trim() });
+            selected.push({
+              ...it,
+              comment: (issueComments[i] || '').trim(),
+              location: (issueLocations[i] || '').trim(),
+            });
           }
         });
         fd.append('selected_issues', JSON.stringify(selected));
@@ -1278,15 +1625,171 @@
         const data = await res.json();
         if (!res.ok) { banner('reportBanner', data.error || 'Submit failed', 'error'); return; }
         const issuePart = data.issue_count > 0 ? `, ${data.issue_count} issue${data.issue_count===1?'':'s'}` : '';
-        banner('reportBanner', `Report submitted ✓ (#${data.report_id}, ${data.evidence_count} file${data.evidence_count===1?'':'s'}${issuePart})`, 'ok');
-        evidenceList = []; renderThumbs();
-        description.value = '';
-        detectedIssues = []; issueSelected = []; issueComments = [];
-        describeResults.classList.remove('has-content');
-        describeResults.textContent = 'AI analysis results will appear here';
+        let msg = `Report submitted ✓ (#${data.report_id}, ${data.evidence_count} file${data.evidence_count===1?'':'s'}${issuePart})`;
+        if (data.analysis_running && data.analysis_job_id) {
+          msg += ` — AI analysis running against ${data.analysis_job_id} in background.`;
+        }
+        banner('reportBanner', msg, 'ok');
+        if (data.analysis_running) {
+          // keep the analysis spinner / polling alive so the user can still see results land
+          evidenceList = []; renderThumbs();
+          description.value = '';
+          // detectedIssues / poller stay so the analysis can finish
+        } else {
+          evidenceList = []; renderThumbs();
+          description.value = '';
+          detectedIssues = []; issueSelected = []; issueComments = []; issueLocations = [];
+          describeResults.classList.remove('has-content');
+          describeResults.textContent = 'AI analysis results will appear here';
+          showChatPanel(false); chatHistory = []; renderChat();
+        }
         updateActionButtons();
       });
     });
+
+    // ============ CHAT PANEL ============
+    const chatPanel = document.getElementById('chatPanel');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatSuggestionsEl = document.getElementById('chatSuggestions');
+    const chatInput = document.getElementById('chatInput');
+    const chatSend = document.getElementById('chatSend');
+    const chatReset = document.getElementById('chatReset');
+
+    let chatHistory = [];          // [{role: 'user'|'bot', text}]
+    let suggestionsAbort = null;
+    let suggestionsTimer = null;
+
+    function selectedIssuesPayload() {
+      const out = [];
+      detectedIssues.forEach((it, i) => {
+        if (issueSelected[i]) {
+          out.push({
+            title: it.title || it.category || 'Issue',
+            category: it.category || '',
+            severity: it.severity || 'medium',
+            detail: it.detail || '',
+            comment: (issueComments[i] || '').trim(),
+            location: (issueLocations[i] || '').trim(),
+          });
+        }
+      });
+      return out;
+    }
+
+    function showChatPanel(show) {
+      chatPanel.style.display = show ? 'block' : 'none';
+    }
+
+    function renderChat() {
+      chatMessages.innerHTML = '';
+      chatHistory.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (m.role === 'user' ? 'user' : 'bot') + (m.loading ? ' loading' : '');
+        div.textContent = m.text;
+        chatMessages.appendChild(div);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function setSuggestions(list, isLoading) {
+      chatSuggestionsEl.innerHTML = '';
+      if (isLoading) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sug loading';
+        b.disabled = true;
+        b.textContent = 'Loading suggestions…';
+        chatSuggestionsEl.appendChild(b);
+        return;
+      }
+      (list || []).forEach(q => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sug';
+        b.textContent = q;
+        b.addEventListener('click', () => askChat(q));
+        chatSuggestionsEl.appendChild(b);
+      });
+    }
+
+    async function fetchSuggestions() {
+      const issues = selectedIssuesPayload();
+      if (!issues.length) { setSuggestions([]); return; }
+      if (suggestionsAbort) suggestionsAbort.abort();
+      suggestionsAbort = new AbortController();
+      setSuggestions(null, true);
+      try {
+        const res = await fetch('/chat/suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ issues }),
+          signal: suggestionsAbort.signal,
+        });
+        const data = await res.json();
+        if (!res.ok) { setSuggestions([]); return; }
+        setSuggestions(data.suggestions || []);
+      } catch (e) {
+        if (e.name !== 'AbortError') setSuggestions([]);
+      }
+    }
+
+    function scheduleSuggestionsRefresh() {
+      clearTimeout(suggestionsTimer);
+      suggestionsTimer = setTimeout(fetchSuggestions, 900);
+    }
+
+    async function askChat(question) {
+      question = (question || '').trim();
+      if (!question) return;
+      chatHistory.push({ role: 'user', text: question });
+      chatHistory.push({ role: 'bot', text: 'Thinking…', loading: true });
+      renderChat();
+      chatInput.value = '';
+      chatSend.disabled = true;
+      try {
+        const res = await fetch('/chat/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question,
+            issues: selectedIssuesPayload(),
+            history: chatHistory.slice(0, -1).map(m => ({ role: m.role === 'bot' ? 'assistant' : 'user', text: m.text })),
+          }),
+        });
+        const data = await res.json();
+        // remove the loading placeholder
+        chatHistory.pop();
+        if (!res.ok) {
+          chatHistory.push({ role: 'bot', text: data.error || 'Sorry, I could not get an answer right now.' });
+        } else {
+          chatHistory.push({ role: 'bot', text: data.answer || '(no answer)' });
+        }
+        renderChat();
+      } catch (e) {
+        chatHistory.pop();
+        chatHistory.push({ role: 'bot', text: e.message });
+        renderChat();
+      } finally {
+        chatSend.disabled = chatInput.value.trim().length === 0;
+      }
+    }
+
+    function resetChat() {
+      chatHistory = [];
+      renderChat();
+      fetchSuggestions();
+      chatInput.value = '';
+      chatSend.disabled = true;
+    }
+
+    chatInput.addEventListener('input', () => {
+      chatSend.disabled = chatInput.value.trim().length === 0;
+    });
+    chatInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !chatSend.disabled) { e.preventDefault(); askChat(chatInput.value); }
+    });
+    chatSend.addEventListener('click', () => askChat(chatInput.value));
+    chatReset.addEventListener('click', resetChat);
 
     // ============ ZOOM MODAL ============
     const zoomModal = document.getElementById('zoomModal');
@@ -1389,12 +1892,15 @@
       videoResults.textContent = 'AI analysis results will appear here';
       banner('signupBanner', '');
       // Report
+      stopAnalysisPolling();
       evidenceList = []; renderThumbs();
       description.value = '';
-      detectedIssues = []; issueSelected = []; issueComments = [];
+      detectedIssues = []; issueSelected = []; issueComments = []; issueLocations = [];
       describeResults.classList.remove('has-content');
       describeResults.textContent = 'AI analysis results will appear here';
       banner('reportBanner', '');
+      showChatPanel(false); chatHistory = []; renderChat();
+      chatInput.value = ''; chatSend.disabled = true;
       updateActionButtons();
     }
   </script>

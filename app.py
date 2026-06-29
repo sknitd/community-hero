@@ -5,6 +5,7 @@ import uuid
 import re
 import base64
 import subprocess
+import threading
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -42,6 +43,21 @@ app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
 app.secret_key = os.environ.get("FLASK_SECRET", "society-inspector-dev-secret-change-me")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
+
+# In-memory store for background analysis jobs.
+# job_id -> {status: running|done|failed, phone, started_at, result, error}
+_analysis_jobs: dict = {}
+_analysis_lock = threading.Lock()
+
+
+def _get_running_job_for_phone(phone: str | None) -> str | None:
+    if not phone:
+        return None
+    with _analysis_lock:
+        for jid, j in _analysis_jobs.items():
+            if j.get("phone") == phone and j.get("status") == "running":
+                return jid
+    return None
 
 ISSUE_CATEGORIES = """
 - Maintenance & Infrastructure: poor upkeep of lobbies/staircases/lifts, irregular cleaning, lift breakdowns, leaking roofs/walls/pipelines, damaged flooring, peeling paint, non-functional lighting, broken gym equipment, neglected pool, poor play area upkeep
@@ -395,41 +411,69 @@ def homezone_analyse():
         return jsonify({"error": f"Gemini failed: {e}"}), 500
 
 
-@app.route("/describe/analyse", methods=["POST"])
-def describe_analyse():
+@app.route("/geocode/reverse", methods=["POST"])
+def geocode_reverse():
     if not session.get("otp_verified"):
         return jsonify({"error": "Phone not verified"}), 401
-
-    description = (request.form.get("description") or "").strip()
-    evidence_files = request.files.getlist("evidence")
-    evidence_files = [f for f in evidence_files if f and f.filename]
-    if not evidence_files:
-        return jsonify({"error": "Attach at least one media file"}), 400
-
-    job_id = uuid.uuid4().hex[:12]
-    tmp_dir = UPLOAD_DIR / "analyse" / job_id
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    media_records = []  # [{tmp_path, is_video, ref}]
+    data = request.get_json(silent=True) or {}
     try:
-        for f in evidence_files[:8]:
-            safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", f.filename)[:120]
-            tmp_path = tmp_dir / safe_name
-            f.save(tmp_path)
-            mime = (f.mimetype or "").lower()
-            is_video = mime.startswith("video/") or tmp_path.suffix.lower() in {".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv"}
+        lat = float(data.get("lat"))
+        lon = float(data.get("lon"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid coordinates"}), 400
+
+    url = (
+        "https://nominatim.openstreetmap.org/reverse"
+        f"?format=jsonv2&lat={lat}&lon={lon}&zoom=18&addressdetails=1"
+    )
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "society-reporter-app/1.0 (sk39693@gmail.com)"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            payload = json.loads(resp.read())
+    except Exception as e:
+        return jsonify({"error": f"Reverse geocode failed: {e}"}), 502
+
+    addr = payload.get("address") or {}
+    parts = [
+        addr.get("road") or addr.get("neighbourhood") or addr.get("suburb"),
+        addr.get("suburb") if (addr.get("road") or addr.get("neighbourhood")) else None,
+        addr.get("city") or addr.get("town") or addr.get("village") or addr.get("county"),
+        addr.get("state"),
+        addr.get("postcode"),
+        addr.get("country"),
+    ]
+    short = ", ".join([p for p in parts if p])
+    return jsonify({
+        "address": short or payload.get("display_name") or "Unknown location",
+        "display_name": payload.get("display_name", ""),
+    })
+
+
+def _run_describe_analyse(job_id: str, description: str, saved_files: list, tmp_dir: Path, job_frames_dir: Path):
+    media_records = []
+    try:
+        for s in saved_files:
             try:
-                ref = client.files.upload(file=str(tmp_path))
+                ref = client.files.upload(file=str(s["path"]))
                 while ref.state and ref.state.name == "PROCESSING":
                     time.sleep(2)
                     ref = client.files.get(name=ref.name)
                 if ref.state and ref.state.name == "FAILED":
                     continue
-                media_records.append({"tmp_path": tmp_path, "is_video": is_video, "ref": ref})
+                media_records.append({"tmp_path": s["path"], "is_video": s["is_video"], "ref": ref})
             except Exception:
                 continue
 
         if not media_records:
-            return jsonify({"error": "Gemini could not process any of the uploaded files"}), 500
+            with _analysis_lock:
+                _analysis_jobs[job_id].update({
+                    "status": "failed",
+                    "error": "Gemini could not process any of the uploaded files",
+                })
+            return
 
         n = len(media_records)
         index_lines = []
@@ -489,7 +533,7 @@ def describe_analyse():
         )
         result = parse_json_response(response.text)
 
-        frames_dir = FRAMES_DIR / "report" / job_id
+        frames_dir = job_frames_dir
         frames_dir.mkdir(parents=True, exist_ok=True)
         issues = result.get("issues", []) or []
 
@@ -560,9 +604,11 @@ def describe_analyse():
                         issue["annotated_url"] = f"/static/frames/report/{job_id}/{ann_name}"
 
         result["issues"] = issues
-        return jsonify(result)
+        with _analysis_lock:
+            _analysis_jobs[job_id].update({"status": "done", "result": result})
     except Exception as e:
-        return jsonify({"error": f"Gemini failed: {e}"}), 500
+        with _analysis_lock:
+            _analysis_jobs[job_id].update({"status": "failed", "error": f"Gemini failed: {e}"})
     finally:
         for rec in media_records:
             try:
@@ -577,6 +623,191 @@ def describe_analyse():
             tmp_dir.rmdir()
         except Exception:
             pass
+
+
+@app.route("/describe/analyse", methods=["POST"])
+def describe_analyse():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+
+    running_id = _get_running_job_for_phone(phone)
+    if running_id:
+        return jsonify({
+            "error": "AI analysis is already running. Wait for completion.",
+            "running_job_id": running_id,
+        }), 409
+
+    description = (request.form.get("description") or "").strip()
+    evidence_files = request.files.getlist("evidence")
+    evidence_files = [f for f in evidence_files if f and f.filename]
+    if not evidence_files:
+        return jsonify({"error": "Attach at least one media file"}), 400
+
+    job_id = uuid.uuid4().hex[:12]
+    tmp_dir = UPLOAD_DIR / "analyse" / job_id
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    job_frames_dir = FRAMES_DIR / "report" / job_id
+
+    saved = []
+    for f in evidence_files[:8]:
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", f.filename)[:120]
+        tmp_path = tmp_dir / safe_name
+        f.save(tmp_path)
+        mime = (f.mimetype or "").lower()
+        is_video = mime.startswith("video/") or tmp_path.suffix.lower() in {
+            ".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv",
+        }
+        saved.append({"path": tmp_path, "is_video": is_video, "mime": mime})
+
+    with _analysis_lock:
+        _analysis_jobs[job_id] = {
+            "status": "running",
+            "phone": phone,
+            "started_at": time.time(),
+            "result": None,
+            "error": None,
+        }
+
+    threading.Thread(
+        target=_run_describe_analyse,
+        args=(job_id, description, saved, tmp_dir, job_frames_dir),
+        daemon=True,
+    ).start()
+
+    return jsonify({"job_id": job_id, "status": "running"})
+
+
+@app.route("/describe/analyse/running")
+def describe_analyse_running():
+    if not session.get("otp_verified"):
+        return jsonify({"running": False})
+    phone = session.get("otp_phone")
+    jid = _get_running_job_for_phone(phone)
+    return jsonify({"running": bool(jid), "job_id": jid})
+
+
+@app.route("/describe/analyse/status/<job_id>")
+def describe_analyse_status(job_id):
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    with _analysis_lock:
+        job = _analysis_jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    if job.get("phone") != phone:
+        return jsonify({"error": "Not authorized"}), 403
+    return jsonify({
+        "job_id": job_id,
+        "status": job["status"],
+        "result": job.get("result"),
+        "error": job.get("error"),
+    })
+
+
+def _issues_context_text(issues: list) -> str:
+    lines = []
+    for it in issues[:10]:
+        title = it.get("title") or it.get("category") or "Issue"
+        cat = it.get("category") or "unknown"
+        sev = it.get("severity") or "medium"
+        line = f"- {title} ({cat}, severity: {sev})"
+        detail = (it.get("detail") or "").strip()
+        if detail:
+            line += f" — {detail[:240]}"
+        comment = (it.get("comment") or "").strip()
+        if comment:
+            line += f" | resident's note: \"{comment[:240]}\""
+        loc = (it.get("location") or "").strip()
+        if loc:
+            line += f" | location: {loc[:120]}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+@app.route("/chat/suggestions", methods=["POST"])
+def chat_suggestions():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    data = request.get_json(silent=True) or {}
+    issues = data.get("issues") or []
+    if not isinstance(issues, list) or not issues:
+        return jsonify({"suggestions": []})
+
+    prompt = (
+        "You help a resident who is reporting issues in their residential society (in India). "
+        "Given the issues below, suggest 4 SHORT questions the resident might want to ask "
+        "before submitting their report. Questions must be:\n"
+        "- specific to these exact issues (and especially any resident notes if provided)\n"
+        "- actionable / useful (next steps, responsibility, escalation, rights, timelines)\n"
+        "- under 12 words each, no quotes, no numbering\n\n"
+        f"Issues:\n{_issues_context_text(issues)}\n\n"
+        "Return ONLY a JSON array of 4 question strings."
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                temperature=0.4,
+                response_mime_type="application/json",
+            ),
+        )
+        suggestions = json.loads(response.text)
+        if not isinstance(suggestions, list):
+            suggestions = []
+        cleaned = []
+        for s in suggestions:
+            s = str(s).strip().strip('"').strip("'")
+            if s:
+                cleaned.append(s[:200])
+        return jsonify({"suggestions": cleaned[:6]})
+    except Exception as e:
+        return jsonify({"error": f"Gemini failed: {e}"}), 500
+
+
+@app.route("/chat/ask", methods=["POST"])
+def chat_ask():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "Empty question"}), 400
+    if len(question) > 1000:
+        return jsonify({"error": "Question too long"}), 400
+    issues = data.get("issues") or []
+    history = data.get("history") or []
+
+    convo = []
+    for turn in history[-6:]:
+        role = "User" if turn.get("role") == "user" else "Assistant"
+        text = str(turn.get("text") or "").strip()
+        if text:
+            convo.append(f"{role}: {text}")
+    convo.append(f"User: {question}\nAssistant:")
+    convo_text = "\n".join(convo)
+
+    prompt = (
+        "You are a concise, practical assistant helping a resident of an Indian housing "
+        "society / apartment complex. The resident is preparing a report about issues in "
+        "their community. Answer the user's question in 3–5 short sentences. Be specific, "
+        "actionable, and reference Indian RWA / society / municipal practice where relevant. "
+        "Do NOT add disclaimers. Do NOT invent legal advice — point to the right body to ask.\n\n"
+        f"Issues identified in the report:\n{_issues_context_text(issues) or '- (none)'}\n\n"
+        "Conversation so far:\n"
+        f"{convo_text}"
+    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt],
+            config=types.GenerateContentConfig(temperature=0.5),
+        )
+        return jsonify({"answer": (response.text or "").strip()})
+    except Exception as e:
+        return jsonify({"error": f"Gemini failed: {e}"}), 500
 
 
 @app.route("/report", methods=["POST"])
@@ -609,6 +840,8 @@ def submit_report():
             f.save(evidence_dir / safe_name)
             saved.append(safe_name)
 
+    running_job_id = _get_running_job_for_phone(session.get("otp_phone"))
+
     return jsonify({
         "ok": True,
         "report_id": report_id,
@@ -617,6 +850,8 @@ def submit_report():
         "evidence_count": len(saved),
         "issue_count": len(selected_issues),
         "selected_issues": selected_issues,
+        "analysis_running": running_job_id is not None,
+        "analysis_job_id": running_job_id,
     })
 
 
