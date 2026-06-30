@@ -4241,11 +4241,25 @@
       return viewName;
     }
 
+    function helperResetAll() {
+      helperHistory = [];
+      helperCurrentScreen = null;
+      helperHelloDismissed = false;
+      helperBusy = false;
+      helperMessagesEl.innerHTML = '';
+      helperSuggestionsEl.innerHTML = '';
+      helperHelloEl.style.display = 'none';
+      helperPanelEl.style.display = 'none';
+      helperHelloText.textContent = 'Hello!';
+      helperPanelHello.textContent = 'Hi there!';
+      if (helperInputEl) helperInputEl.value = '';
+    }
+
     function helperOnViewChange(viewName) {
-      // OTP screen and unknown — hide.
+      // OTP screen and unknown — hide AND wipe (fresh login expected next).
       if (viewName === 'otp' || !viewName) {
+        helperResetAll();
         helperBotEl.style.display = 'none';
-        helperPanelEl.style.display = 'none';
         return;
       }
       helperBotEl.style.display = 'flex';
@@ -4256,7 +4270,10 @@
         return;
       }
       helperCurrentScreen = screen;
+      // Reset per-screen transcript so chat from a previous screen
+      // (or a previous user on this device) never bleeds in.
       helperHistory = [];
+      helperMessagesEl.innerHTML = '';
       if (helperPanelEl.style.display === 'flex') helperFetchTurn();
       else helperFetchTurn(true);
     }
@@ -4704,6 +4721,8 @@
           return;
         }
         banner('otpBanner', 'Verified ✓', 'ok');
+        // Fresh login → wipe any stale Helper Bot chat from a previous session.
+        if (typeof helperResetAll === 'function') helperResetAll();
         prefillSignupPhone(data.phone);
         if (data.partner) {
           setTimeout(() => showPartnerHome(data.partner, data.first_name || data.phone), 350);
@@ -9503,6 +9522,8 @@
 
     // ============ RESET ============
     function resetAll() {
+      // Helper Bot — wipe chat history + DOM so the next user starts fresh.
+      if (typeof helperResetAll === 'function') helperResetAll();
       // OTP
       clearInterval(timerHandle);
       phoneInput.value = ''; phoneInput.disabled = false;
