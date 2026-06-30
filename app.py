@@ -199,6 +199,45 @@ def _save_admins():
 _load_admins()
 
 
+def _url_to_path(url):
+    if not url or not isinstance(url, str) or not url.startswith("/static/"):
+        return None
+    rel = url[len("/static/"):]
+    return BASE_DIR / "static" / rel
+
+
+def _area_words(text):
+    return {w for w in re.findall(r"[a-z0-9]{3,}", (text or "").lower())}
+
+
+def _location_in_admin_area(loc, admin_area):
+    a = _area_words(admin_area)
+    l = _area_words(loc)
+    if not a or not l:
+        return False
+    return bool(a & l)
+
+
+def _attach_reporter_info(report):
+    out = dict(report)
+    ph = report.get("phone")
+    rep = _reporters_data.get(ph) if ph else None
+    if rep:
+        out["reporter_name"] = rep.get("full_name", "")
+        out["reporter_address"] = rep.get("address", "")
+        out["reporter_email"] = rep.get("email", "")
+    return out
+
+
+def _find_report(report_id):
+    with _reports_lock:
+        for ph, reports in _reports_data.items():
+            for r in reports:
+                if r.get("id") == report_id:
+                    return ph, r
+    return None, None
+
+
 ADMIN_CATEGORIES = [
     "Infrastructure", "Waste Disposal", "Water & Drainage",
     "Street Lighting", "Roads & Potholes", "Public Safety", "Parks & Greenery",
@@ -474,18 +513,27 @@ def otp_verify():
         session["otp_verified"] = True
         session["otp_phone"] = phone
         with _reporters_lock:
-            stored = _reporters_data.get(phone)
-        if stored:
-            session["reporter"] = stored
-            first_name = (stored.get("full_name", "").split() or [""])[0]
+            stored_reporter = _reporters_data.get(phone)
+        with _admins_lock:
+            stored_admin = _admins_data.get(phone)
+        first_name = None
+        if stored_reporter:
+            session["reporter"] = stored_reporter
+            first_name = (stored_reporter.get("full_name", "").split() or [""])[0]
         else:
             session.pop("reporter", None)
-            first_name = None
+        if stored_admin:
+            session["admin"] = stored_admin
+            if not first_name:
+                first_name = (stored_admin.get("full_name", "").split() or [""])[0]
+        else:
+            session.pop("admin", None)
         return jsonify({
             "ok": True,
             "status": "approved",
             "phone": phone,
-            "reporter": stored,
+            "reporter": stored_reporter,
+            "admin": stored_admin,
             "first_name": first_name,
         })
 
@@ -494,13 +542,36 @@ def otp_verify():
 
 @app.route("/session")
 def session_state():
-    reporter = session.get("reporter")
     phone = session.get("otp_phone")
+    reporter = session.get("reporter")
+    admin = session.get("admin")
+    # Backfill from persistent stores if the session got stale (e.g. user
+    # logged in before profile-restore was wired into /otp/verify, or the
+    # admin/reporter was created in another tab).
+    if phone and session.get("otp_verified"):
+        if not reporter:
+            with _reporters_lock:
+                stored_r = _reporters_data.get(phone)
+            if stored_r:
+                session["reporter"] = stored_r
+                reporter = stored_r
+        if not admin:
+            with _admins_lock:
+                stored_a = _admins_data.get(phone)
+            if stored_a:
+                session["admin"] = stored_a
+                admin = stored_a
+    first_name = None
+    if reporter:
+        first_name = (reporter.get("full_name", "").split() or [""])[0]
+    elif admin:
+        first_name = (admin.get("full_name", "").split() or [""])[0]
     return jsonify({
         "verified": bool(session.get("otp_verified")),
         "phone": phone,
         "reporter": reporter,
-        "first_name": (reporter.get("full_name", "").split() or [""])[0] if reporter else None,
+        "admin": admin,
+        "first_name": first_name,
         "total_points": _total_points_for(phone),
     })
 
@@ -613,6 +684,127 @@ def admin_signup():
             _admins_data[phone] = admin
             _save_admins()
     return jsonify({"ok": True, "first_name": full_name.split()[0], "admin": admin})
+
+
+@app.route("/admin/reports")
+def admin_list_all_reports():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    if not session.get("admin"):
+        return jsonify({"error": "Admin only"}), 403
+    admin = session.get("admin") or {}
+    admin_area = admin.get("area") or ""
+    area_filter = (request.args.get("area") or "").strip().lower()
+
+    all_reports = []
+    with _reports_lock:
+        for ph, reports in _reports_data.items():
+            for r in reports:
+                if r.get("phone") is None:
+                    r2 = dict(r); r2["phone"] = ph
+                else:
+                    r2 = r
+                all_reports.append(_attach_reporter_info(r2))
+
+    if area_filter in ("my", "other"):
+        def matches_my(rep):
+            for it in (rep.get("issues") or []):
+                if _location_in_admin_area(it.get("location") or "", admin_area):
+                    return True
+            return False
+        if area_filter == "my":
+            all_reports = [r for r in all_reports if matches_my(r)]
+        else:
+            all_reports = [r for r in all_reports if not matches_my(r)]
+
+    all_reports.sort(key=lambda r: r.get("created_at", 0), reverse=True)
+    categories = sorted({
+        (i.get("category") or "").strip()
+        for r in all_reports for i in (r.get("issues") or [])
+        if (i.get("category") or "").strip()
+    })
+    return jsonify({
+        "reports": all_reports,
+        "admin_area": admin_area,
+        "categories": categories,
+    })
+
+
+@app.route("/admin/reports/<report_id>/seen", methods=["POST"])
+def admin_mark_seen(report_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Admin only"}), 403
+    admin = session.get("admin") or {}
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+    if not report.get("seen_by_admin"):
+        report["seen_by_admin"] = {
+            "admin_name": admin.get("full_name", ""),
+            "ts": time.time(),
+        }
+        with _reports_lock:
+            _save_reports()
+    return jsonify({"ok": True, "seen_by_admin": report.get("seen_by_admin")})
+
+
+@app.route("/admin/reports/<report_id>/thumbs_up", methods=["POST"])
+def admin_thumbs_up(report_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Admin only"}), 403
+    admin = session.get("admin") or {}
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+    if report.get("thumbs_up_by_admin"):
+        return jsonify({"ok": True, "already": True,
+                        "thumbs_up_by_admin": report["thumbs_up_by_admin"],
+                        "total_points": report.get("points", 0)})
+    BONUS = 50
+    report["thumbs_up_by_admin"] = {
+        "admin_name": admin.get("full_name", ""),
+        "ts": time.time(),
+        "points": BONUS,
+    }
+    report["points"] = int(report.get("points", 0)) + BONUS
+    with _reports_lock:
+        _save_reports()
+    return jsonify({
+        "ok": True,
+        "thumbs_up_by_admin": report["thumbs_up_by_admin"],
+        "total_points": report["points"],
+    })
+
+
+@app.route("/admin/reports/<report_id>/deny_issue", methods=["POST"])
+def admin_deny_issue(report_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Admin only"}), 403
+    admin = session.get("admin") or {}
+    data = request.get_json(silent=True) or {}
+    issue_title = (data.get("issue_title") or "").strip()
+    reason = (data.get("reason") or "").strip()
+    if not issue_title:
+        return jsonify({"error": "issue_title required"}), 400
+    if not reason:
+        return jsonify({"error": "Reason is required"}), 400
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+    denials = report.setdefault("denied_issues", [])
+    existing = next((d for d in denials if d.get("issue_title") == issue_title), None)
+    if existing:
+        return jsonify({"ok": True, "already": True, "denied_issues": denials, "entry": existing})
+    entry = {
+        "issue_title": issue_title,
+        "admin_name": admin.get("full_name", ""),
+        "reason": reason[:500],
+        "ts": time.time(),
+    }
+    denials.append(entry)
+    with _reports_lock:
+        _save_reports()
+    return jsonify({"ok": True, "entry": entry, "denied_issues": denials})
 
 
 @app.route("/admin/addresses")

@@ -125,6 +125,332 @@
 
     /* Admin sign-up theme */
     .card.admin-card::before { background: linear-gradient(90deg, #6d28d9, #a78bfa); }
+
+    /* === ADMIN HOME (Screen 3b) === */
+    .admin-filters {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .filter-row .label {
+      font-size: 11px; color: var(--muted);
+      font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      min-width: 64px;
+    }
+    .filter-btn {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .filter-btn:hover { color: var(--text); border-color: var(--muted-2); }
+    .filter-btn.active {
+      background: #6d28d9;
+      border-color: #6d28d9;
+      color: #fff;
+    }
+
+    .admin-reports-list { display: flex; flex-direction: column; gap: 12px; padding: 0; }
+    .admin-reports-list:empty::before {
+      content: "No reports yet.";
+      color: var(--muted-2);
+      text-align: center; padding: 30px 0;
+      display: block; font-size: 13px;
+    }
+    .admin-report-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fafbfc;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .admin-report-card:hover { border-color: #6d28d9; background: #fff; }
+    .arc-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; gap: 12px; }
+    .arc-top .date { color: var(--muted); font-size: 12px; }
+    .arc-top .id { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; color: var(--muted-2); }
+    .arc-top .pts {
+      background: #d1fae5; color: #065f46;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+    }
+    .arc-desc { font-size: 12.5px; color: #374151; margin: 4px 0 6px; line-height: 1.4; }
+
+    .ai-card {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-top: 1px dashed var(--border);
+    }
+    .ai-card:first-of-type { border-top: 0; }
+    .ai-card .thumb-sm {
+      width: 96px; height: 64px;
+      border-radius: 6px;
+      background: #e9ecef; overflow: hidden;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: var(--muted);
+    }
+    .ai-card .thumb-sm img, .ai-card .thumb-sm video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .ai-card .ai-info { flex: 1; min-width: 0; }
+    .ai-card .row1 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 3px; }
+    .ai-card .ai-title { font-weight: 700; font-size: 13px; }
+    .ai-card .cat-tag {
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+    .ai-card .sev-tag {
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .ai-card .sev-tag.high { background: rgba(239,68,68,.12); color: var(--high); }
+    .ai-card .sev-tag.medium { background: rgba(245,158,11,.15); color: var(--med); }
+    .ai-card .sev-tag.low { background: rgba(16,185,129,.15); color: var(--low); }
+    .ai-card .pts-badge {
+      background: #d1fae5; color: #065f46;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 10.5px; font-weight: 800;
+    }
+    .ai-card .pts-badge.medium { background: #fef3c7; color: #92400e; }
+    .ai-card .pts-badge.low { background: #e0f2fe; color: #075985; }
+    .ai-card .loc { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+    .ai-card .detail-text { color: #374151; font-size: 11.5px; margin-top: 4px; line-height: 1.4; }
+    .ai-card .comment-text {
+      color: #374151; font-size: 11.5px; margin-top: 4px;
+      font-style: italic;
+      border-left: 2px solid var(--primary-soft);
+      padding-left: 6px;
+    }
+    .ai-card .ad-row { display: flex; gap: 8px; margin-top: 8px; }
+    .ad-btn {
+      flex: 1;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      font-family: inherit;
+    }
+    .ad-btn.approve { background: #10b981; }
+    .ad-btn.approve:hover:not(:disabled) { background: #059669; }
+    .ad-btn.deny { background: #ef4444; }
+    .ad-btn.deny:hover:not(:disabled) { background: #dc2626; }
+    .ad-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .ad-btn.hidden { display: none !important; }
+
+    /* Admin detail modal */
+    .admin-detail-modal {
+      position: fixed; inset: 0;
+      background: rgba(15,17,21,.55);
+      z-index: 2000;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .admin-detail-modal[data-open="1"] { display: flex; }
+    .admin-detail-dialog {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+    .admin-detail-head {
+      padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-detail-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+    .admin-detail-head .close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--input-bg); color: var(--muted);
+      border: 0; cursor: pointer; font-size: 18px;
+    }
+    .admin-detail-body { padding: 16px 18px 22px; overflow-y: auto; }
+    .reporter-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+    .reporter-bar .name { font-size: 13px; color: var(--text); }
+    .reporter-bar .name strong { color: #5b21b6; }
+    .reporter-bar .addr { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .thumbs-btn {
+      background: #fff;
+      border: 1.5px solid #d1d5db;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .thumbs-btn:hover { border-color: #10b981; color: #047857; }
+    .thumbs-btn.done {
+      background: #d1fae5; border-color: #10b981; color: #065f46;
+      cursor: default;
+    }
+
+    .status-banner {
+      background: #fef3c7; color: #78350f;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+
+    /* Timeline */
+    .timeline { position: relative; padding: 4px 0 4px 4px; margin-bottom: 18px; }
+    .timeline .tl-step { position: relative; padding-left: 36px; padding-bottom: 14px; }
+    .timeline .tl-step:last-child { padding-bottom: 0; }
+    .timeline .tl-step::before {
+      content: ""; position: absolute;
+      left: 11px; top: 22px; bottom: -6px;
+      width: 2px; background: #e5e7eb;
+    }
+    .timeline .tl-step:last-child::before { display: none; }
+    .timeline .tl-dot {
+      position: absolute; left: 0; top: 0;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800;
+      background: #fff;
+      border: 2px solid #d1d5db;
+      color: var(--muted-2);
+    }
+    .timeline .tl-step.done .tl-dot { background: #10b981; border-color: #10b981; color: #fff; }
+    .timeline .tl-step.done::before { background: #10b981; }
+    .timeline .tl-step.current .tl-dot {
+      background: #fef3c7; border-color: #f59e0b; color: #92400e;
+      animation: tl-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes tl-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,.55); }
+      50% { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+    }
+    .timeline .tl-title { font-size: 13.5px; font-weight: 700; color: var(--text); }
+    .timeline .tl-step.future .tl-title { color: var(--muted); }
+    .timeline .tl-time { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+    .timeline .tl-step.current .tl-time::after { content: " (pending)"; color: #92400e; font-weight: 700; }
+    .timeline .tl-step.future .tl-time::after { content: " (pending)"; color: var(--muted-2); font-weight: 600; }
+
+    .seen-chip {
+      margin-top: 4px;
+      font-size: 11.5px;
+      color: #5b21b6;
+      background: #ede9fe;
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .deny-chip {
+      margin-top: 4px;
+      font-size: 11.5px;
+      color: var(--high);
+      background: #fee2e2;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .deny-chip .reason { display: block; font-weight: 500; color: #991b1b; margin-top: 2px; }
+
+    /* Confirm + reason dialogs */
+    .small-modal {
+      position: fixed; inset: 0;
+      background: rgba(15,17,21,.55);
+      z-index: 2500;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .small-modal[data-open="1"] { display: flex; }
+    .small-dialog {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 400px;
+      padding: 22px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    }
+    .small-dialog h4 { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+    .small-dialog p { margin: 0 0 16px; color: var(--text); font-size: 13.5px; line-height: 1.4; }
+    .small-dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+    .small-dialog .actions button {
+      border: 0; border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .small-dialog .yes, .small-dialog .ok { background: var(--primary); color: #fff; }
+    .small-dialog .yes:hover, .small-dialog .ok:hover { background: var(--primary-strong); }
+    .small-dialog .no, .small-dialog .cancel { background: #e5e7eb; color: var(--text); }
+    .small-dialog .no:hover, .small-dialog .cancel:hover { background: #d1d5db; }
+    .small-dialog .ok:disabled { opacity: .55; cursor: not-allowed; }
+    .small-dialog textarea {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .small-dialog textarea:focus { border-color: var(--primary); background: #fff; }
+    .small-dialog .field-label {
+      font-size: 12px; color: var(--text); font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .small-dialog .field-label .req { color: var(--high); margin-left: 2px; }
+
+    /* Bonus tag in reporter's My reports */
+    .bonus-tag {
+      display: inline-block;
+      background: #d1fae5;
+      color: #065f46;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 800;
+      margin-left: 4px;
+    }
+
     .btn.admin {
       background: #6d28d9;
     }
@@ -1085,6 +1411,42 @@
   </style>
 </head>
 <body>
+  <!-- Admin: report detail -->
+  <div id="adminDetailModal" class="admin-detail-modal">
+    <div class="admin-detail-dialog">
+      <div class="admin-detail-head">
+        <h3>Report details</h3>
+        <button class="close" id="adminDetailClose" aria-label="Close">×</button>
+      </div>
+      <div class="admin-detail-body" id="adminDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- Confirm Y/N dialog -->
+  <div id="confirmModal" class="small-modal">
+    <div class="small-dialog">
+      <h4 id="confirmTitle">Are you sure?</h4>
+      <p id="confirmMsg"></p>
+      <div class="actions">
+        <button class="no" id="confirmNo">No</button>
+        <button class="yes" id="confirmYes">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deny reason dialog -->
+  <div id="reasonModal" class="small-modal" style="z-index: 2600;">
+    <div class="small-dialog">
+      <h4 id="reasonTitle">Reason for denial</h4>
+      <div class="field-label">Reason<span class="req">*</span></div>
+      <textarea id="reasonInput" placeholder="Why are you denying this issue?" maxlength="500"></textarea>
+      <div class="actions">
+        <button class="cancel" id="reasonCancel">Cancel</button>
+        <button class="ok" id="reasonOk" disabled>OK</button>
+      </div>
+    </div>
+  </div>
+
   <div id="reportDetailModal" class="reports-modal" style="z-index: 1900;">
     <div class="reports-dialog">
       <div class="reports-head">
@@ -1286,6 +1648,44 @@
       </div>
     </section>
 
+    <!-- ============ SCREEN 3b: ADMIN HOME (All reports) ============ -->
+    <section id="adminHomeView" class="view">
+      <div class="card admin-card">
+        <div class="card-body">
+          <div class="head-row">
+            <div class="role-avatar admin" style="width:42px;height:42px;border-radius:10px;font-size:17px;">A</div>
+            <div style="flex:1;">
+              <h2>All reports</h2>
+              <p id="adminHomeSub">Reports across all reporters</p>
+            </div>
+          </div>
+          <div class="admin-filters">
+            <div class="filter-row">
+              <span class="label">Area</span>
+              <button class="filter-btn" data-filter="area" data-value="my">My Area</button>
+              <button class="filter-btn" data-filter="area" data-value="other">Other Areas</button>
+            </div>
+            <div class="filter-row">
+              <span class="label">Priority</span>
+              <button class="filter-btn" data-filter="priority" data-value="high">High</button>
+              <button class="filter-btn" data-filter="priority" data-value="medium">Medium</button>
+              <button class="filter-btn" data-filter="priority" data-value="low">Low</button>
+            </div>
+            <div class="filter-row">
+              <span class="label">Category</span>
+              <div id="adminCategoryFilters" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+            <div class="filter-row">
+              <span class="label">Sort</span>
+              <button class="filter-btn active" data-filter="sort" data-value="desc">Newest first</button>
+              <button class="filter-btn" data-filter="sort" data-value="asc">Oldest first</button>
+            </div>
+          </div>
+          <div id="adminReportsList" class="admin-reports-list"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ COMING SOON (Service Partner) ============ -->
     <section id="comingSoonView" class="view">
       <div class="card">
@@ -1434,6 +1834,7 @@
       otp: document.getElementById('otpView'),
       roleSelect: document.getElementById('roleSelectView'),
       adminSignup: document.getElementById('adminSignupView'),
+      adminHome: document.getElementById('adminHomeView'),
       comingSoon: document.getElementById('comingSoonView'),
       signup: document.getElementById('signupView'),
       report: document.getElementById('reportView'),
@@ -1448,9 +1849,10 @@
       if (headerLabel) {
         whoBox.classList.add('show');
         whoText.textContent = 'Verified: ' + headerLabel;
-        reportsBtn.style.display = 'inline-flex';
-        // profile chip only when user already has a reporter on record (i.e. on report view)
-        profileBtn.style.display = (name === 'report') ? 'inline-flex' : 'none';
+        const isReporterScreen = (name === 'report');
+        reportsBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
+        profileBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
+        if (!isReporterScreen) document.getElementById('pointsPill').style.display = 'none';
       } else {
         whoBox.classList.remove('show');
         reportsBtn.style.display = 'none';
@@ -1467,6 +1869,10 @@
         prefillSignupPhone(s.phone);
         prefillFromReporter(s.reporter);
         showView('report', s.first_name || s.phone);
+      } else if (s.verified && s.admin) {
+        currentAdmin = s.admin;
+        showView('adminHome', s.first_name || s.phone);
+        loadAdminReports();
       } else if (s.verified) {
         prefillSignupPhone(s.phone);
         showView('roleSelect', s.phone);
@@ -1667,6 +2073,9 @@
         if (data.reporter) {
           prefillFromReporter(data.reporter);
           setTimeout(() => showView('report', data.first_name || data.phone), 350);
+        } else if (data.admin) {
+          currentAdmin = data.admin;
+          setTimeout(() => { showView('adminHome', data.first_name || data.phone); loadAdminReports(); }, 350);
         } else {
           setFormMode('signup');
           setTimeout(() => showView('roleSelect', data.phone), 350);
@@ -2442,13 +2851,15 @@
           </div>`;
         });
         if (!issuesHtml) return; // hide reports whose issues are all filtered out
+        const bonusTag = r.thumbs_up_by_admin
+          ? `<span class="bonus-tag">👍 +${r.thumbs_up_by_admin.points || 50} by admin</span>` : '';
         card.innerHTML = `
           <div class="top">
             <div>
               <div class="date">${fmtReportDate(r.created_at)}</div>
               <div class="id">#${escapeHtml(r.id || '')}</div>
             </div>
-            <span class="pts">+${r.points || 0} pts</span>
+            <span class="pts">+${r.points || 0} pts${bonusTag}</span>
           </div>
           ${r.description ? `<div class="desc">${escapeHtml(r.description)}</div>` : ''}
           ${issuesHtml}
@@ -2523,7 +2934,7 @@
           <div class="meta-line">${r.evidence_count || 0} evidence file${(r.evidence_count||0)===1?'':'s'} · ${(r.issues||[]).length} issue${(r.issues||[]).length===1?'':'s'}</div>
         </div>
         <div class="status-banner">Current status: <strong>${escapeHtml(statusLabel)}</strong></div>
-        ${renderTimeline(timeline)}
+        ${renderTimeline(timeline, r)}
         ${r.description ? `<div class="desc" style="font-size:13px;color:#374151;margin:6px 0 12px;line-height:1.45;">${escapeHtml(r.description)}</div>` : ''}
         <div class="reports-list" style="padding:0;">${issuesHtml}</div>
       `;
@@ -2840,6 +3251,392 @@
       if (btn) { e.stopPropagation(); openZoom(btn.dataset.src); }
     });
 
+    // ============ CONFIRM + REASON DIALOGS ============
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmTitle = document.getElementById('confirmTitle');
+    const confirmMsg = document.getElementById('confirmMsg');
+    const confirmYes = document.getElementById('confirmYes');
+    const confirmNo = document.getElementById('confirmNo');
+    let confirmResolver = null;
+    function confirmDialog(message, title = 'Are you sure?') {
+      return new Promise(resolve => {
+        confirmTitle.textContent = title;
+        confirmMsg.textContent = message;
+        confirmModal.setAttribute('data-open', '1');
+        confirmResolver = resolve;
+      });
+    }
+    function closeConfirm(answer) {
+      confirmModal.removeAttribute('data-open');
+      const r = confirmResolver; confirmResolver = null;
+      if (r) r(answer);
+    }
+    confirmYes.addEventListener('click', () => closeConfirm(true));
+    confirmNo.addEventListener('click', () => closeConfirm(false));
+    confirmModal.addEventListener('click', e => { if (e.target === confirmModal) closeConfirm(false); });
+
+    const reasonModal = document.getElementById('reasonModal');
+    const reasonInput = document.getElementById('reasonInput');
+    const reasonOk = document.getElementById('reasonOk');
+    const reasonCancel = document.getElementById('reasonCancel');
+    const reasonTitle = document.getElementById('reasonTitle');
+    let reasonResolver = null;
+    function reasonDialog(title = 'Reason for denial') {
+      return new Promise(resolve => {
+        reasonTitle.textContent = title;
+        reasonInput.value = '';
+        reasonOk.disabled = true;
+        reasonModal.setAttribute('data-open', '1');
+        setTimeout(() => reasonInput.focus(), 50);
+        reasonResolver = resolve;
+      });
+    }
+    function closeReason(value) {
+      reasonModal.removeAttribute('data-open');
+      const r = reasonResolver; reasonResolver = null;
+      if (r) r(value);
+    }
+    reasonInput.addEventListener('input', () => { reasonOk.disabled = reasonInput.value.trim().length === 0; });
+    reasonOk.addEventListener('click', () => { const v = reasonInput.value.trim(); if (v) closeReason(v); });
+    reasonCancel.addEventListener('click', () => closeReason(null));
+    reasonModal.addEventListener('click', e => { if (e.target === reasonModal) closeReason(null); });
+
+    // ============ ADMIN HOME (Screen 3b) ============
+    let currentAdmin = null;
+    let adminAllReports = [];
+    let adminFilters = { area: null, priority: null, category: null, sort: 'desc' };
+    const adminReportsList = document.getElementById('adminReportsList');
+    const adminCategoryFilters = document.getElementById('adminCategoryFilters');
+
+    async function loadAdminReports() {
+      adminReportsList.innerHTML = '<div style="color:var(--muted-2);padding:14px;text-align:center;font-size:13px;"><span class="spinner" style="color:var(--muted)"></span>Loading reports…</div>';
+      try {
+        const params = new URLSearchParams();
+        if (adminFilters.area) params.set('area', adminFilters.area);
+        const res = await fetch('/admin/reports?' + params.toString());
+        const data = await res.json();
+        if (!res.ok) { adminReportsList.innerHTML = `<div style="color:var(--high);padding:14px;text-align:center;">${escapeHtml(data.error || 'Failed to load')}</div>`; return; }
+        adminAllReports = data.reports || [];
+        adminCategoryFilters.innerHTML = '';
+        (data.categories || []).forEach(cat => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'filter-btn' + (adminFilters.category === cat ? ' active' : '');
+          b.dataset.filter = 'category';
+          b.dataset.value = cat;
+          b.textContent = cat;
+          b.addEventListener('click', () => toggleAdminFilter('category', cat));
+          adminCategoryFilters.appendChild(b);
+        });
+        renderAdminReports();
+      } catch (e) {
+        adminReportsList.innerHTML = `<div style="color:var(--high);padding:14px;text-align:center;">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderAdminReports() {
+      let list = adminAllReports.slice();
+      if (adminFilters.priority) {
+        list = list.filter(r => (r.issues || []).some(i => (i.severity || 'medium').toLowerCase() === adminFilters.priority));
+      }
+      if (adminFilters.category) {
+        list = list.filter(r => (r.issues || []).some(i => (i.category || '') === adminFilters.category));
+      }
+      list.sort((a, b) => {
+        const da = a.created_at || 0, db = b.created_at || 0;
+        return adminFilters.sort === 'asc' ? da - db : db - da;
+      });
+      adminReportsList.innerHTML = '';
+      if (!list.length) {
+        adminReportsList.innerHTML = '<div style="color:var(--muted-2);padding:30px;text-align:center;font-size:13px;">No reports match.</div>';
+        return;
+      }
+      list.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'admin-report-card';
+        card.dataset.id = r.id || '';
+        let issuesHtml = '';
+        (r.issues || []).forEach(it => {
+          const sev = (it.severity || 'medium').toLowerCase();
+          if (adminFilters.priority && sev !== adminFilters.priority) return;
+          if (adminFilters.category && (it.category || '') !== adminFilters.category) return;
+          let thumb = '<div style="color:var(--muted-2)">no media</div>';
+          if (it.media_kind === 'video' && it.media_url) {
+            thumb = `<video src="${escapeHtml(it.media_url)}" muted preload="metadata"></video>`;
+          } else if (it.media_url || it.annotated_url) {
+            thumb = `<img src="${escapeHtml(it.annotated_url || it.media_url)}" alt="">`;
+          }
+          issuesHtml += `<div class="ai-card">
+            <div class="thumb-sm">${thumb}</div>
+            <div class="ai-info">
+              <div class="row1">
+                <span class="ai-title">${escapeHtml(it.title || it.category || 'Issue')}</span>
+                <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
+                <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
+                <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
+              </div>
+              ${it.location ? `<div class="loc">📍 ${escapeHtml(it.location)}</div>` : ''}
+              ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
+            </div>
+          </div>`;
+        });
+        if (!issuesHtml) return;
+        card.innerHTML = `
+          <div class="arc-top">
+            <div>
+              <div class="date">${fmtReportDate(r.created_at)}</div>
+              <div class="id">#${escapeHtml(r.id || '')} · ${escapeHtml(r.reporter_name || r.phone || '')}</div>
+            </div>
+            <span class="pts">+${r.points || 0} pts</span>
+          </div>
+          ${r.description ? `<div class="arc-desc">${escapeHtml(r.description)}</div>` : ''}
+          ${issuesHtml}
+        `;
+        card.addEventListener('click', () => openAdminDetail(r));
+        adminReportsList.appendChild(card);
+      });
+    }
+
+    function toggleAdminFilter(kind, value) {
+      if (kind === 'sort') {
+        adminFilters.sort = value;
+      } else {
+        adminFilters[kind] = (adminFilters[kind] === value) ? null : value;
+      }
+      document.querySelectorAll(`#adminHomeView .filter-btn[data-filter="${kind}"]`).forEach(b => {
+        const isActive = (kind === 'sort')
+          ? (b.dataset.value === adminFilters.sort)
+          : (b.dataset.value === adminFilters[kind]);
+        b.classList.toggle('active', isActive);
+      });
+      if (kind === 'area') loadAdminReports();
+      else renderAdminReports();
+    }
+    document.querySelectorAll('#adminHomeView .filter-btn[data-filter="area"], #adminHomeView .filter-btn[data-filter="priority"], #adminHomeView .filter-btn[data-filter="sort"]').forEach(b => {
+      b.addEventListener('click', () => toggleAdminFilter(b.dataset.filter, b.dataset.value));
+    });
+
+    // === Admin detail modal ===
+    const adminDetailModal = document.getElementById('adminDetailModal');
+    const adminDetailBody = document.getElementById('adminDetailBody');
+
+    function defaultTimeline(createdAt) {
+      return [
+        { step: 'submitted', label: 'Submitted', ts: createdAt, done: true, current: false },
+        { step: 'approval', label: 'Waiting for admin / moderator approval', ts: null, done: false, current: true },
+        { step: 'assigned', label: 'Service partner assigned', ts: null, done: false, current: false },
+        { step: 'started', label: 'Task started', ts: null, done: false, current: false },
+        { step: 'completed', label: 'Task complete', ts: null, done: false, current: false },
+      ];
+    }
+    function renderTimeline(steps, report) {
+      return `<div class="timeline">${steps.map(s => {
+        const cls = s.done ? 'done' : (s.current ? 'current' : 'future');
+        const icon = s.done ? '✓' : (s.current ? '⏳' : '·');
+        const ts = s.ts ? fmtReportDate(s.ts) : '—';
+        let extra = '';
+        if (s.step === 'approval' && report) {
+          if (report.seen_by_admin) {
+            const sba = report.seen_by_admin;
+            extra += `<div class="seen-chip">👁 Seen by admin: ${escapeHtml(sba.admin_name || 'admin')} · ${fmtReportDate(sba.ts)}</div>`;
+          }
+          (report.denied_issues || []).forEach(d => {
+            extra += `<div class="deny-chip">🚫 "${escapeHtml(d.issue_title)}" denied by admin: ${escapeHtml(d.admin_name || 'admin')} · ${fmtReportDate(d.ts)}
+              <span class="reason">Reason: ${escapeHtml(d.reason || '')}</span>
+            </div>`;
+          });
+        }
+        return `<div class="tl-step ${cls}">
+          <div class="tl-dot">${icon}</div>
+          <div class="tl-title">${escapeHtml(s.label || s.step)}</div>
+          <div class="tl-time">${ts}</div>
+          ${extra}
+        </div>`;
+      }).join('')}</div>`;
+    }
+    function refreshAdminTimeline(report) {
+      const old = adminDetailBody.querySelector('.timeline');
+      if (!old) return;
+      const steps = (report.timeline && report.timeline.length) ? report.timeline : defaultTimeline(report.created_at);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = renderTimeline(steps, report);
+      old.replaceWith(wrapper.firstElementChild);
+    }
+
+    function openAdminDetail(report) {
+      // Render and open immediately, then mark seen in the background.
+      renderAdminDetail(report);
+      adminDetailModal.setAttribute('data-open', '1');
+      document.body.style.overflow = 'hidden';
+      fetch(`/admin/reports/${encodeURIComponent(report.id)}/seen`, { method: 'POST' })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          if (ok && d.seen_by_admin) {
+            report.seen_by_admin = d.seen_by_admin;
+            refreshAdminTimeline(report);
+          }
+        })
+        .catch(() => {});
+    }
+    function closeAdminDetail() {
+      adminDetailModal.removeAttribute('data-open');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('adminDetailClose').addEventListener('click', closeAdminDetail);
+    adminDetailModal.addEventListener('click', e => { if (e.target === adminDetailModal) closeAdminDetail(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && adminDetailModal.getAttribute('data-open')) closeAdminDetail(); });
+
+    function renderAdminDetail(r) {
+      const timeline = (r.timeline && r.timeline.length) ? r.timeline : defaultTimeline(r.created_at);
+      const statusLabel = r.status_label || 'Waiting for approval from admin';
+      const thumbsDone = !!r.thumbs_up_by_admin;
+      const deniedTitles = new Set(((r.denied_issues || []).map(d => d.issue_title)));
+
+      let issuesHtml = '';
+      (r.issues || []).forEach((it, idx) => {
+        const sev = (it.severity || 'medium').toLowerCase();
+        const issueTitle = it.title || it.category || 'Issue';
+        const issueKey = issueTitle;
+        let thumb = '<div style="color:var(--muted-2)">no media</div>';
+        if (it.media_kind === 'video' && it.media_url) {
+          thumb = `<video src="${escapeHtml(it.media_url)}" controls playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+        } else if (it.media_url || it.annotated_url) {
+          thumb = `<img src="${escapeHtml(it.annotated_url || it.media_url)}" alt="">`;
+        }
+        const ts = it.created_at ? fmtReportDate(it.created_at) : fmtReportDate(r.created_at);
+        const alreadyDenied = deniedTitles.has(issueTitle);
+        // If already denied previously, hide approve, show deny-turned-Approve
+        const approveHtml = alreadyDenied
+          ? '<button class="ad-btn approve hidden" data-act="approve">Approve</button>'
+          : '<button class="ad-btn approve" data-act="approve">Approve</button>';
+        const denyHtml = alreadyDenied
+          ? '<button class="ad-btn approve" data-act="post-deny-approve">Approve</button>'
+          : '<button class="ad-btn deny" data-act="deny">Deny</button>';
+        issuesHtml += `<div class="ai-card" data-idx="${idx}" data-issue-title="${escapeAttr(issueTitle)}">
+          <div class="thumb-sm" style="width:140px;height:96px;">${thumb}</div>
+          <div class="ai-info">
+            <div class="row1">
+              <span class="ai-title">${escapeHtml(issueTitle)}</span>
+              <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
+              <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
+              <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
+            </div>
+            <div class="loc">📍 ${escapeHtml(it.location || '—')} · 🗓 ${escapeHtml(ts)}</div>
+            ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
+            ${it.comment ? `<div class="comment-text">"${escapeHtml(it.comment)}"</div>` : ''}
+            <div class="ad-row">${approveHtml}${denyHtml}</div>
+          </div>
+        </div>`;
+      });
+
+      adminDetailBody.innerHTML = `
+        <div class="reporter-bar">
+          <div>
+            <div class="name"><strong>${escapeHtml(r.reporter_name || 'Reporter')}</strong> · ${escapeHtml(r.phone || '')}</div>
+            <div class="addr">${escapeHtml(r.reporter_address || '')}</div>
+          </div>
+          <button class="thumbs-btn ${thumbsDone ? 'done' : ''}" id="adminThumbsBtn">
+            ${thumbsDone ? '👍 +50 awarded' : '👍 Thumbs up'}
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <span class="arc-top" style="margin:0;display:inline-flex;"><span class="pts">+${r.points || 0} pts</span></span>
+          <span style="color:var(--muted);font-size:12px;">${fmtReportDate(r.created_at)}</span>
+          <span style="font-family:ui-monospace,monospace;font-size:11px;color:var(--muted-2);">#${escapeHtml(r.id || '')}</span>
+          <span style="color:var(--muted);font-size:12px;">${r.evidence_count || 0} evidence file${(r.evidence_count||0)===1?'':'s'} · ${(r.issues||[]).length} issue${(r.issues||[]).length===1?'':'s'}</span>
+        </div>
+        <div class="status-banner">Current status: <strong>${escapeHtml(statusLabel)}</strong></div>
+        ${renderTimeline(timeline, r)}
+        ${r.description ? `<div style="font-size:13px;color:#374151;margin:6px 0 12px;line-height:1.45;">${escapeHtml(r.description)}</div>` : ''}
+        <div id="adminDetailBanner" style="margin:8px 0;"></div>
+        <div>${issuesHtml}</div>
+      `;
+
+      // Wire thumbs up
+      const tbtn = document.getElementById('adminThumbsBtn');
+      if (tbtn && !thumbsDone) {
+        tbtn.addEventListener('click', async () => {
+          const reporterName = r.reporter_name || 'this reporter';
+          const ok = await confirmDialog(`Are you sure you want to thumbs up reporter ${reporterName}?`);
+          if (!ok) return;
+          try {
+            const res = await fetch(`/admin/reports/${encodeURIComponent(r.id)}/thumbs_up`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+              banner('adminDetailBanner', data.error || 'Failed', 'error');
+              return;
+            }
+            r.thumbs_up_by_admin = data.thumbs_up_by_admin;
+            r.points = data.total_points;
+            tbtn.classList.add('done');
+            tbtn.textContent = '👍 +50 awarded';
+          } catch (e) {
+            banner('adminDetailBanner', e.message, 'error');
+          }
+        });
+      }
+
+      // Wire approve/deny per issue
+      adminDetailBody.querySelectorAll('.ai-card').forEach(node => {
+        const issueTitle = node.dataset.issueTitle || 'this issue';
+        const approveBtn = node.querySelector('.ad-btn[data-act="approve"]');
+        const denyBtn = node.querySelector('.ad-btn[data-act="deny"]');
+        const postDenyApprove = node.querySelector('.ad-btn[data-act="post-deny-approve"]');
+
+        if (approveBtn) {
+          approveBtn.addEventListener('click', async () => {
+            const ok = await confirmDialog(`Are you sure to approve ${issueTitle}?`);
+            if (!ok) return;
+            banner('adminDetailBanner', `Approval for "${issueTitle}" — coming soon`, 'ok');
+          });
+        }
+        if (denyBtn) {
+          denyBtn.addEventListener('click', async () => {
+            const ok = await confirmDialog(`Are you sure deny ${issueTitle}?`);
+            if (!ok) return;
+            const reason = await reasonDialog(`Reason for denying "${issueTitle}"`);
+            if (!reason) return;
+            try {
+              const res = await fetch(`/admin/reports/${encodeURIComponent(r.id)}/deny_issue`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ issue_title: issueTitle, reason })
+              });
+              const data = await res.json();
+              if (!res.ok) {
+                banner('adminDetailBanner', data.error || 'Deny failed', 'error');
+                return;
+              }
+              r.denied_issues = data.denied_issues || r.denied_issues || [];
+              // Hide original approve; transform deny → green Approve (post-deny-approve)
+              if (approveBtn) approveBtn.classList.add('hidden');
+              denyBtn.classList.remove('deny');
+              denyBtn.classList.add('approve');
+              denyBtn.textContent = 'Approve';
+              denyBtn.dataset.act = 'post-deny-approve';
+              // Wire it as post-deny approve
+              denyBtn.addEventListener('click', async () => {
+                const yes = await confirmDialog(`Are you sure to approve ${issueTitle}?`);
+                if (!yes) return;
+                banner('adminDetailBanner', `Approval for "${issueTitle}" — coming soon`, 'ok');
+              });
+              refreshAdminTimeline(r);
+            } catch (e) {
+              banner('adminDetailBanner', e.message, 'error');
+            }
+          });
+        }
+        if (postDenyApprove) {
+          postDenyApprove.addEventListener('click', async () => {
+            const yes = await confirmDialog(`Are you sure to approve ${issueTitle}?`);
+            if (!yes) return;
+            banner('adminDetailBanner', `Approval for "${issueTitle}" — coming soon`, 'ok');
+          });
+        }
+      });
+    }
+
+    function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
     // ============ ADMIN SIGN-UP (Screen 2b) ============
     const ADMIN_CATEGORIES = [
       'Infrastructure', 'Waste Disposal', 'Water & Drainage',
@@ -3036,7 +3833,9 @@
           banner('adminBanner', data.error || 'Sign-up failed', 'error');
           return;
         }
-        banner('adminBanner', `Admin account created ✓ Welcome ${data.first_name}! Admin dashboard coming soon.`, 'ok');
+        banner('adminBanner', `Admin account created ✓ Welcome ${data.first_name}!`, 'ok');
+        currentAdmin = data.admin || null;
+        setTimeout(() => { showView('adminHome', data.first_name); loadAdminReports(); }, 600);
       });
     });
 
