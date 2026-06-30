@@ -366,7 +366,14 @@ def _assignment_dict(phone, partner, scheduled_for, duration_hours, admin_name):
         "scheduled_for_label": _next_available_label(scheduled_for),
         "admin_name": admin_name,
         "ts": time.time(),
+        "status": "pending",  # pending | accepted | denied | rescheduled (still active)
+        "reschedule_count": 0,
+        "history": [],  # list of {type: accept/deny/reschedule, sp_name, ts, ...}
     }
+
+
+MAX_RESCHEDULES = 3
+AUTO_APPROVE_LEAD_SECONDS = 2 * 3600
 
 
 def _find_issue_in_report(report, issue_title):
@@ -1661,6 +1668,261 @@ def admin_partners_for_issue():
         })
     rows.sort(key=lambda r: r["next_available_at"])
     return jsonify({"partners": rows})
+
+
+def _find_assignment_pair(report_id, issue_title, partner_phone):
+    """Return (phone_key, report, issue, assignment) for the SP-owned
+    assignment, or (None, None, None, None)."""
+    with _reports_lock:
+        for ph, reports in _reports_data.items():
+            for r in reports:
+                if r.get("id") != report_id:
+                    continue
+                assignments = r.get("assignments") or {}
+                a = assignments.get(issue_title)
+                if not a or a.get("partner_phone") != partner_phone:
+                    return None, None, None, None
+                issue = _find_issue_in_report(r, issue_title)
+                return ph, r, issue, a
+    return None, None, None, None
+
+
+def _auto_approve_at(scheduled_for):
+    try:
+        return float(scheduled_for) - AUTO_APPROVE_LEAD_SECONDS
+    except (TypeError, ValueError):
+        return None
+
+
+@app.route("/partner/assigned_reports")
+def partner_assigned_reports():
+    if not session.get("otp_verified") or not session.get("partner"):
+        return jsonify({"error": "Service partner only"}), 403
+    phone = session.get("otp_phone")
+    out = []
+    with _reports_lock:
+        for ph, reports in _reports_data.items():
+            for r in reports:
+                assignments = r.get("assignments") or {}
+                mine = {t: a for t, a in assignments.items() if a.get("partner_phone") == phone}
+                if not mine:
+                    continue
+                # Build a slim report dict with only my-assignment context.
+                slim = _attach_reporter_info(r)
+                slim["my_assignments"] = mine
+                out.append(slim)
+    out.sort(key=lambda r: min(
+        (float(a.get("scheduled_for") or 0) for a in (r.get("my_assignments") or {}).values()),
+        default=0,
+    ))
+    return jsonify({"assignments": out})
+
+
+def _apply_assignment_history(report, assignment, entry):
+    history = assignment.setdefault("history", [])
+    history.append(entry)
+    _refresh_assigned_timeline(report)
+
+
+def _set_report_status_from_assignments(report):
+    """Roll up assignment statuses into the report-level status_label so
+    list views convey the latest SP action."""
+    assignments = (report.get("assignments") or {}).values()
+    if not assignments:
+        return
+    accepted = [a for a in assignments if a.get("status") == "accepted"]
+    denied = [a for a in assignments if a.get("status") == "denied"]
+    rescheduled = [a for a in assignments if a.get("status") == "rescheduled"]
+    if denied and not accepted:
+        report["status_label"] = "SP denied. Task will be assigned to new SP"
+    elif accepted:
+        report["status_label"] = "Accepted by service partner"
+    elif rescheduled:
+        report["status_label"] = "Rescheduled by service partner"
+
+
+@app.route("/partner/assignment/<report_id>/accept", methods=["POST"])
+def partner_accept(report_id):
+    if not session.get("partner"):
+        return jsonify({"error": "Service partner only"}), 403
+    phone = session.get("otp_phone")
+    partner = session.get("partner") or {}
+    data = request.get_json(silent=True) or {}
+    issue_title = (data.get("issue_title") or "").strip()
+    _, report, _, assignment = _find_assignment_pair(report_id, issue_title, phone)
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+    if assignment.get("status") == "denied":
+        return jsonify({"error": "Already denied"}), 400
+    now = time.time()
+    assignment["status"] = "accepted"
+    assignment["accepted_at"] = now
+    sp_name = partner.get("full_name", "")
+    _apply_assignment_history(report, assignment, {
+        "type": "accept", "sp_name": sp_name, "ts": now,
+    })
+    _set_report_status_from_assignments(report)
+    with _reports_lock:
+        _save_reports()
+    return jsonify({"ok": True, "assignment": assignment, "status_label": report.get("status_label", "")})
+
+
+@app.route("/partner/assignment/<report_id>/deny", methods=["POST"])
+def partner_deny(report_id):
+    if not session.get("partner"):
+        return jsonify({"error": "Service partner only"}), 403
+    phone = session.get("otp_phone")
+    partner = session.get("partner") or {}
+    data = request.get_json(silent=True) or {}
+    issue_title = (data.get("issue_title") or "").strip()
+    _, report, _, assignment = _find_assignment_pair(report_id, issue_title, phone)
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+    now = time.time()
+    assignment["status"] = "denied"
+    assignment["denied_at"] = now
+    assignment["auto_approve_at"] = _auto_approve_at(assignment.get("scheduled_for"))
+    sp_name = partner.get("full_name", "")
+    _apply_assignment_history(report, assignment, {
+        "type": "deny", "sp_name": sp_name, "ts": now,
+    })
+    # Release SP's slot since they're walking away.
+    _release_partner_slot(phone, assignment)
+    _set_report_status_from_assignments(report)
+    with _reports_lock:
+        _save_reports()
+    return jsonify({"ok": True, "assignment": assignment, "status_label": report.get("status_label", "")})
+
+
+@app.route("/partner/assignment/<report_id>/reschedule", methods=["POST"])
+def partner_reschedule(report_id):
+    if not session.get("partner"):
+        return jsonify({"error": "Service partner only"}), 403
+    phone = session.get("otp_phone")
+    partner = session.get("partner") or {}
+    data = request.get_json(silent=True) or {}
+    issue_title = (data.get("issue_title") or "").strip()
+    date_str = (data.get("date") or "").strip()
+    time_slot = (data.get("time_slot") or "").strip()
+    if not date_str or not time_slot:
+        return jsonify({"error": "date and time_slot required"}), 400
+    slot_range = PARTNER_TIME_SLOT_RANGES.get(time_slot)
+    if not slot_range:
+        return jsonify({"error": "Invalid time slot"}), 400
+    try:
+        new_dt = datetime.strptime(date_str, "%Y-%m-%d").replace(hour=slot_range[0])
+    except ValueError:
+        return jsonify({"error": "Invalid date format (use YYYY-MM-DD)"}), 400
+    new_epoch = new_dt.timestamp()
+    if new_epoch <= time.time():
+        return jsonify({"error": "Pick a future date/slot"}), 400
+
+    _, report, _, assignment = _find_assignment_pair(report_id, issue_title, phone)
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+    count = int(assignment.get("reschedule_count") or 0)
+    if count >= MAX_RESCHEDULES:
+        return jsonify({"error": "Reschedule limit reached"}), 400
+
+    duration_hours = float(assignment.get("duration_hours") or 4)
+    old_scheduled = assignment.get("scheduled_for")
+
+    # Release old window; reserve new one at the end of the partner's queue
+    # but no earlier than the requested slot start.
+    with _partners_lock:
+        live = _partners_data.get(phone) or {}
+        try:
+            current_next = float(live.get("next_available_at") or 0)
+        except (TypeError, ValueError):
+            current_next = 0
+        # Roll back if this assignment was the latest commitment.
+        old_end = float(old_scheduled or 0) + float(assignment.get("duration_hours") or 0) * 3600
+        if current_next and abs(current_next - old_end) < 60:
+            current_next = float(old_scheduled or current_next)
+        scheduled_for = max(new_epoch, current_next, time.time())
+        live["next_available_at"] = scheduled_for + duration_hours * 3600
+        _partners_data[phone] = live
+        _save_partners()
+
+    sp_name = partner.get("full_name", "")
+    now = time.time()
+    assignment["scheduled_for"] = scheduled_for
+    assignment["scheduled_for_label"] = _next_available_label(scheduled_for)
+    assignment["reschedule_count"] = count + 1
+    assignment["status"] = "rescheduled"
+    # Per spec: a reschedule submit also counts as acceptance — so include
+    # an accepted_at timestamp without flipping status to accepted (the UI
+    # uses status == "rescheduled" to decide which buttons to hide).
+    assignment["accepted_at"] = now
+    assignment["auto_approve_at"] = None
+    _apply_assignment_history(report, assignment, {
+        "type": "reschedule",
+        "sp_name": sp_name,
+        "ts": now,
+        "new_scheduled_for": scheduled_for,
+        "new_scheduled_for_label": assignment["scheduled_for_label"],
+        "time_slot": time_slot,
+    })
+    _set_report_status_from_assignments(report)
+    with _reports_lock:
+        _save_reports()
+    return jsonify({"ok": True, "assignment": assignment, "status_label": report.get("status_label", "")})
+
+
+def _auto_approve_denied_assignments():
+    """Background worker: when an SP denial has crossed its auto_approve_at,
+    re-run the assign flow to pick a fresh SP (excluding the original one)."""
+    while True:
+        try:
+            now = time.time()
+            todo = []
+            with _reports_lock:
+                for ph, reports in _reports_data.items():
+                    for r in reports:
+                        for title, a in (r.get("assignments") or {}).items():
+                            if a.get("status") != "denied":
+                                continue
+                            t = a.get("auto_approve_at")
+                            if not t or float(t) > now:
+                                continue
+                            todo.append((r, title, a))
+            for r, title, a in todo:
+                issue = _find_issue_in_report(r, title)
+                if not issue:
+                    continue
+                category = issue.get("category") or ""
+                duration_hours = float(a.get("duration_hours") or _estimate_duration_hours(issue))
+                # Exclude the partner who denied this exact assignment.
+                exclude_phone = a.get("partner_phone")
+                candidates = [
+                    (ph, p) for (ph, p) in _candidate_partners(category)
+                    if ph != exclude_phone
+                ]
+                if not candidates:
+                    a["auto_approve_attempted_at"] = now
+                    a["auto_approve_failed"] = "No alternative service partner available"
+                    continue
+                ph, picked = candidates[0]
+                assignment = _assign_partner(r, issue, ph, picked, duration_hours, "auto-reassign")
+                assignment["auto_reassigned"] = True
+                history = assignment.setdefault("history", [])
+                history.append({
+                    "type": "auto_reassign", "sp_name": picked.get("full_name", ""),
+                    "ts": now, "reason": "previous SP denied; auto reassign 2h before slot",
+                })
+                if not r.get("timeline"):
+                    r["timeline"] = _build_timeline(float(r.get("created_at") or time.time()))
+                _refresh_assigned_timeline(r)
+                _set_report_status_from_assignments(r)
+            if todo:
+                with _reports_lock:
+                    _save_reports()
+        except Exception:
+            pass
+        time.sleep(60)
+
+
+threading.Thread(target=_auto_approve_denied_assignments, daemon=True).start()
 
 
 @app.route("/admin/addresses")
