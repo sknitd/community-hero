@@ -3385,6 +3385,160 @@ def explore_stats():
     })
 
 
+def _city_from_address(addr: str) -> str:
+    parts = [p.strip() for p in (addr or "").split(",") if p.strip()]
+    return parts[-1] if parts else ""
+
+
+def _short_name(full: str) -> str:
+    parts = (full or "").strip().split()
+    if not parts:
+        return "Reporter"
+    if len(parts) == 1:
+        return parts[0]
+    return f"{parts[0]} {parts[-1][0].upper()}."
+
+
+HERO_BADGES = [
+    {
+        "id": "first_reporter",
+        "name": "First Reporter",
+        "icon": "🚀",
+        "desc": "Submit your first issue",
+    },
+    {
+        "id": "lens_hero",
+        "name": "Lens Hero",
+        "icon": "📸",
+        "desc": "Submit 5 photo reports",
+    },
+    {
+        "id": "road_warrior",
+        "name": "Road Warrior",
+        "icon": "🛣",
+        "desc": "Report 10 road issues",
+    },
+    {
+        "id": "city_hero",
+        "name": "City Hero",
+        "icon": "🏆",
+        "desc": "Top 3 in city ranking",
+    },
+]
+
+
+def _badges_for(phone: str, reports: list, rank: int | None) -> list[str]:
+    earned = []
+    if reports:
+        earned.append("first_reporter")
+    photo_reports = sum(1 for r in reports if int(r.get("evidence_count") or 0) > 0 or (r.get("evidence_files") or []))
+    if photo_reports >= 5:
+        earned.append("lens_hero")
+    road_count = 0
+    for r in reports:
+        for issue in r.get("issues") or []:
+            cat = (issue.get("category") or "").lower()
+            title = (issue.get("title") or "").lower()
+            if "road" in cat or "pothole" in cat or "road" in title or "pothole" in title:
+                road_count += 1
+    if road_count >= 10:
+        earned.append("road_warrior")
+    if rank is not None and rank <= 3:
+        earned.append("city_hero")
+    return earned
+
+
+@app.route("/explore/heroes")
+def explore_heroes():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    me_phone = session.get("otp_phone")
+    leaderboard = []
+    with _reports_lock:
+        all_data = {p: list(rs) for p, rs in _reports_data.items()}
+    with _reporters_lock:
+        reporters_snapshot = dict(_reporters_data)
+    for phone, reports in all_data.items():
+        if not reports:
+            continue
+        points = sum(int(r.get("points", 0)) for r in reports)
+        if points <= 0:
+            continue
+        reporter = reporters_snapshot.get(phone, {})
+        full = reporter.get("full_name") or "Reporter"
+        # primary location for this contributor
+        locs = []
+        for r in reports:
+            for issue in r.get("issues") or []:
+                loc = (issue.get("location") or "").strip()
+                if loc:
+                    locs.append(loc)
+        if not locs and reporter.get("address"):
+            locs.append(reporter["address"])
+        primary_loc = ""
+        if locs:
+            scored = sorted(((sum(len(_area_words(loc) & _area_words(o)) for o in locs), loc) for loc in locs), reverse=True)
+            primary_loc = scored[0][1]
+        leaderboard.append({
+            "phone": phone,
+            "name": _short_name(full),
+            "full_name": full,
+            "area": _area_token(primary_loc),
+            "city": _city_from_address(primary_loc) or _city_from_address(reporter.get("address", "")),
+            "reports": len(reports),
+            "points": points,
+        })
+    leaderboard.sort(key=lambda r: (-r["points"], r["name"]))
+    for i, row in enumerate(leaderboard):
+        row["rank"] = i + 1
+
+    my_row = next((r for r in leaderboard if r["phone"] == me_phone), None)
+    me_reports = all_data.get(me_phone, [])
+    me_reporter = reporters_snapshot.get(me_phone, {})
+    me_full = me_reporter.get("full_name") or "You"
+    me_locs = []
+    for r in me_reports:
+        for issue in r.get("issues") or []:
+            loc = (issue.get("location") or "").strip()
+            if loc:
+                me_locs.append(loc)
+    if not me_locs and me_reporter.get("address"):
+        me_locs.append(me_reporter["address"])
+    me_primary = ""
+    if me_locs:
+        scored = sorted(((sum(len(_area_words(loc) & _area_words(o)) for o in me_locs), loc) for loc in me_locs), reverse=True)
+        me_primary = scored[0][1]
+    me_points = sum(int(r.get("points", 0)) for r in me_reports)
+    me_rank = my_row["rank"] if my_row else None
+    me_badges = _badges_for(me_phone, me_reports, me_rank)
+    profile = {
+        "name": _short_name(me_full),
+        "full_name": me_full,
+        "area": _area_token(me_primary),
+        "city": _city_from_address(me_primary) or _city_from_address(me_reporter.get("address", "")),
+        "points": me_points,
+        "reports": len(me_reports),
+        "rank": me_rank,
+        "scope": "City",
+        "earned_badges": me_badges,
+    }
+
+    # Strip phone before returning leaderboard
+    public_board = [
+        {k: v for k, v in row.items() if k != "phone"}
+        for row in leaderboard[:25]
+    ]
+    badges_payload = [
+        {**b, "earned": b["id"] in me_badges}
+        for b in HERO_BADGES
+    ]
+    return jsonify({
+        "profile": profile,
+        "leaderboard": public_board,
+        "badges": badges_payload,
+    })
+
+
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
