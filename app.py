@@ -9,6 +9,7 @@ import threading
 import urllib.request
 import urllib.parse
 import urllib.error
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import cv2
@@ -230,6 +231,178 @@ _load_partners()
 
 SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 
+PARTNER_TIME_SLOT_RANGES = {
+    "Morning 8 AM - 12 PM": (8, 12),
+    "Afternoon 12 PM - 4 PM": (12, 16),
+    "Evening 4 PM - 8 PM": (16, 20),
+    "Full day 8 AM - 8 PM": (8, 20),
+}
+WEEKDAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+
+def _partner_slot_ranges(time_slots):
+    out = []
+    for s in time_slots or []:
+        rng = PARTNER_TIME_SLOT_RANGES.get(s)
+        if rng:
+            out.append(rng)
+    out.sort()
+    # merge overlapping
+    merged = []
+    for r in out:
+        if merged and r[0] <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], r[1]))
+        else:
+            merged.append(r)
+    return merged
+
+
+def _snap_to_partner_slot(start_epoch, weekdays, time_slots):
+    """Return next epoch >= start_epoch that falls inside one of the partner's
+    allowed weekday + time-slot windows. If we can't snap (no availability),
+    return the original epoch."""
+    valid_days = {d for d in (weekdays or []) if d in WEEKDAY_ABBR}
+    ranges = _partner_slot_ranges(time_slots)
+    if not valid_days or not ranges:
+        return start_epoch
+    dt = datetime.fromtimestamp(start_epoch).replace(second=0, microsecond=0)
+    for _ in range(60):
+        wd = WEEKDAY_ABBR[dt.weekday()]
+        if wd in valid_days:
+            for sh, eh in ranges:
+                slot_start = dt.replace(hour=sh, minute=0, second=0, microsecond=0)
+                slot_end = dt.replace(hour=eh, minute=0, second=0, microsecond=0)
+                if dt <= slot_start:
+                    return slot_start.timestamp()
+                if dt < slot_end:
+                    return dt.timestamp()
+        dt = (dt + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return start_epoch
+
+
+def _slot_label_for_hour(hour):
+    for label, (sh, eh) in PARTNER_TIME_SLOT_RANGES.items():
+        if sh <= hour < eh:
+            return label
+    return ""
+
+
+def _next_available_label(epoch):
+    if not epoch:
+        return ""
+    try:
+        dt = datetime.fromtimestamp(float(epoch))
+    except (TypeError, ValueError):
+        return ""
+    slot = _slot_label_for_hour(dt.hour)
+    base = dt.strftime("%a, %d %b %Y · %I:%M %p").replace(" 0", " ")
+    return f"{base}" + (f" ({slot})" if slot else "")
+
+
+def _category_match(issue_category, partner_categories):
+    """Return True if any word (3+ chars) overlaps between the issue category
+    and any of the partner's categories."""
+    if not issue_category or not partner_categories:
+        return False
+    a = {w for w in re.findall(r"[a-z]{3,}", issue_category.lower())}
+    if not a:
+        return False
+    for pc in partner_categories:
+        b = {w for w in re.findall(r"[a-z]{3,}", (pc or "").lower())}
+        if a & b:
+            return True
+    return False
+
+
+def _partner_next_available_at(partner, phone=None):
+    val = partner.get("next_available_at")
+    if not val:
+        # Initialize lazily to "now" so legacy partners are usable.
+        val = time.time()
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return time.time()
+
+
+def _estimate_duration_hours(issue):
+    """Ask Gemini to estimate how many hours fixing this issue takes. Falls
+    back to severity-based defaults if the model fails."""
+    severity = (issue.get("severity") or "medium").lower()
+    fallback = {"low": 2, "medium": 4, "high": 8}.get(severity, 4)
+    try:
+        prompt = (
+            "Estimate the number of working hours a single service partner "
+            "would need to fix this residential-society issue. Return ONLY a "
+            'JSON object {"hours": <number>} with hours between 1 and 24.\n\n'
+            f"Title: {issue.get('title') or ''}\n"
+            f"Category: {issue.get('category') or ''}\n"
+            f"Severity: {severity}\n"
+            f"Detail: {issue.get('detail') or ''}\n"
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                response_mime_type="application/json",
+            ),
+        )
+        data = json.loads(response.text)
+        hours = float(data.get("hours", fallback))
+        if not (0.5 <= hours <= 48):
+            hours = fallback
+        return hours
+    except Exception:
+        return fallback
+
+
+def _assignment_dict(phone, partner, scheduled_for, duration_hours, admin_name):
+    return {
+        "partner_phone": phone,
+        "partner_name": partner.get("full_name", ""),
+        "scheduled_for": scheduled_for,
+        "duration_hours": duration_hours,
+        "scheduled_for_label": _next_available_label(scheduled_for),
+        "admin_name": admin_name,
+        "ts": time.time(),
+    }
+
+
+def _find_issue_in_report(report, issue_title):
+    for it in report.get("issues") or []:
+        title = it.get("title") or it.get("category") or "Issue"
+        if title == issue_title:
+            return it
+    return None
+
+
+def _refresh_assigned_timeline(report):
+    """Ensure timeline 'assigned' step reflects current assignments."""
+    timeline = report.get("timeline") or []
+    if not timeline:
+        return
+    assignments = report.get("assignments") or {}
+    any_assigned = bool(assignments)
+    earliest_ts = None
+    for a in assignments.values():
+        try:
+            ts = float(a.get("scheduled_for") or 0)
+        except (TypeError, ValueError):
+            ts = 0
+        if ts and (earliest_ts is None or ts < earliest_ts):
+            earliest_ts = ts
+    decided = bool(report.get("approved_issues") or report.get("denied_issues"))
+    for step in timeline:
+        if step.get("step") == "assigned":
+            step["done"] = any_assigned
+            step["current"] = decided and not any_assigned
+            step["ts"] = earliest_ts if any_assigned else None
+        elif step.get("step") == "approval":
+            if decided:
+                step["done"] = True
+                step["current"] = False
+
 
 def _partner_doc_url(phone, stored_filename):
     if not phone or not stored_filename:
@@ -259,6 +432,11 @@ def _with_partner_experience(partner, phone=None):
             item["url"] = _partner_doc_url(phone, item.get("stored_filename"))
         docs.append(item)
     out["verification_documents"] = docs
+    nxt = out.get("next_available_at")
+    if not nxt:
+        nxt = out.get("created_at") or time.time()
+        out["next_available_at"] = nxt
+    out["next_available_label"] = _next_available_label(nxt)
     return out
 
 
@@ -984,6 +1162,7 @@ def partner_signup():
         },
         "verification_documents": saved_docs,
         "supervising_admin": supervising_admin,
+        "next_available_at": _snap_to_partner_slot(created_at, cleaned_days, cleaned_slots),
     }
     display_partner = _with_partner_experience(partner, phone)
     session["partner"] = display_partner
@@ -1219,6 +1398,219 @@ def admin_deny_issue(report_id):
     with _reports_lock:
         _save_reports()
     return jsonify({"ok": True, "entry": entry, "denied_issues": denials})
+
+
+def _ensure_assignments_dict(report):
+    if not isinstance(report.get("assignments"), dict):
+        report["assignments"] = {}
+    return report["assignments"]
+
+
+def _release_partner_slot(partner_phone, assignment):
+    """Roll back a partner's next_available_at by the duration of an
+    assignment that is being replaced. Best-effort — if their slot has
+    moved further since, we keep that."""
+    if not partner_phone or not assignment:
+        return
+    with _partners_lock:
+        p = _partners_data.get(partner_phone)
+        if not p:
+            return
+        try:
+            duration_h = float(assignment.get("duration_hours") or 0)
+        except (TypeError, ValueError):
+            duration_h = 0
+        try:
+            scheduled = float(assignment.get("scheduled_for") or 0)
+        except (TypeError, ValueError):
+            scheduled = 0
+        current_next = float(p.get("next_available_at") or 0)
+        released_end = scheduled + duration_h * 3600
+        # If the freed end was the latest commitment, roll back.
+        if current_next and abs(current_next - released_end) < 60:
+            p["next_available_at"] = scheduled
+            _save_partners()
+
+
+def _candidate_partners(issue_category):
+    """All partners whose categories match the issue, sorted by earliest
+    next_available_at."""
+    candidates = []
+    with _partners_lock:
+        for ph, p in _partners_data.items():
+            if not _category_match(issue_category, p.get("categories")):
+                continue
+            candidates.append((ph, dict(p)))
+    candidates.sort(key=lambda x: float(x[1].get("next_available_at") or 0))
+    return candidates
+
+
+def _assign_partner(report, issue, partner_phone, partner, duration_hours, admin_name):
+    """Atomically reserve the partner's next slot and write the assignment to
+    the report. Returns the assignment dict."""
+    with _partners_lock:
+        live = _partners_data.get(partner_phone) or partner
+        current_next = float(live.get("next_available_at") or time.time())
+        weekdays = (live.get("availability") or {}).get("weekdays") or []
+        time_slots = (live.get("availability") or {}).get("time_slots") or []
+        start_floor = max(current_next, time.time())
+        scheduled_for = _snap_to_partner_slot(start_floor, weekdays, time_slots)
+        live["next_available_at"] = scheduled_for + duration_hours * 3600
+        _partners_data[partner_phone] = live
+        _save_partners()
+    assignment = _assignment_dict(partner_phone, live, scheduled_for, duration_hours, admin_name)
+    issue_title = issue.get("title") or issue.get("category") or "Issue"
+    assignments = _ensure_assignments_dict(report)
+    assignments[issue_title] = assignment
+    return assignment
+
+
+@app.route("/admin/reports/<report_id>/approve_issue", methods=["POST"])
+def admin_approve_issue(report_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Admin only"}), 403
+    admin = session.get("admin") or {}
+    data = request.get_json(silent=True) or {}
+    issue_title = (data.get("issue_title") or "").strip()
+    if not issue_title:
+        return jsonify({"error": "issue_title required"}), 400
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+    issue = _find_issue_in_report(report, issue_title)
+    if not issue:
+        return jsonify({"error": "Issue not found in report"}), 404
+
+    approved = report.setdefault("approved_issues", [])
+    existing_approval = next((a for a in approved if a.get("issue_title") == issue_title), None)
+    existing_assignment = (report.get("assignments") or {}).get(issue_title)
+    if existing_approval and existing_assignment:
+        return jsonify({
+            "ok": True,
+            "already": True,
+            "assignment": existing_assignment,
+            "approved_issues": approved,
+        })
+
+    duration_hours = _estimate_duration_hours(issue)
+    candidates = _candidate_partners(issue.get("category") or "")
+    no_partner = False
+    assignment = None
+    if not candidates:
+        no_partner = True
+    else:
+        ph, partner = candidates[0]
+        assignment = _assign_partner(
+            report, issue, ph, partner, duration_hours, admin.get("full_name", "")
+        )
+
+    if not existing_approval:
+        approved.append({
+            "issue_title": issue_title,
+            "admin_name": admin.get("full_name", ""),
+            "ts": time.time(),
+            "duration_hours": duration_hours,
+        })
+
+    if not report.get("timeline"):
+        report["timeline"] = _build_timeline(float(report.get("created_at") or time.time()))
+    _refresh_assigned_timeline(report)
+    with _reports_lock:
+        _save_reports()
+    return jsonify({
+        "ok": True,
+        "no_partner": no_partner,
+        "assignment": assignment,
+        "approved_issues": approved,
+        "assignments": report.get("assignments") or {},
+        "timeline": report.get("timeline") or [],
+        "duration_hours": duration_hours,
+    })
+
+
+@app.route("/admin/reports/<report_id>/change_assignment", methods=["POST"])
+def admin_change_assignment(report_id):
+    if not session.get("admin"):
+        return jsonify({"error": "Admin only"}), 403
+    admin = session.get("admin") or {}
+    data = request.get_json(silent=True) or {}
+    issue_title = (data.get("issue_title") or "").strip()
+    new_partner_phone = (data.get("partner_phone") or "").strip()
+    if not issue_title or not new_partner_phone:
+        return jsonify({"error": "issue_title and partner_phone required"}), 400
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+    issue = _find_issue_in_report(report, issue_title)
+    if not issue:
+        return jsonify({"error": "Issue not found"}), 404
+    assignments = _ensure_assignments_dict(report)
+    prev = assignments.get(issue_title)
+    if prev and prev.get("partner_phone") == new_partner_phone:
+        return jsonify({"ok": True, "unchanged": True, "assignment": prev})
+    with _partners_lock:
+        new_partner = _partners_data.get(new_partner_phone)
+    if not new_partner:
+        return jsonify({"error": "Partner not found"}), 404
+    if not _category_match(issue.get("category") or "", new_partner.get("categories")):
+        return jsonify({"error": "Partner does not handle this category"}), 400
+
+    duration_hours = (prev or {}).get("duration_hours") or _estimate_duration_hours(issue)
+    try:
+        duration_hours = float(duration_hours)
+    except (TypeError, ValueError):
+        duration_hours = 4
+
+    if prev:
+        _release_partner_slot(prev.get("partner_phone"), prev)
+
+    assignment = _assign_partner(
+        report, issue, new_partner_phone, new_partner, duration_hours,
+        admin.get("full_name", ""),
+    )
+    if not report.get("timeline"):
+        report["timeline"] = _build_timeline(float(report.get("created_at") or time.time()))
+    _refresh_assigned_timeline(report)
+    with _reports_lock:
+        _save_reports()
+    return jsonify({
+        "ok": True,
+        "assignment": assignment,
+        "assignments": report.get("assignments") or {},
+        "timeline": report.get("timeline") or [],
+    })
+
+
+@app.route("/admin/partners_for_issue")
+def admin_partners_for_issue():
+    if not session.get("admin"):
+        return jsonify({"error": "Admin only"}), 403
+    category = (request.args.get("category") or "").strip()
+    q = (request.args.get("q") or "").strip().lower()
+    rows = []
+    with _partners_lock:
+        items = list(_partners_data.items())
+    for ph, p in items:
+        if category and not _category_match(category, p.get("categories")):
+            continue
+        if q:
+            blob = " ".join([
+                p.get("full_name", ""),
+                " ".join(p.get("categories") or []),
+            ]).lower()
+            if q not in blob:
+                continue
+        nxt = float(p.get("next_available_at") or p.get("created_at") or time.time())
+        rows.append({
+            "phone": ph,
+            "full_name": p.get("full_name", ""),
+            "categories": p.get("categories") or [],
+            "next_available_at": nxt,
+            "next_available_label": _next_available_label(nxt),
+            "availability": p.get("availability") or {},
+        })
+    rows.sort(key=lambda r: r["next_available_at"])
+    return jsonify({"partners": rows})
 
 
 @app.route("/admin/addresses")
