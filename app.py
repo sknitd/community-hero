@@ -2456,44 +2456,74 @@ def _run_describe_analyse(job_id: str, description: str, saved_files: list, tmp_
                     if annotate_issue_image(out_path, issue.get("title") or "", issue.get("detail") or "", ann_path):
                         issue["annotated_url"] = f"/static/frames/report/{job_id}/{ann_name}"
 
-        # Duplicate detection against this user's existing submitted issues.
+        # Duplicate detection against previously submitted issues from all
+        # reporters in the same or nearby location.
         with _analysis_lock:
             job_meta = _analysis_jobs.get(job_id) or {}
         phone = job_meta.get("phone")
         with _reports_lock:
-            existing_reports = list(_reports_data.get(phone, [])) if phone else []
+            existing_reports = [
+                r for reports in _reports_data.values() for r in reports
+            ]
         # cache hash for previously-stored image-issues
         existing_records = []
         for r in existing_reports:
+            reporter = _reporters_data.get(r.get("phone") or "", {})
             for prev in (r.get("issues") or []):
+                prev_title = _issue_title(prev)
                 text = ((prev.get("title") or "") + " " + (prev.get("detail") or "")).strip()
+                loc = (prev.get("location") or "").strip()
                 if prev.get("media_kind") == "image":
                     p = _url_to_path(prev.get("annotated_url") or prev.get("media_url"))
                     h = image_phash(p)
                 else:
                     h = None
+                avg_tol, user_tol, tol_count = _issue_tolerance_stats(r, prev_title, phone)
                 existing_records.append({
                     "report_id": r.get("id"),
+                    "issue_title": prev_title,
+                    "owner_phone": r.get("phone"),
+                    "reporter_name": reporter.get("full_name") or r.get("phone") or "the other user",
+                    "upvotes": len(((r.get("issue_votes") or {}).get(prev_title) or [])),
+                    "voted": phone in (((r.get("issue_votes") or {}).get(prev_title) or [])) if phone else False,
+                    "avg_tolerance": avg_tol,
+                    "user_tolerance": user_tol,
+                    "tolerance_count": tol_count,
                     "text": text,
+                    "location": loc,
                     "phash": h,
                     "kind": prev.get("media_kind"),
                 })
 
         for i, issue in enumerate(issues):
             issue_text = ((issue.get("title") or "") + " " + (issue.get("detail") or "")).strip()
+            issue_loc = (issue.get("location") or "").strip()
             new_path = _url_to_path(issue.get("annotated_url") or issue.get("media_url"))
             new_hash = image_phash(new_path) if issue.get("media_kind") == "image" else None
-            dup_report = None
+            dup = None
             for rec in existing_records:
+                if issue_loc and rec["location"] and not _location_overlap(issue_loc, rec["location"], min_words=1):
+                    continue
                 if rec["text"] and text_jaccard(issue_text, rec["text"]) >= 0.55:
-                    dup_report = rec["report_id"]
+                    dup = rec
                     break
                 if new_hash and rec["phash"] and hamming_distance(new_hash, rec["phash"]) <= 10:
-                    dup_report = rec["report_id"]
+                    dup = rec
                     break
-            if dup_report:
+            issue["source_issue_id"] = f"{job_id.upper()}-I{i + 1}"
+            if dup:
                 issue["is_duplicate"] = True
-                issue["duplicate_of_report_id"] = dup_report
+                issue["duplicate_of_report_id"] = dup["report_id"]
+                issue["duplicate_issue_title"] = dup.get("issue_title")
+                issue["duplicate_owner_phone"] = dup.get("owner_phone")
+                issue["duplicate_reporter_name"] = dup.get("reporter_name") or "the other user"
+                issue["duplicate_upvotes"] = dup.get("upvotes") or 0
+                issue["duplicate_voted"] = bool(dup.get("voted"))
+                issue["duplicate_avg_tolerance"] = dup.get("avg_tolerance")
+                issue["duplicate_user_tolerance"] = dup.get("user_tolerance")
+                issue["duplicate_tolerance_count"] = dup.get("tolerance_count") or 0
+                issue["duplicate_can_interact"] = bool(phone and dup.get("owner_phone") != phone)
+                issue["duplicate_can_add_tolerance"] = dup.get("user_tolerance") is None
             else:
                 issue["is_duplicate"] = False
 
@@ -2714,6 +2744,7 @@ def submit_report():
 
     description = (request.form.get("description") or "").strip()
     evidence_files = request.files.getlist("evidence")
+    analysis_job_id = (request.form.get("analysis_job_id") or "").strip()
     selected_issues_raw = request.form.get("selected_issues") or "[]"
     try:
         selected_issues = json.loads(selected_issues_raw)
@@ -2736,12 +2767,29 @@ def submit_report():
 
     phone = session.get("otp_phone")
     running_job_id = _get_running_job_for_phone(phone)
+    if running_job_id:
+        return jsonify({"error": "AI analysis is still running. Please wait until it is complete."}), 409
+    if not analysis_job_id:
+        return jsonify({"error": "Run AI analysis before submitting this report."}), 400
+    with _analysis_lock:
+        job = _analysis_jobs.get(analysis_job_id)
+    if not job or job.get("phone") != phone:
+        return jsonify({"error": "Run AI analysis before submitting this report."}), 400
+    if job.get("status") == "running":
+        return jsonify({"error": "AI analysis is still running. Please wait until it is complete."}), 409
+    if job.get("status") != "done":
+        return jsonify({"error": job.get("error") or "AI analysis did not complete successfully."}), 400
+    job_issues = ((job.get("result") or {}).get("issues") or [])
+    if not job_issues:
+        return jsonify({"error": "No issues were found in the AI analysis, so this report cannot be submitted."}), 400
+    if not selected_issues:
+        return jsonify({"error": "Select at least one non-duplicate issue before submitting."}), 400
 
     # Award points and persist the report.
     awarded = 0
     enriched_issues = []
     for it in selected_issues:
-        pts = _points_for(it.get("severity"))
+        pts = 0 if it.get("is_duplicate") else _points_for(it.get("severity"))
         awarded += pts
         enriched = dict(it)
         enriched["points"] = pts
@@ -2757,7 +2805,7 @@ def submit_report():
         "evidence_files": saved,
         "issues": enriched_issues,
         "points": awarded,
-        "analysis_job_id": running_job_id,
+        "analysis_job_id": analysis_job_id,
         "status": "waiting_for_approval",
         "status_label": "Waiting for approval from admin",
         "timeline": _build_timeline(now_ts),
@@ -2776,8 +2824,8 @@ def submit_report():
         "selected_issues": enriched_issues,
         "points_awarded": awarded,
         "total_points": _total_points_for(phone),
-        "analysis_running": running_job_id is not None,
-        "analysis_job_id": running_job_id,
+        "analysis_running": False,
+        "analysis_job_id": analysis_job_id,
     })
 
 
@@ -2803,6 +2851,146 @@ def _backfill_admin_phones(reports):
                 a["admin_phone"] = ph
 
 
+def _issue_title(issue):
+    return (issue or {}).get("title") or (issue or {}).get("category") or "Issue"
+
+
+def _feed_category(issue):
+    text = f"{(issue or {}).get('category') or ''} {_issue_title(issue)} {(issue or {}).get('detail') or ''}".lower()
+    if any(w in text for w in ("waste", "garbage", "trash", "dump", "bin")):
+        return "Waste Disposal"
+    if any(w in text for w in ("water", "drain", "leak", "pipe", "sewage")):
+        return "Water & Drainage"
+    if any(w in text for w in ("light", "lamp", "streetlight", "street lighting")):
+        return "Street Lighting"
+    if any(w in text for w in ("road", "pothole", "footpath", "pavement", "traffic")):
+        return "Roads & Potholes"
+    if any(w in text for w in ("safety", "security", "guard", "cctv", "theft", "danger")):
+        return "Public Safety"
+    if any(w in text for w in ("park", "garden", "green", "bench", "tree")):
+        return "Parks & Greenery"
+    return "Infrastructure"
+
+
+def _reporter_primary_location(phone):
+    locations = []
+    for r in _reports_data.get(phone, []):
+        for issue in r.get("issues") or []:
+            loc = (issue.get("location") or "").strip()
+            if loc:
+                locations.append(loc)
+    if locations:
+        scored = []
+        for loc in locations:
+            words = _area_words(loc)
+            score = sum(len(words & _area_words(other)) for other in locations)
+            scored.append((score, loc))
+        scored.sort(reverse=True)
+        return scored[0][1]
+    rep = _reporters_data.get(phone) if phone else None
+    return (rep or {}).get("address", "")
+
+
+def _issue_feed_status(report, issue):
+    title = _issue_title(issue)
+    assignment = (report.get("assignments") or {}).get(title) or {}
+    approved = next((a for a in report.get("approved_issues") or [] if a.get("issue_title") == title), None)
+    denied = next((d for d in report.get("denied_issues") or [] if d.get("issue_title") == title), None)
+    st = (assignment.get("status") or "").lower()
+    if denied:
+        return "Declined", bool(approved)
+    if st == "completed" or assignment.get("ended_at"):
+        return "Resolved", True
+    if st == "in_progress" or assignment.get("started_at"):
+        return "In Progress", True
+    if st == "accepted":
+        return "Acknowledged", True
+    if assignment or approved:
+        return "Acknowledged", True
+    return "Reported", False
+
+
+def _issue_vote_bucket(report, title):
+    votes = report.setdefault("issue_votes", {})
+    bucket = votes.setdefault(title, [])
+    if not isinstance(bucket, list):
+        bucket = list(bucket) if bucket else []
+        votes[title] = bucket
+    return bucket
+
+
+def _issue_tolerance_bucket(report, title):
+    tolerances = report.setdefault("issue_tolerances", {})
+    bucket = tolerances.setdefault(title, [])
+    if not isinstance(bucket, list):
+        bucket = []
+        tolerances[title] = bucket
+    return bucket
+
+
+def _issue_tolerance_stats(report, title, phone=None):
+    bucket = ((report.get("issue_tolerances") or {}).get(title) or [])
+    vals = []
+    user_score = None
+    for row in bucket:
+        try:
+            score = float(row.get("score"))
+        except (TypeError, ValueError):
+            continue
+        score = max(0.0, min(100.0, score))
+        vals.append(score)
+        if phone and row.get("phone") == phone:
+            user_score = score
+    avg = round(sum(vals) / len(vals), 1) if vals else None
+    return avg, user_score, len(vals)
+
+
+def _feed_items_for(phone):
+    base_loc = _reporter_primary_location(phone)
+    rows = []
+    seq = 1
+    for owner_phone, reports in _reports_data.items():
+        for report in reports:
+            reporter = _reporters_data.get(report.get("phone") or owner_phone, {})
+            for idx, issue in enumerate(report.get("issues") or []):
+                title = _issue_title(issue)
+                votes = ((report.get("issue_votes") or {}).get(title) or [])
+                status, verified = _issue_feed_status(report, issue)
+                loc = issue.get("location") or reporter.get("address", "")
+                report_phone = report.get("phone") or owner_phone
+                is_owner = bool(phone and report_phone == phone)
+                avg_tol, user_tol, tol_count = _issue_tolerance_stats(report, title, phone)
+                source_id = f"{(report.get('analysis_job_id') or report.get('id') or 'issue').upper()}-I{idx + 1}"
+                row = {
+                    "id": source_id,
+                    "report_id": report.get("id", ""),
+                    "issue_title": title,
+                    "title": title,
+                    "location": loc,
+                    "category": issue.get("category") or "Uncategorized",
+                    "filter_category": _feed_category(issue),
+                    "priority": (issue.get("severity") or "medium").lower(),
+                    "status": status,
+                    "verified": verified,
+                    "created_at": report.get("created_at") or 0,
+                    "reporter_name": reporter.get("full_name") or report.get("phone") or "Reporter",
+                    "media_count": int(report.get("evidence_count") or len(report.get("evidence_files") or [])),
+                    "upvotes": max(0, len(votes)),
+                    "voted": phone in votes if phone else False,
+                    "is_owner": is_owner,
+                    "can_upvote": not is_owner,
+                    "avg_tolerance": avg_tol,
+                    "tolerance_count": tol_count,
+                    "user_tolerance": user_tol,
+                    "can_add_tolerance": user_tol is None,
+                    "near_score": len(_area_words(base_loc) & _area_words(loc)) if base_loc else 0,
+                }
+                rows.append(row)
+                seq += 1
+    nearby = [r for r in rows if r["near_score"] > 0]
+    return nearby or rows
+
+
 @app.route("/reports")
 def list_reports():
     if not session.get("otp_verified"):
@@ -2821,6 +3009,89 @@ def list_reports():
         "reports": reports,
         "total_points": sum(int(r.get("points", 0)) for r in reports),
         "categories": categories,
+    })
+
+
+@app.route("/explore/issues")
+def explore_issues():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    with _reports_lock:
+        items = _feed_items_for(phone)
+    items.sort(key=lambda x: x.get("created_at") or 0, reverse=True)
+    return jsonify({
+        "issues": items,
+        "total_points": _total_points_for(phone),
+        "categories": ADMIN_CATEGORIES,
+    })
+
+
+@app.route("/explore/issues/upvote", methods=["POST"])
+def explore_issue_upvote():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    data = request.get_json(silent=True) or {}
+    report_id = (data.get("report_id") or "").strip()
+    issue_title = (data.get("issue_title") or "").strip()
+    if not report_id or not issue_title:
+        return jsonify({"error": "report_id and issue_title required"}), 400
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Issue not found"}), 404
+    issue = _find_issue_in_report(report, issue_title)
+    if not issue:
+        return jsonify({"error": "Issue not found"}), 404
+    if report.get("phone") == phone:
+        return jsonify({"error": "You cannot upvote your own issue"}), 403
+    votes = _issue_vote_bucket(report, issue_title)
+    if phone in votes:
+        votes[:] = [p for p in votes if p != phone]
+        voted = False
+    else:
+        votes.append(phone)
+        voted = True
+    with _reports_lock:
+        _save_reports()
+    return jsonify({"ok": True, "upvotes": max(0, len(votes)), "voted": voted})
+
+
+@app.route("/explore/issues/tolerance", methods=["POST"])
+def explore_issue_tolerance():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    data = request.get_json(silent=True) or {}
+    report_id = (data.get("report_id") or "").strip()
+    issue_title = (data.get("issue_title") or "").strip()
+    try:
+        score = float(data.get("score"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Enter a tolerance score from 0 to 100"}), 400
+    if not (0 <= score <= 100):
+        return jsonify({"error": "Tolerance score must be from 0 to 100"}), 400
+    _, report = _find_report(report_id)
+    if not report or not _find_issue_in_report(report, issue_title):
+        return jsonify({"error": "Issue not found"}), 404
+    bucket = _issue_tolerance_bucket(report, issue_title)
+    if any(row.get("phone") == phone for row in bucket):
+        avg, user_score, count = _issue_tolerance_stats(report, issue_title, phone)
+        return jsonify({
+            "error": "You already submitted a tolerance score for this issue",
+            "avg_tolerance": avg,
+            "user_tolerance": user_score,
+            "tolerance_count": count,
+        }), 400
+    bucket.append({"phone": phone, "score": round(score, 1), "ts": time.time()})
+    with _reports_lock:
+        _save_reports()
+    avg, user_score, count = _issue_tolerance_stats(report, issue_title, phone)
+    return jsonify({
+        "ok": True,
+        "avg_tolerance": avg,
+        "user_tolerance": user_score,
+        "tolerance_count": count,
     })
 
 

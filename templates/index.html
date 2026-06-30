@@ -1863,6 +1863,332 @@
     .pts-badge.medium { background: #fef3c7; color: #92400e; }
     .pts-badge.low { background: #e0f2fe; color: #075985; }
 
+    /* Explore feed (screen 2c) */
+    .explore-shell {
+      min-height: calc(100vh - 96px);
+      padding: 4px 0 86px;
+    }
+    .explore-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 2px 0 18px;
+    }
+    .explore-head h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #163b70;
+      font-weight: 850;
+    }
+    .explore-sub {
+      margin: 6px 0 0;
+      color: #62769b;
+      font-size: 13px;
+    }
+    .explore-reward {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .explore-refresh {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #dbe3f0;
+      border-radius: 12px;
+      background: #fff;
+      color: #173f75;
+      font-size: 18px;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 6px 18px rgba(31, 74, 118, .06);
+    }
+    .explore-controls {
+      display: grid;
+      grid-template-columns: 1fr 154px;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .explore-search,
+    .explore-sort {
+      height: 42px;
+      border: 1px solid #dbe3f0;
+      border-radius: 10px;
+      background: #fff;
+      color: #173f75;
+      font: inherit;
+      font-size: 13.5px;
+      outline: none;
+    }
+    .explore-search {
+      padding: 0 14px;
+    }
+    .explore-search:focus,
+    .explore-sort:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(47, 92, 255, .12);
+    }
+    .explore-sort {
+      padding: 0 12px;
+      cursor: pointer;
+    }
+    .explore-cats {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .explore-cats::-webkit-scrollbar { display: none; }
+    .explore-cat {
+      border: 1px solid #dbe3f0;
+      background: #fff;
+      color: #334155;
+      border-radius: 999px;
+      padding: 8px 15px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .explore-cat.active {
+      background: #173f75;
+      color: #fff;
+      border-color: #173f75;
+    }
+    .explore-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .feed-card {
+      display: grid;
+      grid-template-columns: 1fr 48px;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid #dfe7f2;
+      border-radius: 12px;
+      padding: 16px 14px;
+      box-shadow: 0 6px 18px rgba(31, 74, 118, .04);
+    }
+    .feed-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .feed-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 850;
+      border: 1px solid transparent;
+      line-height: 1;
+    }
+    .feed-pill.priority.high { color:#b42318; background:#fee4e2; border-color:#fda29b; }
+    .feed-pill.priority.medium { color:#b45309; background:#ffedd5; border-color:#fdba74; }
+    .feed-pill.priority.low { color:#047857; background:#d1fae5; border-color:#a7f3d0; }
+    .feed-pill.status.reported { color:#c2410c; background:#ffedd5; border-color:#fdba74; }
+    .feed-pill.status.acknowledged { color:#1d4ed8; background:#dbeafe; border-color:#bfdbfe; }
+    .feed-pill.status.in-progress { color:#6d28d9; background:#ede9fe; border-color:#c4b5fd; }
+    .feed-pill.status.resolved { color:#166534; background:#dcfce7; border-color:#bbf7d0; }
+    .feed-pill.status.declined { color:#991b1b; background:#fee2e2; border-color:#fecaca; }
+    .feed-pill.verified { color:#166534; background:#e7f5ed; border-color:#a7cdb8; }
+    .feed-title {
+      color: #123b72;
+      font-size: 15.5px;
+      font-weight: 850;
+      margin: 0 0 6px;
+    }
+    .feed-meta,
+    .feed-foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: #62769b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .feed-divider {
+      height: 1px;
+      background: #edf1f7;
+      margin: 14px 0 10px;
+    }
+    .feed-id {
+      margin-left: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #8a9abb;
+    }
+    .vote-btn {
+      align-self: start;
+      border: 0;
+      border-radius: 10px;
+      background: #eef4ff;
+      color: #173f75;
+      min-height: 76px;
+      padding: 8px 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .vote-btn[disabled] {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+    .tip-wrap {
+      position: relative;
+      display: inline-flex;
+      align-self: start;
+    }
+    .tip-wrap > .vote-btn[disabled] { pointer-events: none; }
+    .tip-wrap::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+      background: #173f75;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.3;
+      padding: 6px 8px;
+      border-radius: 8px;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(15,33,67,0.2);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(2px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      z-index: 30;
+    }
+    .tip-wrap::before {
+      content: "";
+      position: absolute;
+      bottom: 100%;
+      right: 14px;
+      border: 5px solid transparent;
+      border-top-color: #173f75;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease;
+      z-index: 30;
+    }
+    .tip-wrap:hover::after,
+    .tip-wrap.show-tip::after {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .tip-wrap:hover::before,
+    .tip-wrap.show-tip::before { opacity: 1; }
+    .vote-btn.voted {
+      background: #dbeafe;
+      color: #1d4ed8;
+      box-shadow: inset 0 0 0 1.5px #93c5fd;
+    }
+    .vote-btn .arrow { font-size: 18px; line-height: 1; }
+    .vote-btn .count { font-size: 14px; }
+    .vote-btn .label {
+      color: #8a9abb;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .explore-empty {
+      background: #fff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 22px 16px;
+      color: #62769b;
+      text-align: center;
+      font-size: 13px;
+    }
+    .explore-soon {
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #62769b;
+      gap: 8px;
+    }
+    .explore-soon .icon {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 18px;
+      background: #eef4ff;
+      color: #173f75;
+      font-size: 28px;
+      font-weight: 900;
+    }
+    .explore-bottom {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: min(100%, 552px);
+      height: 72px;
+      background: #fff;
+      border-top: 1px solid #e5ebf4;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+      z-index: 1800;
+      box-shadow: 0 -10px 28px rgba(15, 23, 42, .08);
+    }
+    .explore-nav {
+      height: 100%;
+      border: 0;
+      background: transparent;
+      color: #8a9abb;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .explore-nav .ico { font-size: 20px; line-height: 1; }
+    .explore-nav.active { color: #173f75; }
+    .explore-nav.add {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: #1f5b9f;
+      color: #f59e0b;
+      justify-self: center;
+      box-shadow: 0 10px 24px rgba(31, 91, 159, .28);
+      font-size: 26px;
+    }
+    .explore-nav.add .ico { font-size: 28px; }
+    .explore-nav.add .txt { display: none; }
+    @media (max-width: 520px) {
+      .explore-controls { grid-template-columns: 1fr; }
+      .feed-card { grid-template-columns: 1fr 44px; padding: 14px 12px; }
+    }
+
     .dup-badge {
       background: rgba(239,68,68,.12);
       color: var(--high);
@@ -2280,6 +2606,25 @@
     </div>
   </div>
 
+  <!-- Issue tolerance dialog -->
+  <div id="toleranceModal" class="small-modal" style="z-index: 2650;">
+    <div class="small-dialog">
+      <h4 id="toleranceTitle">Issue tolerance level</h4>
+      <p id="toleranceSubtitle" style="margin:0 0 10px;color:var(--muted);font-size:12.5px;"></p>
+      <div class="field-label">
+        Tolerance score
+        <span title="How much disruption can you personally tolerate from this issue? Use 0 for not tolerable and 100 for fully tolerable.">ⓘ</span>
+      </div>
+      <input id="toleranceInput" type="number" min="0" max="100" step="0.1"
+             style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--input-bg);outline:none;font-family:inherit;" />
+      <div id="toleranceBanner" style="margin-top:8px;"></div>
+      <div class="actions">
+        <button class="cancel" id="toleranceCancel">Cancel</button>
+        <button class="ok" id="toleranceSubmit" disabled>Submit</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Start task modal -->
   <div id="startTaskModal" class="reports-modal" style="z-index: 2300;">
     <div class="reports-dialog">
@@ -2479,6 +2824,7 @@
     <div class="who" id="whoBox">
       <span class="verified-pill" id="whoText"></span>
       <span class="points-pill" id="pointsPill" style="display:none;">🪙 <span id="pointsValue">0</span></span>
+      <button id="topExploreBtn" type="button" class="reports-btn" style="display:none;">🌐 Explore</button>
       <button id="profileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
       <button id="adminProfileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
       <button id="partnerCalendarBtn" type="button" class="reports-btn" style="display:none;">🗓 My calendar</button>
@@ -2877,10 +3223,11 @@
         <div class="card-body">
           <div class="head-row">
             <div class="avatar">R</div>
-            <div>
+            <div style="flex:1;">
               <h2>Report an issue</h2>
               <p>Add evidence and describe what's wrong</p>
             </div>
+            <button id="exploreBtn" type="button" class="reports-btn">Explore</button>
           </div>
 
           <div class="field">
@@ -2920,9 +3267,58 @@
         </div>
       </div>
     </section>
+
+    <!-- ============ SCREEN 2c: ISSUE FEED ============ -->
+    <section id="exploreView" class="view">
+      <div class="explore-shell">
+        <div id="exploreFeedPanel">
+          <div class="explore-head">
+            <div>
+              <h2>Issue Feed</h2>
+              <p class="explore-sub" id="exploreSub">Loading active reports in your area</p>
+              <div class="explore-reward">🏆 <span id="explorePoints">0</span> reward points</div>
+            </div>
+            <button id="exploreRefresh" type="button" class="explore-refresh" aria-label="Refresh feed">↻</button>
+          </div>
+          <div class="explore-controls">
+            <input id="exploreSearch" class="explore-search" type="search" placeholder="Search issues or locations..." autocomplete="off" />
+            <select id="exploreSort" class="explore-sort" aria-label="Sort issues">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="votes">Most upvoted</option>
+              <option value="nearby">Nearest first</option>
+            </select>
+          </div>
+          <div id="exploreCats" class="explore-cats"></div>
+          <div id="exploreList" class="explore-list"></div>
+        </div>
+        <div id="exploreSoonPanel" class="explore-soon" style="display:none;">
+          <div class="icon" id="exploreSoonIcon">◇</div>
+          <h2 id="exploreSoonTitle" style="margin:0;color:#173f75;font-size:22px;">Coming soon</h2>
+          <p id="exploreSoonText" style="margin:0;font-size:13px;">This section is coming soon.</p>
+        </div>
+      </div>
+      <div class="explore-bottom">
+        <button type="button" class="explore-nav active" data-tab="feed"><span class="ico">▣</span><span class="txt">Feed</span></button>
+        <button type="button" class="explore-nav" data-tab="map"><span class="ico">🗺</span><span class="txt">Map</span></button>
+        <button type="button" class="explore-nav add" data-tab="report"><span class="ico">+</span><span class="txt">Report</span></button>
+        <button type="button" class="explore-nav" data-tab="stats"><span class="ico">▥</span><span class="txt">Stats</span></button>
+        <button type="button" class="explore-nav" data-tab="heroes"><span class="ico">🏆</span><span class="txt">Heroes</span></button>
+      </div>
+    </section>
   </div>
 
   <script>
+    // ============ TIP-WRAP (tap-to-show tooltip for disabled controls) ============
+    document.addEventListener('click', (e) => {
+      const wrap = e.target.closest('.tip-wrap');
+      document.querySelectorAll('.tip-wrap.show-tip').forEach(el => { if (el !== wrap) el.classList.remove('show-tip'); });
+      if (wrap) {
+        wrap.classList.add('show-tip');
+        setTimeout(() => wrap.classList.remove('show-tip'), 1800);
+      }
+    });
+
     // ============ VIEW SWITCHING ============
     const views = {
       otp: document.getElementById('otpView'),
@@ -2933,6 +3329,7 @@
       comingSoon: document.getElementById('comingSoonView'),
       signup: document.getElementById('signupView'),
       report: document.getElementById('reportView'),
+      explore: document.getElementById('exploreView'),
     };
     const whoBox = document.getElementById('whoBox');
     const whoText = document.getElementById('whoText');
@@ -2943,6 +3340,7 @@
       Object.entries(views).forEach(([k, el]) => el.classList.toggle('active', k === name));
       document.getElementById('brandLabel').textContent = name === 'partnerSignup' ? 'SERVICE PARTNER' : 'COMMUNITY HERO';
       const reportsBtn = document.getElementById('reportsBtn');
+      const topExploreBtn = document.getElementById('topExploreBtn');
       const profileBtn = document.getElementById('profileBtn');
       const adminProfileBtn = document.getElementById('adminProfileBtn');
       const partnerProfileBtn = document.getElementById('partnerProfileBtn');
@@ -2953,9 +3351,10 @@
       if (headerLabel) {
         whoBox.classList.toggle('show', !isRoleSelect);
         whoText.textContent = 'Verified: ' + headerLabel;
-        const isReporterScreen = (name === 'report');
+        const isReporterScreen = (name === 'report' || name === 'explore');
         const isAdminHome = (name === 'adminHome');
         const isPartnerHome = (name === 'comingSoon' && document.getElementById('csTitle').textContent === 'Service Partner');
+        topExploreBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
         reportsBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
         profileBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
         adminProfileBtn.style.display = isAdminHome ? 'inline-flex' : 'none';
@@ -2965,6 +3364,7 @@
       } else {
         whoBox.classList.remove('show');
         roleAuth.classList.remove('show');
+        topExploreBtn.style.display = 'none';
         reportsBtn.style.display = 'none';
         profileBtn.style.display = 'none';
         adminProfileBtn.style.display = 'none';
@@ -3309,12 +3709,7 @@
       return evidenceList.length >= 1;
     }
     function canSubmitReport() {
-      if (!hasEvidence()) return false;
-      if (detectedIssues && detectedIssues.length > 0) {
-        if (!issueSelected.some(Boolean)) return false;
-        if (!commentsAllValid()) return false;
-      }
-      return true;
+      return hasEvidence();
     }
     function updateActionButtons() {
       document.getElementById('signupBtn').disabled = !isSignupValid();
@@ -4886,14 +5281,18 @@
 
     function addEvidenceFiles(fileList) {
       const incoming = Array.from(fileList || []);
+      let added = false;
       for (const f of incoming) {
         if (evidenceList.length >= 20) break;
         if (f.type.startsWith('image/') || f.type.startsWith('video/')) {
           evidenceList.push(f);
+          added = true;
         }
       }
+      if (added) markReportMediaChanged();
       renderThumbs();
       updateActionButtons();
+      captureReportDraft();
     }
 
     ['dragenter','dragover'].forEach(ev => evidenceArea.addEventListener(ev, e => {
@@ -4926,8 +5325,10 @@
         node.querySelector('button').addEventListener('click', ev => {
           ev.stopPropagation();
           evidenceList.splice(i, 1);
+          markReportMediaChanged();
           renderThumbs();
           updateActionButtons();
+          captureReportDraft();
         });
         evidenceThumbs.appendChild(node);
       });
@@ -4935,7 +5336,39 @@
 
     const description = document.getElementById('description');
     const describeResults = document.getElementById('describeResults');
-    description.addEventListener('input', updateActionButtons);
+    let reportDraft = null;
+    description.addEventListener('input', () => {
+      updateActionButtons();
+      captureReportDraft();
+    });
+
+    function captureReportDraft() {
+      reportDraft = {
+        description: description.value,
+        evidence: evidenceList.slice(),
+      };
+    }
+
+    function restoreReportDraft() {
+      if (!reportDraft) return;
+      description.value = reportDraft.description || '';
+      evidenceList = (reportDraft.evidence || []).slice();
+      renderThumbs();
+      updateActionButtons();
+    }
+
+    function clearReportDraft() {
+      reportDraft = null;
+    }
+
+    function markReportMediaChanged() {
+      if (analysisState === 'running') return;
+      analysisState = 'idle';
+      completedAnalysisJobId = null;
+      detectedIssues = []; issueSelected = []; issueComments = []; issueLocations = [];
+      describeResults.classList.remove('has-content');
+      describeResults.textContent = 'AI analysis results will appear here';
+    }
 
     function showAnalysisRunningUI(jobId) {
       describeResults.classList.remove('has-content');
@@ -4944,6 +5377,8 @@
 
     function startAnalysisPolling(jobId) {
       analysisJobId = jobId;
+      analysisState = 'running';
+      completedAnalysisJobId = null;
       if (analysisPoller) clearInterval(analysisPoller);
       const btn = document.getElementById('analyseAiBtn');
       btn.disabled = true;
@@ -4959,10 +5394,13 @@
           }
           if (data.status === 'done') {
             stopAnalysisPolling();
+            analysisState = 'done';
+            completedAnalysisJobId = jobId;
             renderDescribeResults(data.result || {});
             updateActionButtons();
           } else if (data.status === 'failed') {
             stopAnalysisPolling();
+            analysisState = 'failed';
             describeResults.textContent = data.error || 'Analysis failed';
             updateActionButtons();
           }
@@ -4990,6 +5428,8 @@
       }
       const btn = e.currentTarget;
       btn.disabled = true;
+      analysisState = 'running';
+      completedAnalysisJobId = null;
       describeResults.classList.remove('has-content');
       describeResults.innerHTML = '<span class="spinner" style="color: var(--muted)"></span>Starting analysis…';
       try {
@@ -5028,6 +5468,8 @@
     let issueLocations = [];
     let analysisJobId = null;
     let analysisPoller = null;
+    let completedAnalysisJobId = null;
+    let analysisState = 'idle'; // idle | running | done | failed
 
     function wordCount(s) {
       const t = (s || '').trim();
@@ -5052,7 +5494,7 @@
         html += `<div style="font-size:13px;color:#374151;margin-bottom:10px;"><strong>Suggested:</strong> ${escapeHtml(data.suggested_action)}</div>`;
       }
       if (!detectedIssues.length) {
-        html += '<div class="clean">No issues detected ✓</div>';
+        html += '<div class="clean">No issues found in AI analysis.</div>';
         describeResults.innerHTML = html;
         updateActionButtons();
         return;
@@ -5085,6 +5527,15 @@
           : `<div class="ts">media #${it.media_index ?? 0}</div>`;
         const isDup = !!it.is_duplicate;
         const dupRef = it.duplicate_of_report_id ? `Duplicate of report #${escapeHtml(it.duplicate_of_report_id)}` : 'Looks like a duplicate of an earlier report';
+        const dupWho = it.duplicate_can_interact ? (it.duplicate_reporter_name || 'the other user') : 'you';
+        const dupVotes = Math.max(0, Number(it.duplicate_upvotes || 0));
+        const dupTol = it.duplicate_avg_tolerance == null ? '—' : Number(it.duplicate_avg_tolerance).toFixed(1);
+        const dupUserTol = it.duplicate_user_tolerance == null ? '' : ` · your tolerance ${Number(it.duplicate_user_tolerance).toFixed(1)}`;
+        const dupActionHtml = isDup ? `<div class="dup-note">⚠ No reward points on duplicate issue (already submitted by ${escapeHtml(dupWho)}). Instead, you can upvote and add a tolerance level by clicking here.</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+            ${it.duplicate_can_interact ? `<button type="button" class="filter-btn" data-act="dup-upvote" data-i="${i}">▲ ${dupVotes} upvotes</button>` : `<span class="tip-wrap" data-tip="You cannot upvote your issue" tabindex="0" aria-label="You cannot upvote your issue"><button type="button" class="filter-btn" data-act="dup-upvote" data-i="${i}" disabled aria-disabled="true">▲ ${dupVotes} upvotes</button></span>`}
+            <button type="button" class="filter-btn" data-act="dup-tolerance" data-i="${i}" ${it.duplicate_can_add_tolerance ? '' : 'disabled title="Tolerance already submitted"'}>Tolerance ${dupTol}${escapeHtml(dupUserTol)} ⓘ</button>
+          </div>` : '';
         html += `<div class="loc-card${isDup ? ' unselected' : ''}" data-i="${i}">
           <label class="issue-check" title="Include in report">
             <input type="checkbox" data-i="${i}" ${issueSelected[i] ? 'checked' : ''} /> Report
@@ -5093,13 +5544,13 @@
           <div class="body">
             <h4>${escapeHtml(it.title || it.category || 'Issue')}
               <span class="chip" style="margin-left:6px;text-transform:uppercase;font-size:10.5px;">${escapeHtml(sev)}</span>
-              <span class="pts-badge ${sev}">+${pointsFor(sev)} pts</span>
+              <span class="pts-badge ${sev}">+${isDup ? 0 : pointsFor(sev)} pts</span>
               ${isDup ? '<span class="dup-badge">Duplicate</span>' : ''}
             </h4>
             ${tsLine}
             <div class="cat" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:4px;">${escapeHtml(it.category || '')}</div>
             <div class="desc">${escapeHtml(it.detail || '')}</div>
-            ${isDup ? `<div class="dup-note">⚠ ${dupRef} — unchecked by default.</div>` : ''}
+            ${isDup ? `<div class="dup-note">⚠ ${dupRef} — unchecked by default.</div>${dupActionHtml}` : ''}
             <div style="margin-top:8px;">
               <textarea class="textarea issue-comment" data-i="${i}" rows="2"
                 placeholder="Add your comment (optional, max 100 words)"
@@ -5160,6 +5611,12 @@
       describeResults.querySelectorAll('.loc-clear').forEach(b => {
         b.addEventListener('click', () => clearIssueLocation(+b.dataset.i));
       });
+      describeResults.querySelectorAll('[data-act="dup-upvote"]').forEach(b => {
+        b.addEventListener('click', () => toggleDuplicateUpvote(+b.dataset.i));
+      });
+      describeResults.querySelectorAll('[data-act="dup-tolerance"]').forEach(b => {
+        b.addEventListener('click', () => openDuplicateTolerance(+b.dataset.i));
+      });
       describeResults.querySelectorAll('.issues-toolbar button').forEach(b => {
         b.addEventListener('click', () => {
           const val = b.dataset.act === 'all';
@@ -5180,6 +5637,46 @@
         showChatPanel(false);
         chatHistory = []; renderChat();
       }
+    }
+
+    async function toggleDuplicateUpvote(i) {
+      const it = detectedIssues[i];
+      if (!it || !it.duplicate_can_interact || !it.duplicate_of_report_id || !it.duplicate_issue_title) return;
+      try {
+        const res = await fetch('/explore/issues/upvote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ report_id: it.duplicate_of_report_id, issue_title: it.duplicate_issue_title }),
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Upvote failed'); return; }
+        it.duplicate_upvotes = data.upvotes;
+        it.duplicate_voted = data.voted;
+        const btn = describeResults.querySelector(`[data-act="dup-upvote"][data-i="${i}"]`);
+        if (btn) btn.textContent = `▲ ${Math.max(0, Number(data.upvotes || 0))} upvotes`;
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    function openDuplicateTolerance(i) {
+      const it = detectedIssues[i];
+      if (!it || !it.duplicate_can_add_tolerance || it.duplicate_user_tolerance != null) return;
+      openToleranceModal({
+        reportId: it.duplicate_of_report_id,
+        issueTitle: it.duplicate_issue_title,
+        title: it.title || it.category || 'Issue',
+        onSaved: data => {
+          it.duplicate_avg_tolerance = data.avg_tolerance;
+          it.duplicate_user_tolerance = data.user_tolerance;
+          it.duplicate_tolerance_count = data.tolerance_count;
+          const btn = describeResults.querySelector(`[data-act="dup-tolerance"][data-i="${i}"]`);
+          if (btn) {
+            btn.textContent = `Tolerance ${data.avg_tolerance == null ? '—' : Number(data.avg_tolerance).toFixed(1)} · your tolerance ${Number(data.user_tolerance).toFixed(1)}`;
+            btn.disabled = true;
+          }
+        },
+      });
     }
 
     function showLocError(i, msg) {
@@ -5260,10 +5757,35 @@
 
     document.getElementById('submitReportBtn').addEventListener('click', async (e) => {
       banner('reportBanner', '');
+      if (!hasEvidence()) {
+        banner('reportBanner', 'Attach at least one media file before submitting.', 'error');
+        return;
+      }
+      if (analysisJobId || analysisState === 'running') {
+        banner('reportBanner', 'AI analysis is still running. Please wait until it is complete.', 'error');
+        return;
+      }
+      if (analysisState !== 'done' || !completedAnalysisJobId) {
+        banner('reportBanner', 'Run AI analysis before submitting this report.', 'error');
+        return;
+      }
+      if (!detectedIssues.length) {
+        banner('reportBanner', 'No issues were found in AI analysis, so this report cannot be submitted.', 'error');
+        return;
+      }
+      if (!issueSelected.some(Boolean)) {
+        banner('reportBanner', 'Select at least one issue before submitting.', 'error');
+        return;
+      }
+      if (!commentsAllValid()) {
+        banner('reportBanner', 'Please keep every issue comment within 100 words.', 'error');
+        return;
+      }
       const btn = e.currentTarget;
       await withBusy(btn, 'Submitting…', async () => {
         const fd = new FormData();
         fd.append('description', description.value.trim());
+        fd.append('analysis_job_id', completedAnalysisJobId || '');
         evidenceList.forEach(f => fd.append('evidence', f));
         const selected = [];
         detectedIssues.forEach((it, i) => {
@@ -5286,6 +5808,9 @@
           msg += ` — AI analysis running against ${data.analysis_job_id} in background.`;
         }
         banner('reportBanner', msg, 'ok');
+        clearReportDraft();
+        analysisState = 'idle';
+        completedAnalysisJobId = null;
         if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
         if (data.analysis_running) {
           // keep the analysis spinner / polling alive so the user can still see results land
@@ -5642,6 +6167,318 @@
     }
 
     reportsBtn.addEventListener('click', openReportsModal);
+
+    // ============ EXPLORE FEED (Screen 2c) ============
+    const exploreBtn = document.getElementById('exploreBtn');
+    const topExploreBtn = document.getElementById('topExploreBtn');
+    const exploreFeedPanel = document.getElementById('exploreFeedPanel');
+    const exploreSoonPanel = document.getElementById('exploreSoonPanel');
+    const exploreSoonIcon = document.getElementById('exploreSoonIcon');
+    const exploreSoonTitle = document.getElementById('exploreSoonTitle');
+    const exploreSoonText = document.getElementById('exploreSoonText');
+    const exploreSub = document.getElementById('exploreSub');
+    const explorePoints = document.getElementById('explorePoints');
+    const exploreSearch = document.getElementById('exploreSearch');
+    const exploreSort = document.getElementById('exploreSort');
+    const exploreCats = document.getElementById('exploreCats');
+    const exploreList = document.getElementById('exploreList');
+    const exploreRefresh = document.getElementById('exploreRefresh');
+    let exploreIssues = [];
+    let exploreCategory = 'All';
+    let exploreLoaded = false;
+    let toleranceCtx = null;
+
+    function openExploreFeed(force = false) {
+      captureReportDraft();
+      showView('explore', whoText.textContent.replace(/^Verified:\s*/, ''));
+      setExploreTab('feed');
+      if (force || !exploreLoaded) loadExploreIssues();
+      else renderExploreIssues();
+    }
+
+    function setExploreTab(tab) {
+      document.querySelectorAll('.explore-nav').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      if (tab === 'feed') {
+        exploreFeedPanel.style.display = '';
+        exploreSoonPanel.style.display = 'none';
+        return;
+      }
+      if (tab === 'report') {
+        showView('report', whoText.textContent.replace(/^Verified:\s*/, ''));
+        restoreReportDraft();
+        return;
+      }
+      const meta = {
+        map: ['🗺', 'Map', 'Issue map is coming soon.'],
+        stats: ['▥', 'Stats', 'Community stats are coming soon.'],
+        heroes: ['🏆', 'Heroes', 'Community heroes are coming soon.'],
+      }[tab] || ['◇', 'Coming soon', 'This section is coming soon.'];
+      exploreSoonIcon.textContent = meta[0];
+      exploreSoonTitle.textContent = meta[1];
+      exploreSoonText.textContent = meta[2];
+      exploreFeedPanel.style.display = 'none';
+      exploreSoonPanel.style.display = '';
+    }
+
+    async function loadExploreIssues() {
+      exploreLoaded = false;
+      exploreList.innerHTML = '<div class="explore-empty"><span class="spinner" style="color:var(--muted)"></span>Loading issue feed…</div>';
+      try {
+        const res = await fetch('/explore/issues');
+        const data = await res.json();
+        if (!res.ok) {
+          exploreList.innerHTML = `<div class="explore-empty" style="color:var(--high);">${escapeHtml(data.error || 'Failed to load')}</div>`;
+          return;
+        }
+        exploreIssues = data.issues || [];
+        exploreLoaded = true;
+        explorePoints.textContent = data.total_points || 0;
+        setTotalPoints(data.total_points || 0);
+        renderExploreCategories(data.categories || []);
+        renderExploreIssues();
+      } catch (e) {
+        exploreList.innerHTML = `<div class="explore-empty" style="color:var(--high);">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderExploreCategories(categories) {
+      const cats = ['All'].concat(categories.filter(Boolean));
+      if (!cats.includes(exploreCategory)) exploreCategory = 'All';
+      exploreCats.innerHTML = cats.map(cat =>
+        `<button type="button" class="explore-cat ${cat === exploreCategory ? 'active' : ''}" data-cat="${escapeAttr(cat)}">${escapeHtml(cat)}</button>`
+      ).join('');
+      exploreCats.querySelectorAll('.explore-cat').forEach(btn => {
+        btn.addEventListener('click', () => {
+          exploreCategory = btn.dataset.cat || 'All';
+          renderExploreCategories(categories);
+          renderExploreIssues();
+        });
+      });
+    }
+
+    function exploreRelativeTime(ts) {
+      const seconds = Math.max(0, Math.floor(Date.now() / 1000 - (Number(ts) || 0)));
+      if (seconds < 60) return 'now';
+      const mins = Math.floor(seconds / 60);
+      if (mins < 60) return `${mins}m ago`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    }
+
+    function explorePriorityLabel(p) {
+      const sev = (p || 'medium').toLowerCase();
+      if (sev === 'high') return 'Critical';
+      if (sev === 'low') return 'Low';
+      return 'Medium';
+    }
+
+    function exploreSearchText(item) {
+      return [
+        item.id, item.title, item.location, item.category, item.filter_category,
+        item.priority, item.status, item.reporter_name, exploreRelativeTime(item.created_at),
+      ].filter(Boolean).join(' ').toLowerCase();
+    }
+
+    function filteredExploreIssues() {
+      const q = (exploreSearch.value || '').trim().toLowerCase();
+      let list = exploreIssues.filter(item => {
+        const catOk = exploreCategory === 'All' || item.filter_category === exploreCategory;
+        const qOk = !q || exploreSearchText(item).includes(q);
+        return catOk && qOk;
+      });
+      const sort = exploreSort.value || 'newest';
+      list.sort((a, b) => {
+        if (sort === 'oldest') return (a.created_at || 0) - (b.created_at || 0);
+        if (sort === 'votes') return (b.upvotes || 0) - (a.upvotes || 0) || (b.created_at || 0) - (a.created_at || 0);
+        if (sort === 'nearby') return (b.near_score || 0) - (a.near_score || 0) || (b.created_at || 0) - (a.created_at || 0);
+        return (b.created_at || 0) - (a.created_at || 0);
+      });
+      return list;
+    }
+
+    function renderExploreIssues() {
+      const list = filteredExploreIssues();
+      const total = exploreIssues.length;
+      exploreSub.textContent = `${list.length} active report${list.length === 1 ? '' : 's'} in your area${total && list.length !== total ? ` · ${total} total` : ''}`;
+      if (!list.length) {
+        exploreList.innerHTML = '<div class="explore-empty">No issues match this search or filter.</div>';
+        return;
+      }
+      exploreList.innerHTML = list.map(item => {
+        const pri = (item.priority || 'medium').toLowerCase();
+        const statusSlug = (item.status || 'Reported').toLowerCase().replace(/\s+/g, '-');
+        const photoCount = Number(item.media_count || 0);
+        return `<div class="feed-card" data-report-id="${escapeAttr(item.report_id)}" data-issue-title="${escapeAttr(item.issue_title)}">
+          <div>
+            <div class="feed-badges">
+              <span class="feed-pill priority ${escapeAttr(pri)}">${escapeHtml(explorePriorityLabel(pri))}</span>
+              <span class="feed-pill status ${escapeAttr(statusSlug)}">${escapeHtml(item.status || 'Reported')}</span>
+              ${item.verified ? '<span class="feed-pill verified">✓ Verified</span>' : ''}
+            </div>
+            <h3 class="feed-title">${escapeHtml(item.title)}</h3>
+            <div class="feed-meta">
+              ${item.location ? `<span>📍 ${escapeHtml(item.location)}</span>` : ''}
+              <span>🗂 ${escapeHtml(item.category || item.filter_category || 'Uncategorized')}</span>
+              <span>🕘 ${escapeHtml(exploreRelativeTime(item.created_at))}</span>
+            </div>
+            <div class="feed-divider"></div>
+            <div class="feed-foot">
+              <span>📸 ${photoCount} photo${photoCount === 1 ? '' : 's'}</span>
+              <span>👤 ${escapeHtml(item.reporter_name || 'Reporter')}</span>
+              <span>Tolerance avg: ${item.avg_tolerance == null ? '—' : Number(item.avg_tolerance).toFixed(1)}</span>
+              <button type="button" class="filter-btn" data-act="feed-tolerance" style="padding:3px 8px;font-size:11px;" ${item.can_add_tolerance ? '' : 'disabled title="Tolerance already submitted"'}>${item.user_tolerance != null ? `Your tolerance: ${Number(item.user_tolerance).toFixed(1)}` : 'Add tolerance ⓘ'}</button>
+              <span class="feed-id">${escapeHtml(item.id || '')}</span>
+            </div>
+          </div>
+          ${item.can_upvote ? `<button type="button" class="vote-btn ${item.voted ? 'voted' : ''}" data-act="feed-upvote">
+            <span class="arrow">▲</span>
+            <span class="count">${Math.max(0, Number(item.upvotes || 0))}</span>
+            <span class="label">votes</span>
+          </button>` : `<span class="tip-wrap" data-tip="You cannot upvote your issue" tabindex="0" aria-label="You cannot upvote your issue"><button type="button" class="vote-btn" data-act="feed-upvote" disabled aria-disabled="true">
+            <span class="arrow">▲</span>
+            <span class="count">${Math.max(0, Number(item.upvotes || 0))}</span>
+            <span class="label">votes</span>
+          </button></span>`}
+        </div>`;
+      }).join('');
+      exploreList.querySelectorAll('[data-act="feed-upvote"]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const card = btn.closest('.feed-card');
+          toggleExploreUpvote(card.dataset.reportId, card.dataset.issueTitle, btn);
+        });
+      });
+      exploreList.querySelectorAll('[data-act="feed-tolerance"]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          if (btn.disabled) return;
+          const card = btn.closest('.feed-card');
+          const item = exploreIssues.find(x => x.report_id === card.dataset.reportId && x.issue_title === card.dataset.issueTitle);
+          openToleranceModal({
+            reportId: card.dataset.reportId,
+            issueTitle: card.dataset.issueTitle,
+            title: item ? item.title : 'Issue',
+            onSaved: data => {
+              if (item) {
+                item.avg_tolerance = data.avg_tolerance;
+                item.user_tolerance = data.user_tolerance;
+                item.tolerance_count = data.tolerance_count;
+                item.can_add_tolerance = false;
+              }
+              renderExploreIssues();
+            },
+          });
+        });
+      });
+    }
+
+    async function toggleExploreUpvote(reportId, issueTitle, btn) {
+      const item = exploreIssues.find(x => x.report_id === reportId && x.issue_title === issueTitle);
+      if (!item || btn.disabled || !item.can_upvote) return;
+      btn.disabled = true;
+      const wasVoted = !!item.voted;
+      const oldVotes = Math.max(0, Number(item.upvotes || 0));
+      item.voted = !wasVoted;
+      item.upvotes = Math.max(0, oldVotes + (wasVoted ? -1 : 1));
+      renderExploreIssues();
+      try {
+        const res = await fetch('/explore/issues/upvote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ report_id: reportId, issue_title: issueTitle }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Vote failed');
+        item.voted = !!data.voted;
+        item.upvotes = Math.max(0, Number(data.upvotes || 0));
+      } catch (e) {
+        item.voted = wasVoted;
+        item.upvotes = oldVotes;
+        alert(e.message);
+      } finally {
+        renderExploreIssues();
+      }
+    }
+
+    const toleranceModal = document.getElementById('toleranceModal');
+    const toleranceSubtitle = document.getElementById('toleranceSubtitle');
+    const toleranceInput = document.getElementById('toleranceInput');
+    const toleranceSubmit = document.getElementById('toleranceSubmit');
+
+    function openToleranceModal(ctx) {
+      toleranceCtx = ctx;
+      toleranceSubtitle.textContent = `How much can you tolerate "${ctx.title}"? Enter 0-100 once.`;
+      toleranceInput.value = '';
+      toleranceInput.readOnly = false;
+      toleranceSubmit.disabled = true;
+      banner('toleranceBanner', '');
+      toleranceModal.setAttribute('data-open', '1');
+      document.body.style.overflow = 'hidden';
+      toleranceInput.focus();
+    }
+
+    function closeToleranceModal() {
+      toleranceModal.removeAttribute('data-open');
+      document.body.style.overflow = '';
+      toleranceCtx = null;
+    }
+
+    function validateToleranceInput() {
+      const n = Number(toleranceInput.value);
+      toleranceSubmit.disabled = !(Number.isFinite(n) && n >= 0 && n <= 100);
+    }
+
+    toleranceInput.addEventListener('input', validateToleranceInput);
+    document.getElementById('toleranceCancel').addEventListener('click', closeToleranceModal);
+    toleranceModal.addEventListener('click', e => { if (e.target === toleranceModal) closeToleranceModal(); });
+    toleranceSubmit.addEventListener('click', async () => {
+      if (!toleranceCtx) return;
+      const score = Number(toleranceInput.value);
+      if (!Number.isFinite(score) || score < 0 || score > 100) {
+        banner('toleranceBanner', 'Enter a score from 0 to 100.', 'error');
+        return;
+      }
+      toleranceSubmit.disabled = true;
+      try {
+        const res = await fetch('/explore/issues/tolerance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            report_id: toleranceCtx.reportId,
+            issue_title: toleranceCtx.issueTitle,
+            score,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          banner('toleranceBanner', data.error || 'Tolerance submit failed', 'error');
+          return;
+        }
+        if (toleranceCtx.onSaved) toleranceCtx.onSaved(data);
+        closeToleranceModal();
+      } catch (e) {
+        banner('toleranceBanner', e.message, 'error');
+      } finally {
+        validateToleranceInput();
+      }
+    });
+
+    exploreBtn.addEventListener('click', () => openExploreFeed(false));
+    topExploreBtn.addEventListener('click', () => openExploreFeed(false));
+    exploreRefresh.addEventListener('click', () => loadExploreIssues());
+    exploreSearch.addEventListener('input', renderExploreIssues);
+    exploreSort.addEventListener('change', renderExploreIssues);
+    document.querySelectorAll('.explore-nav').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab || 'feed';
+        if (tab === 'feed') openExploreFeed(false);
+        else setExploreTab(tab);
+      });
+    });
 
     document.getElementById('profileBtn').addEventListener('click', async () => {
       try {
@@ -6772,6 +7609,9 @@
       banner('signupBanner', '');
       // Report
       stopAnalysisPolling();
+      clearReportDraft();
+      analysisState = 'idle';
+      completedAnalysisJobId = null;
       evidenceList = []; renderThumbs();
       description.value = '';
       detectedIssues = []; issueSelected = []; issueComments = []; issueLocations = [];
