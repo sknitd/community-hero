@@ -1404,6 +1404,50 @@
     .view { display: none; }
     .view.active { display: block; }
 
+    /* Brand lockup above the OTP card on screen 0 */
+    .brand-lockup {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin: 4px auto 18px;
+      padding: 0 16px;
+      animation: heroFadeUp 0.7s ease-out both;
+    }
+    .brand-mark {
+      width: 96px;
+      height: 104px;
+      display: block;
+      filter: drop-shadow(0 6px 14px rgba(29,78,216,0.18));
+    }
+    .brand-text { text-align: center; }
+    .brand-text h1 {
+      margin: 0;
+      font-family: 'Playfair Display','Georgia',serif;
+      font-weight: 800;
+      font-size: 30px;
+      letter-spacing: 0.5px;
+      line-height: 1.05;
+    }
+    .brand-text h1 .b { color: #1e3a8a; }
+    .brand-text h1 .g { color: #22c55e; }
+    .brand-text .tagline {
+      margin: 6px 0 0;
+      font-family: 'Georgia',serif;
+      font-style: italic;
+      font-size: 12.5px;
+      color: #475569;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+    }
+    .brand-text .tagline .dash {
+      width: 28px; height: 2px; border-radius: 2px; display: inline-block;
+    }
+    .brand-text .tagline .dash.g { background: #22c55e; }
+    .brand-text .tagline .dash.b { background: #1d4ed8; }
+
     /* Captivating tagline under the OTP login card */
     .hero-tagline {
       margin: 22px auto 0;
@@ -3121,6 +3165,41 @@
 
     <!-- ============ SCREEN 0: PHONE / OTP ============ -->
     <section id="otpView" class="view active">
+      <div class="brand-lockup" aria-label="Community Hero — Hyperlocal Problem Solver">
+        <svg class="brand-mark" viewBox="0 0 220 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- pin: ring + tail -->
+          <circle cx="110" cy="105" r="78" fill="none" stroke="#1d4ed8" stroke-width="8"/>
+          <path d="M55 150 Q 110 235 165 150" fill="none" stroke="#1d4ed8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M75 158 L110 215 L145 158" fill="#1d4ed8" opacity="0.85"/>
+          <!-- sun -->
+          <circle cx="170" cy="55" r="11" fill="#f59e0b"/>
+          <!-- house roof -->
+          <path d="M55 95 L110 55 L165 95" fill="none" stroke="#22c55e" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+          <!-- window panes -->
+          <g fill="#22c55e">
+            <rect x="100" y="78" width="9" height="9" rx="1"/>
+            <rect x="112" y="78" width="9" height="9" rx="1"/>
+            <rect x="100" y="90" width="9" height="9" rx="1"/>
+            <rect x="112" y="90" width="9" height="9" rx="1"/>
+          </g>
+          <!-- people -->
+          <g>
+            <!-- left -->
+            <circle cx="75" cy="120" r="11" fill="#22c55e"/>
+            <path d="M55 158 Q 55 132 75 132 Q 95 132 95 158 Z" fill="#22c55e"/>
+            <!-- right -->
+            <circle cx="145" cy="120" r="11" fill="#0e9f6e"/>
+            <path d="M125 158 Q 125 132 145 132 Q 165 132 165 158 Z" fill="#0e9f6e"/>
+            <!-- center (front) -->
+            <circle cx="110" cy="118" r="13" fill="#1d4ed8"/>
+            <path d="M86 168 Q 86 138 110 138 Q 134 138 134 168 Z" fill="#1d4ed8"/>
+          </g>
+        </svg>
+        <div class="brand-text">
+          <h1><span class="b">Community</span> <span class="g">Hero</span></h1>
+          <p class="tagline"><span class="dash g"></span><span>Hyperlocal Problem Solver</span><span class="dash b"></span></p>
+        </div>
+      </div>
       <div class="card">
         <div class="card-body">
           <div class="head-row">
