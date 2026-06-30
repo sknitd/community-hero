@@ -3576,60 +3576,75 @@
         });
       }
 
-      // Wire approve/deny per issue
+      // Wire approve/deny per issue.
+      //
+      // Layout (always 2 buttons in this order):
+      //   approveBtn  (data-act="approve")             — hidden once denial is recorded
+      //   actionBtn   (data-act="deny" → "post-deny-approve" once denial is recorded)
+      //
+      // ONE click listener per button. Each branches on the current data-act so
+      // re-attaching listeners on transition is unnecessary (which was causing
+      // double-fired confirm dialogs / stuck promise resolvers).
       adminDetailBody.querySelectorAll('.ai-card').forEach(node => {
         const issueTitle = node.dataset.issueTitle || 'this issue';
-        const approveBtn = node.querySelector('.ad-btn[data-act="approve"]');
-        const denyBtn = node.querySelector('.ad-btn[data-act="deny"]');
-        const postDenyApprove = node.querySelector('.ad-btn[data-act="post-deny-approve"]');
+        const buttons = node.querySelectorAll('.ad-btn');
+        const approveBtn = buttons[0] || null;
+        const actionBtn = buttons[1] || null;
+
+        async function runApprove() {
+          const yes = await confirmDialog(`Are you sure to approve ${issueTitle}?`);
+          if (!yes) return;
+          banner('adminDetailBanner', `Approval for "${issueTitle}" — coming soon`, 'ok');
+        }
+        async function runDeny() {
+          const yes = await confirmDialog(`Are you sure deny ${issueTitle}?`);
+          if (!yes) return;
+          const reason = await reasonDialog(`Reason for denying "${issueTitle}"`);
+          if (!reason) return;
+          try {
+            const res = await fetch(`/admin/reports/${encodeURIComponent(r.id)}/deny_issue`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ issue_title: issueTitle, reason })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              banner('adminDetailBanner', data.error || 'Deny failed', 'error');
+              return;
+            }
+            r.denied_issues = data.denied_issues || r.denied_issues || [];
+            if (approveBtn) approveBtn.classList.add('hidden');
+            if (actionBtn) {
+              actionBtn.classList.remove('deny');
+              actionBtn.classList.add('approve');
+              actionBtn.textContent = 'Approve';
+              actionBtn.dataset.act = 'post-deny-approve';
+            }
+            refreshAdminTimeline(r);
+          } catch (e) {
+            banner('adminDetailBanner', e.message, 'error');
+          }
+        }
 
         if (approveBtn) {
           approveBtn.addEventListener('click', async () => {
-            const ok = await confirmDialog(`Are you sure to approve ${issueTitle}?`);
-            if (!ok) return;
-            banner('adminDetailBanner', `Approval for "${issueTitle}" — coming soon`, 'ok');
+            if (approveBtn.disabled || approveBtn.classList.contains('hidden')) return;
+            approveBtn.disabled = true;
+            try { await runApprove(); } finally { approveBtn.disabled = false; }
           });
         }
-        if (denyBtn) {
-          denyBtn.addEventListener('click', async () => {
-            const ok = await confirmDialog(`Are you sure deny ${issueTitle}?`);
-            if (!ok) return;
-            const reason = await reasonDialog(`Reason for denying "${issueTitle}"`);
-            if (!reason) return;
+        if (actionBtn) {
+          actionBtn.addEventListener('click', async () => {
+            if (actionBtn.disabled) return;
+            actionBtn.disabled = true;
             try {
-              const res = await fetch(`/admin/reports/${encodeURIComponent(r.id)}/deny_issue`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ issue_title: issueTitle, reason })
-              });
-              const data = await res.json();
-              if (!res.ok) {
-                banner('adminDetailBanner', data.error || 'Deny failed', 'error');
-                return;
+              if (actionBtn.dataset.act === 'post-deny-approve') {
+                await runApprove();
+              } else {
+                await runDeny();
               }
-              r.denied_issues = data.denied_issues || r.denied_issues || [];
-              // Hide original approve; transform deny → green Approve (post-deny-approve)
-              if (approveBtn) approveBtn.classList.add('hidden');
-              denyBtn.classList.remove('deny');
-              denyBtn.classList.add('approve');
-              denyBtn.textContent = 'Approve';
-              denyBtn.dataset.act = 'post-deny-approve';
-              // Wire it as post-deny approve
-              denyBtn.addEventListener('click', async () => {
-                const yes = await confirmDialog(`Are you sure to approve ${issueTitle}?`);
-                if (!yes) return;
-                banner('adminDetailBanner', `Approval for "${issueTitle}" — coming soon`, 'ok');
-              });
-              refreshAdminTimeline(r);
-            } catch (e) {
-              banner('adminDetailBanner', e.message, 'error');
+            } finally {
+              actionBtn.disabled = false;
             }
-          });
-        }
-        if (postDenyApprove) {
-          postDenyApprove.addEventListener('click', async () => {
-            const yes = await confirmDialog(`Are you sure to approve ${issueTitle}?`);
-            if (!yes) return;
-            banner('adminDetailBanner', `Approval for "${issueTitle}" — coming soon`, 'ok');
           });
         }
       });
