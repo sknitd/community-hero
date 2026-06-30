@@ -38,6 +38,8 @@ UPLOAD_DIR = BASE_DIR / "uploads"
 FRAMES_DIR = BASE_DIR / "static" / "frames"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 FRAMES_DIR.mkdir(parents=True, exist_ok=True)
+PARTNER_DOCS_MAX_TOTAL = 10 * 1024 * 1024
+PARTNER_DOC_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf"}
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
@@ -226,6 +228,87 @@ def _save_partners():
 
 _load_partners()
 
+SECONDS_PER_YEAR = 365 * 24 * 60 * 60
+
+
+def _partner_doc_url(phone, stored_filename):
+    if not phone or not stored_filename:
+        return ""
+    return f"/partner/docs/{urllib.parse.quote(stored_filename)}"
+
+
+def _with_partner_experience(partner, phone=None):
+    if not partner:
+        return partner
+    out = dict(partner)
+    try:
+        baseline = int(out.get("experience_years_at_signup", out.get("experience_years", 0)) or 0)
+    except (TypeError, ValueError):
+        baseline = 0
+    try:
+        created_at = float(out.get("created_at") or time.time())
+    except (TypeError, ValueError):
+        created_at = time.time()
+    elapsed_years = max(0, int((time.time() - created_at) // SECONDS_PER_YEAR))
+    out["experience_years_at_signup"] = baseline
+    out["experience_years"] = baseline + elapsed_years
+    docs = []
+    for doc in out.get("verification_documents") or []:
+        item = dict(doc)
+        if phone and item.get("stored_filename") and not item.get("url"):
+            item["url"] = _partner_doc_url(phone, item.get("stored_filename"))
+        docs.append(item)
+    out["verification_documents"] = docs
+    return out
+
+
+def _filestorage_size(file_obj):
+    try:
+        pos = file_obj.stream.tell()
+        file_obj.stream.seek(0, os.SEEK_END)
+        size = file_obj.stream.tell()
+        file_obj.stream.seek(pos)
+        return size
+    except Exception:
+        return int(file_obj.content_length or 0)
+
+
+def _validate_partner_docs(files):
+    total_size = 0
+    for doc in files:
+        ext = Path(doc.filename or "").suffix.lower()
+        mime = (doc.mimetype or "").lower()
+        is_allowed = mime.startswith("image/") or mime == "application/pdf" or ext in PARTNER_DOC_EXTS
+        if not is_allowed:
+            return "Upload images or PDFs only"
+        total_size += _filestorage_size(doc)
+    if total_size > PARTNER_DOCS_MAX_TOTAL:
+        return "Documents must be 10 MB total or less"
+    return ""
+
+
+def _save_partner_docs(phone, files):
+    saved_docs = []
+    if not files:
+        return saved_docs
+    safe_phone = re.sub(r"[^A-Za-z0-9_-]", "_", phone or uuid.uuid4().hex)
+    docs_dir = UPLOAD_DIR / "partner_docs" / safe_phone
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    for doc in files:
+        original = doc.filename or "document"
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", original)[:120] or "document"
+        stored_name = f"{uuid.uuid4().hex[:10]}_{safe_name}"
+        size = _filestorage_size(doc)
+        doc.save(docs_dir / stored_name)
+        saved_docs.append({
+            "filename": original,
+            "stored_filename": stored_name,
+            "size": size,
+            "mime": doc.mimetype or "",
+            "url": _partner_doc_url(phone, stored_name),
+        })
+    return saved_docs
+
 
 def _url_to_path(url):
     if not url or not isinstance(url, str) or not url.startswith("/static/"):
@@ -246,8 +329,34 @@ def _location_in_admin_area(loc, admin_area):
     return bool(a & l)
 
 
-def _attach_reporter_info(report):
+def _with_issue_statuses(report):
     out = dict(report)
+    denied_by_title = {
+        (d.get("issue_title") or ""): d
+        for d in (report.get("denied_issues") or [])
+        if d.get("issue_title")
+    }
+    issues = []
+    for issue in report.get("issues") or []:
+        item = dict(issue)
+        title = item.get("title") or item.get("category") or "Issue"
+        denial = denied_by_title.get(title)
+        if denial:
+            item["issue_status"] = "denied"
+            item["status_label"] = "Denied by admin"
+            item["denial"] = dict(denial)
+        else:
+            item["issue_status"] = "waiting_for_approval"
+            item["status_label"] = "Wait for admin approval"
+        issues.append(item)
+    out["issues"] = issues
+    if denied_by_title:
+        out["status_label"] = f"{len(denied_by_title)} issue{'s' if len(denied_by_title) != 1 else ''} denied by admin"
+    return out
+
+
+def _attach_reporter_info(report):
+    out = _with_issue_statuses(report)
     ph = report.get("phone")
     rep = _reporters_data.get(ph) if ph else None
     if rep:
@@ -559,6 +668,7 @@ def otp_verify():
         else:
             session.pop("admin", None)
         if stored_partner:
+            stored_partner = _with_partner_experience(stored_partner, phone)
             session["partner"] = stored_partner
             if not first_name:
                 first_name = (stored_partner.get("full_name", "").split() or [""])[0]
@@ -603,8 +713,11 @@ def session_state():
             with _partners_lock:
                 stored_p = _partners_data.get(phone)
             if stored_p:
-                session["partner"] = stored_p
-                partner = stored_p
+                partner = _with_partner_experience(stored_p, phone)
+                session["partner"] = partner
+        elif partner:
+            partner = _with_partner_experience(partner, phone)
+            session["partner"] = partner
     first_name = None
     if reporter:
         first_name = (reporter.get("full_name", "").split() or [""])[0]
@@ -743,6 +856,7 @@ def partner_admins():
                 "id": phone,
                 "full_name": admin.get("full_name", ""),
                 "area": admin.get("area", ""),
+                "categories": admin.get("categories", []),
             }
             for phone, admin in _admins_data.items()
         ]
@@ -755,12 +869,31 @@ def partner_signup():
     if not session.get("otp_verified"):
         return jsonify({"error": "Phone not verified"}), 401
     phone = session.get("otp_phone")
-    data = request.get_json(silent=True) or {}
+    is_multipart = (request.content_type or "").lower().startswith("multipart/form-data")
+    data = request.form if is_multipart else (request.get_json(silent=True) or {})
     full_name = (data.get("full_name") or "").strip()
     age_raw = data.get("age")
+    experience_raw = data.get("experience_years")
     email = (data.get("email") or "").strip()
-    trades = data.get("trades") or []
+    raw_categories = data.get("categories") or data.get("trades") or []
+    raw_availability = data.get("availability") or {}
     supervising_admin = (data.get("supervising_admin") or "").strip()
+    if isinstance(raw_categories, str):
+        try:
+            categories = json.loads(raw_categories)
+        except json.JSONDecodeError:
+            categories = []
+    else:
+        categories = raw_categories
+    if isinstance(raw_availability, str):
+        try:
+            availability = json.loads(raw_availability)
+        except json.JSONDecodeError:
+            availability = {}
+    else:
+        availability = raw_availability
+    verification_docs = request.files.getlist("verification_docs") if is_multipart else []
+    verification_docs = [f for f in verification_docs if f and f.filename]
 
     errors = {}
     if not NAME_RE.fullmatch(full_name):
@@ -772,36 +905,199 @@ def partner_signup():
     except (TypeError, ValueError):
         errors["age"] = "Enter a valid age"
         age = None
+    try:
+        experience_years = int(experience_raw)
+        if not (0 <= experience_years <= 80):
+            errors["experience_years"] = "Experience must be 0-80 years"
+    except (TypeError, ValueError):
+        errors["experience_years"] = "Enter years of experience"
+        experience_years = None
     if not EMAIL_RE.match(email):
         errors["email"] = "Enter a valid email"
-    if not isinstance(trades, list) or not trades:
-        errors["trades"] = "Pick at least one service"
+    if not isinstance(categories, list) or not categories:
+        errors["categories"] = "Pick at least one category"
+    weekdays = availability.get("weekdays") if isinstance(availability, dict) else None
+    time_slots = availability.get("time_slots") if isinstance(availability, dict) else None
+    legacy_time_slot = (availability.get("time_slot") or "").strip() if isinstance(availability, dict) else ""
+    if not time_slots and legacy_time_slot:
+        time_slots = [legacy_time_slot]
+    if not isinstance(weekdays, list) or not weekdays:
+        errors["availability"] = "Pick at least one weekday"
+    if not isinstance(time_slots, list) or not time_slots:
+        errors["time_slots"] = "Pick at least one time slot"
     if not supervising_admin:
         errors["supervising_admin"] = "Assign a supervising admin"
+    doc_error = _validate_partner_docs(verification_docs)
+    if doc_error:
+        errors["verification_docs"] = doc_error
     if errors:
         return jsonify({"errors": errors}), 400
 
-    cleaned_trades = []
+    cleaned_cats = []
     seen = set()
-    for t in trades:
-        t = str(t).strip()[:60]
-        if t and t.lower() not in seen:
-            cleaned_trades.append(t)
-            seen.add(t.lower())
+    for c in categories:
+        c = str(c).strip()[:60]
+        if c and c.lower() not in seen:
+            cleaned_cats.append(c)
+            seen.add(c.lower())
 
+    valid_days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+    cleaned_days = []
+    for d in weekdays:
+        d = str(d).strip()[:3].title()
+        if d in valid_days and d not in cleaned_days:
+            cleaned_days.append(d)
+    if not cleaned_days:
+        return jsonify({"errors": {"availability": "Pick at least one weekday"}}), 400
+    cleaned_slots = []
+    seen_slots = set()
+    for slot in time_slots:
+        slot = str(slot).strip()[:80]
+        if slot and slot.lower() not in seen_slots:
+            cleaned_slots.append(slot)
+            seen_slots.add(slot.lower())
+    if not cleaned_slots:
+        return jsonify({"errors": {"time_slots": "Pick at least one time slot"}}), 400
+
+    with _admins_lock:
+        admin = _admins_data.get(supervising_admin)
+    if not admin:
+        return jsonify({"errors": {"supervising_admin": "Pick a matching supervising admin"}}), 400
+    admin_cats = {str(c).strip().lower() for c in admin.get("categories", [])}
+    partner_cats = {c.lower() for c in cleaned_cats}
+    if not (admin_cats & partner_cats):
+        return jsonify({"errors": {"supervising_admin": "Pick an admin who handles at least one selected category"}}), 400
+
+    created_at = time.time()
+    saved_docs = _save_partner_docs(phone, verification_docs)
     partner = {
         "full_name": full_name,
         "age": age,
+        "experience_years_at_signup": experience_years,
+        "experience_years": experience_years,
+        "created_at": created_at,
         "email": email,
-        "trades": cleaned_trades,
+        "categories": cleaned_cats,
+        "availability": {
+            "weekdays": cleaned_days,
+            "time_slots": cleaned_slots,
+        },
+        "verification_documents": saved_docs,
         "supervising_admin": supervising_admin,
     }
-    session["partner"] = partner
+    display_partner = _with_partner_experience(partner, phone)
+    session["partner"] = display_partner
     if phone:
         with _partners_lock:
             _partners_data[phone] = partner
             _save_partners()
-    return jsonify({"ok": True, "first_name": full_name.split()[0], "partner": partner})
+    return jsonify({"ok": True, "first_name": full_name.split()[0], "partner": display_partner})
+
+
+@app.route("/partner/profile", methods=["POST"])
+def partner_profile():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    if not phone:
+        return jsonify({"error": "No phone number on record"}), 400
+    with _partners_lock:
+        partner = dict(_partners_data.get(phone) or {})
+    if not partner:
+        partner = dict(session.get("partner") or {})
+    if not partner:
+        return jsonify({"error": "Complete service partner sign-up first"}), 400
+
+    data = request.form
+    raw_availability = data.get("availability") or {}
+    supervising_admin = (data.get("supervising_admin") or "").strip()
+    if isinstance(raw_availability, str):
+        try:
+            availability = json.loads(raw_availability)
+        except json.JSONDecodeError:
+            availability = {}
+    else:
+        availability = raw_availability
+    verification_docs = [f for f in request.files.getlist("verification_docs") if f and f.filename]
+
+    errors = {}
+    weekdays = availability.get("weekdays") if isinstance(availability, dict) else None
+    time_slots = availability.get("time_slots") if isinstance(availability, dict) else None
+    if not isinstance(weekdays, list) or not weekdays:
+        errors["availability"] = "Pick at least one weekday"
+    if not isinstance(time_slots, list) or not time_slots:
+        errors["time_slots"] = "Pick at least one time slot"
+    if not supervising_admin:
+        errors["supervising_admin"] = "Assign a supervising admin"
+    existing_docs = partner.get("verification_documents") or []
+    if existing_docs and verification_docs:
+        errors["verification_docs"] = "Documents already uploaded"
+    elif verification_docs:
+        doc_error = _validate_partner_docs(verification_docs)
+        if doc_error:
+            errors["verification_docs"] = doc_error
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    valid_days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+    cleaned_days = []
+    for d in weekdays:
+        d = str(d).strip()[:3].title()
+        if d in valid_days and d not in cleaned_days:
+            cleaned_days.append(d)
+    if not cleaned_days:
+        return jsonify({"errors": {"availability": "Pick at least one weekday"}}), 400
+    cleaned_slots = []
+    seen_slots = set()
+    for slot in time_slots:
+        slot = str(slot).strip()[:80]
+        if slot and slot.lower() not in seen_slots:
+            cleaned_slots.append(slot)
+            seen_slots.add(slot.lower())
+    if not cleaned_slots:
+        return jsonify({"errors": {"time_slots": "Pick at least one time slot"}}), 400
+
+    with _admins_lock:
+        admin = _admins_data.get(supervising_admin)
+    if not admin:
+        return jsonify({"errors": {"supervising_admin": "Pick a matching supervising admin"}}), 400
+    admin_cats = {str(c).strip().lower() for c in admin.get("categories", [])}
+    partner_cats = {str(c).strip().lower() for c in partner.get("categories", [])}
+    if not (admin_cats & partner_cats):
+        return jsonify({"errors": {"supervising_admin": "Pick an admin who handles at least one selected category"}}), 400
+
+    partner["availability"] = {"weekdays": cleaned_days, "time_slots": cleaned_slots}
+    partner["supervising_admin"] = supervising_admin
+    if not existing_docs and verification_docs:
+        partner["verification_documents"] = _save_partner_docs(phone, verification_docs)
+
+    display_partner = _with_partner_experience(partner, phone)
+    session["partner"] = display_partner
+    with _partners_lock:
+        _partners_data[phone] = partner
+        _save_partners()
+    return jsonify({"ok": True, "partner": display_partner})
+
+
+@app.route("/partner/docs/<path:stored_filename>")
+def partner_doc(stored_filename):
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    if not phone:
+        return jsonify({"error": "No phone number on record"}), 400
+    safe_name = Path(stored_filename).name
+    with _partners_lock:
+        partner = _partners_data.get(phone) or {}
+    allowed = {
+        doc.get("stored_filename")
+        for doc in (partner.get("verification_documents") or [])
+        if doc.get("stored_filename")
+    }
+    if safe_name not in allowed:
+        return jsonify({"error": "Document not found"}), 404
+    safe_phone = re.sub(r"[^A-Za-z0-9_-]", "_", phone)
+    return send_from_directory(UPLOAD_DIR / "partner_docs" / safe_phone, safe_name)
 
 
 @app.route("/admin/reports")
@@ -1543,7 +1839,7 @@ def list_reports():
         return jsonify({"error": "Phone not verified"}), 401
     phone = session.get("otp_phone")
     with _reports_lock:
-        reports = [dict(r) for r in _reports_data.get(phone, [])]
+        reports = [_with_issue_statuses(r) for r in _reports_data.get(phone, [])]
     reports.sort(key=lambda r: r.get("created_at", 0), reverse=True)
     categories = sorted({
         (i.get("category") or "").strip()

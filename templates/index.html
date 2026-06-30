@@ -56,6 +56,34 @@
       font-weight: 800; font-size: 13px;
     }
     .ch-title { font-weight: 700; font-size: 16px; }
+    .role-auth {
+      margin-left: auto;
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      min-width: 0;
+    }
+    .role-auth.show { display: flex; }
+    .role-auth .verified-pill {
+      background: #e8f4ec;
+      color: #0a7f43;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .role-auth button {
+      background: transparent;
+      color: var(--primary);
+      border: 0;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12.5px;
+      padding: 4px 0 4px 6px;
+      font-family: inherit;
+    }
     .ch-h { margin: 4px 0 6px; font-size: 22px; font-weight: 800; }
     .ch-sub { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
 
@@ -202,14 +230,128 @@
       border-color: #f08a24;
       color: #df7415;
     }
-    .partner-select-wrap { position: relative; }
-    .partner-select {
-      appearance: none;
-      width: 100%;
-      padding-right: 48px;
-      font-family: inherit;
+    .partner-trade-pill:disabled {
+      cursor: default;
+      pointer-events: none;
     }
-    .partner-select-wrap::after {
+    .availability-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 10px;
+    }
+    .availability-pill {
+      background: #fff;
+      border: 1.5px solid #dfe4ec;
+      color: #415069;
+      padding: 9px 13px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 38px;
+    }
+    .availability-pill:hover { border-color: #f3b36a; }
+    .availability-pill.selected {
+      background: #fff4e4;
+      border-color: #f08a24;
+      color: #df7415;
+    }
+    .partner-doc-upload {
+      background: #fff;
+      border: 1.5px dashed #dfe4ec;
+      border-radius: 13px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .partner-doc-upload.drag {
+      border-color: #f08a24;
+      background: #fff8ee;
+    }
+    .partner-doc-upload.invalid {
+      border-color: var(--high);
+      background: #fff5f5;
+    }
+    .partner-doc-upload input[type=file] { display: none; }
+    .partner-doc-upload .choose {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff4e4;
+      color: #df7415;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .partner-doc-upload .hint {
+      color: #9aa7bc;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .partner-doc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .partner-doc-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e4e8f0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: #415069;
+      font-size: 13px;
+    }
+    .partner-doc-item span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .partner-doc-item button {
+      margin-left: auto;
+      width: 24px;
+      height: 24px;
+      border: 0;
+      border-radius: 50%;
+      background: #fee2e2;
+      color: #991b1b;
+      cursor: pointer;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .partner-doc-item .preview {
+      width: auto;
+      height: auto;
+      border-radius: 999px;
+      background: #fff4e4;
+      color: #df7415;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .partner-combobox { position: relative; }
+    .partner-select-trigger {
+      width: 100%;
+      background: #fff;
+      border: 1.5px solid #dfe4ec;
+      border-radius: 13px;
+      padding: 14px 48px 14px 16px;
+      font-size: 16px;
+      color: #3d495f;
+      min-height: 54px;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      position: relative;
+    }
+    .partner-select-trigger::after {
       content: "";
       position: absolute;
       right: 16px;
@@ -220,6 +362,63 @@
       border-bottom: 3px solid #42506a;
       transform: translateY(-65%) rotate(45deg);
       pointer-events: none;
+    }
+    .partner-select-trigger:disabled {
+      background: #eef0f5;
+      color: var(--muted-2);
+      cursor: not-allowed;
+    }
+    .partner-select-trigger.invalid {
+      border-color: var(--high);
+      background: #fff5f5;
+    }
+    .partner-admin-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 250;
+      background: #fff;
+      border: 1.5px solid #dfe4ec;
+      border-radius: 13px;
+      box-shadow: 0 16px 32px rgba(15,23,42,.14);
+      padding: 10px;
+    }
+    .partner-admin-menu[hidden] { display: none; }
+    .partner-admin-search {
+      margin-bottom: 8px;
+      min-height: 44px;
+      font-size: 14px;
+    }
+    .partner-admin-options {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .partner-admin-option {
+      width: 100%;
+      border: 0;
+      background: #fff;
+      color: #334155;
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .partner-admin-option:hover,
+    .partner-admin-option.selected {
+      background: #fff4e4;
+      color: #df7415;
+    }
+    .partner-admin-empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 8px;
     }
     .btn.partner {
       background: #f08a24;
@@ -1206,6 +1405,10 @@
       white-space: nowrap;
       max-width: 240px;
     }
+    .issue-deny {
+      display: inline-block;
+      margin-top: 6px;
+    }
 
     /* Report detail / timeline */
     .report-detail-body {
@@ -1625,6 +1828,7 @@
       <span class="points-pill" id="pointsPill" style="display:none;">🪙 <span id="pointsValue">0</span></span>
       <button id="profileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
       <button id="adminProfileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
+      <button id="partnerProfileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
       <button id="reportsBtn" type="button" class="reports-btn" style="display:none;">📋 My reports</button>
       <button id="logoutBtn">Logout</button>
     </div>
@@ -1677,6 +1881,10 @@
           <div class="ch-head">
             <div class="ch-avatar">CH</div>
             <div class="ch-title">Community Hero</div>
+            <div class="role-auth" id="roleAuth">
+              <span class="verified-pill" id="roleWhoText"></span>
+              <button id="roleLogoutBtn" type="button">Logout</button>
+            </div>
           </div>
           <h2 class="ch-h">How will you help?</h2>
           <p class="ch-sub">Pick your role to set up the right account.</p>
@@ -1842,17 +2050,47 @@
 
           <div class="field">
             <div class="label">Service partner for</div>
-            <p class="partner-trade-sub">Select the trades you provide</p>
+            <p class="partner-trade-sub">Select the categories you can handle</p>
             <div id="partnerTrades" class="partner-trades"></div>
             <div class="err" id="partnerTradesErr"></div>
           </div>
 
           <div class="field">
+            <label class="label" for="partnerExperience">Years of experience</label>
+            <input id="partnerExperience" class="input" type="number" min="0" max="80" step="1" inputmode="numeric" placeholder="5" />
+            <div class="err" id="partnerExperienceErr"></div>
+          </div>
+
+          <div class="field">
+            <div class="label">Govt ID card and registered service provider letter <span class="opt">(optional)</span></div>
+            <div class="partner-doc-upload" id="partnerDocsDrop">
+              <input id="partnerDocs" type="file" accept="image/*,application/pdf" multiple />
+              <div class="choose">Upload files</div>
+              <div class="hint">Drag and drop images or PDFs here. Max 10 MB total.</div>
+            </div>
+            <div id="partnerDocsList" class="partner-doc-list"></div>
+            <div class="err" id="partnerDocsErr"></div>
+          </div>
+
+          <div class="field">
+            <div class="label">Availability</div>
+            <p class="partner-trade-sub">Selected time slots apply for every selected day</p>
+            <div id="partnerWeekdays" class="availability-group"></div>
+            <div id="partnerTimeSlots" class="availability-group"></div>
+            <div class="err" id="partnerAvailabilityErr"></div>
+          </div>
+
+          <div class="field">
             <label class="label" for="partnerAdmin">Supervising admin</label>
-            <div class="partner-select-wrap">
-              <select id="partnerAdmin" class="partner-select">
-                <option value="">Assign a supervising admin</option>
-              </select>
+            <input id="partnerAdmin" type="hidden" />
+            <div class="partner-combobox" id="partnerAdminCombo">
+              <button id="partnerAdminTrigger" class="partner-select-trigger" type="button" disabled>
+                <span id="partnerAdminLabel">Select at least one category first</span>
+              </button>
+              <div id="partnerAdminMenu" class="partner-admin-menu" hidden>
+                <input id="partnerAdminSearch" class="input partner-admin-search" type="text" placeholder="Search matching admins" />
+                <div id="partnerAdminOptions" class="partner-admin-options"></div>
+              </div>
             </div>
             <div class="err" id="partnerAdminErr"></div>
           </div>
@@ -2019,6 +2257,8 @@
     };
     const whoBox = document.getElementById('whoBox');
     const whoText = document.getElementById('whoText');
+    const roleAuth = document.getElementById('roleAuth');
+    const roleWhoText = document.getElementById('roleWhoText');
 
     function showView(name, headerLabel) {
       Object.entries(views).forEach(([k, el]) => el.classList.toggle('active', k === name));
@@ -2026,29 +2266,45 @@
       const reportsBtn = document.getElementById('reportsBtn');
       const profileBtn = document.getElementById('profileBtn');
       const adminProfileBtn = document.getElementById('adminProfileBtn');
+      const partnerProfileBtn = document.getElementById('partnerProfileBtn');
+      const isRoleSelect = name === 'roleSelect';
+      roleAuth.classList.toggle('show', !!headerLabel && isRoleSelect);
+      if (headerLabel && isRoleSelect) roleWhoText.textContent = 'Verified: ' + headerLabel;
       if (headerLabel) {
-        whoBox.classList.add('show');
+        whoBox.classList.toggle('show', !isRoleSelect);
         whoText.textContent = 'Verified: ' + headerLabel;
         const isReporterScreen = (name === 'report');
         const isAdminHome = (name === 'adminHome');
+        const isPartnerHome = (name === 'comingSoon' && document.getElementById('csTitle').textContent === 'Service Partner');
         reportsBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
         profileBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
         adminProfileBtn.style.display = isAdminHome ? 'inline-flex' : 'none';
+        partnerProfileBtn.style.display = isPartnerHome ? 'inline-flex' : 'none';
         if (!isReporterScreen) document.getElementById('pointsPill').style.display = 'none';
       } else {
         whoBox.classList.remove('show');
+        roleAuth.classList.remove('show');
         reportsBtn.style.display = 'none';
         profileBtn.style.display = 'none';
         adminProfileBtn.style.display = 'none';
+        partnerProfileBtn.style.display = 'none';
         document.getElementById('pointsPill').style.display = 'none';
       }
       window.scrollTo({ top: 0, behavior: 'instant' });
       if (typeof updateActionButtons === 'function') updateActionButtons();
     }
 
+    function showPartnerHome(partner, label) {
+      if (partner) currentPartner = partner;
+      renderComingSoon('partner');
+      showView('comingSoon', label);
+    }
+
     // restore session
     fetch('/session').then(r => r.json()).then(async s => {
-      if (s.verified && s.reporter) {
+      if (s.verified && s.partner) {
+        showPartnerHome(s.partner, s.first_name || s.phone);
+      } else if (s.verified && s.reporter) {
         prefillSignupPhone(s.phone);
         prefillFromReporter(s.reporter);
         showView('report', s.first_name || s.phone);
@@ -2056,9 +2312,6 @@
         currentAdmin = s.admin;
         showView('adminHome', s.first_name || s.phone);
         loadAdminReports();
-      } else if (s.verified && s.partner) {
-        renderComingSoon('partner');
-        showView('comingSoon', s.first_name || s.phone);
       } else if (s.verified) {
         prefillSignupPhone(s.phone);
         showView('roleSelect', s.phone);
@@ -2076,11 +2329,13 @@
       }
     });
 
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
+    async function logoutAndReset() {
       try { await fetch('/logout', { method: 'POST' }); } catch {}
       resetAll();
       showView('otp');
-    });
+    }
+    document.getElementById('logoutBtn').addEventListener('click', logoutAndReset);
+    document.getElementById('roleLogoutBtn').addEventListener('click', logoutAndReset);
 
     function prefillSignupPhone(phoneE164) {
       const el = document.getElementById('signupPhone');
@@ -2135,7 +2390,7 @@
       card.addEventListener('click', () => setRoleSelection(card.dataset.role));
     });
 
-    roleContinueBtn.addEventListener('click', () => {
+    roleContinueBtn.addEventListener('click', async () => {
       if (!selectedRole) return;
       const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
       const label = phone ? phone : '';
@@ -2143,8 +2398,18 @@
         setFormMode('signup');
         showView('signup', label);
       } else if (selectedRole === 'admin') {
+        if (typeof setAdminFormMode === 'function') setAdminFormMode('signup');
         showView('adminSignup', label);
       } else {
+        try {
+          const r = await fetch('/session');
+          const s = await r.json();
+          if (s.partner) {
+            showPartnerHome(s.partner, s.first_name || label);
+            return;
+          }
+        } catch {}
+        setPartnerFormMode('signup');
         loadPartnerAdmins();
         showView('partnerSignup', label);
       }
@@ -2173,6 +2438,13 @@
 
     document.getElementById('partnerBackBtn').addEventListener('click', () => {
       banner('partnerBanner', '');
+      if (partnerFormMode === 'profile') {
+        setPartnerFormMode('signup');
+        renderComingSoon('partner');
+        const lbl = whoText.textContent.replace(/^Verified:\s*/, '');
+        showView('comingSoon', lbl);
+        return;
+      }
       const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
       setRoleSelection(null);
       showView('roleSelect', phone || '');
@@ -2263,15 +2535,14 @@
         }
         banner('otpBanner', 'Verified ✓', 'ok');
         prefillSignupPhone(data.phone);
-        if (data.reporter) {
+        if (data.partner) {
+          setTimeout(() => showPartnerHome(data.partner, data.first_name || data.phone), 350);
+        } else if (data.reporter) {
           prefillFromReporter(data.reporter);
           setTimeout(() => showView('report', data.first_name || data.phone), 350);
         } else if (data.admin) {
           currentAdmin = data.admin;
           setTimeout(() => { showView('adminHome', data.first_name || data.phone); loadAdminReports(); }, 350);
-        } else if (data.partner) {
-          renderComingSoon('partner');
-          setTimeout(() => showView('comingSoon', data.first_name || data.phone), 350);
         } else {
           setFormMode('signup');
           setTimeout(() => showView('roleSelect', data.phone), 350);
@@ -2364,24 +2635,52 @@
     });
 
     // ============ SCREEN 4a: SERVICE PARTNER SIGN-UP ============
-    const PARTNER_TRADES = [
-      'Plumber', 'Electrician', 'Labour', 'Carpenter',
-      'Waste Collector', 'Mason', 'Gardener', 'Sanitation',
+    const PARTNER_CATEGORIES = [
+      'Infrastructure', 'Waste Disposal', 'Water & Drainage',
+      'Street Lighting', 'Roads & Potholes', 'Public Safety', 'Parks & Greenery',
     ];
+    const PARTNER_WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const PARTNER_TIME_SLOTS = [
+      'Morning 8 AM - 12 PM',
+      'Afternoon 12 PM - 4 PM',
+      'Evening 4 PM - 8 PM',
+      'Full day 8 AM - 8 PM',
+    ];
+    const PARTNER_DOC_MAX_TOTAL = 10 * 1024 * 1024;
     const partnerFullName = document.getElementById('partnerFullName');
     const partnerAge = document.getElementById('partnerAge');
+    const partnerExperience = document.getElementById('partnerExperience');
     const partnerEmail = document.getElementById('partnerEmail');
     const partnerTradesEl = document.getElementById('partnerTrades');
+    const partnerDocsDrop = document.getElementById('partnerDocsDrop');
+    const partnerDocs = document.getElementById('partnerDocs');
+    const partnerDocsListEl = document.getElementById('partnerDocsList');
+    const partnerWeekdaysEl = document.getElementById('partnerWeekdays');
+    const partnerTimeSlotsEl = document.getElementById('partnerTimeSlots');
     const partnerAdmin = document.getElementById('partnerAdmin');
+    const partnerAdminCombo = document.getElementById('partnerAdminCombo');
+    const partnerAdminTrigger = document.getElementById('partnerAdminTrigger');
+    const partnerAdminLabel = document.getElementById('partnerAdminLabel');
+    const partnerAdminMenu = document.getElementById('partnerAdminMenu');
+    const partnerAdminSearch = document.getElementById('partnerAdminSearch');
+    const partnerAdminOptions = document.getElementById('partnerAdminOptions');
     const createPartnerBtn = document.getElementById('createPartnerBtn');
     let partnerSelectedTrades = new Set();
+    let partnerSelectedDays = new Set();
+    let partnerSelectedTimeSlots = new Set();
+    let partnerVerificationDocs = [];
+    let partnerSavedDocs = [];
+    let partnerFormMode = 'signup';
+    let currentPartner = null;
+    let partnerAdmins = [];
 
     function renderPartnerTrades() {
       partnerTradesEl.innerHTML = '';
-      PARTNER_TRADES.forEach(trade => {
+      PARTNER_CATEGORIES.forEach(trade => {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'partner-trade-pill' + (partnerSelectedTrades.has(trade) ? ' selected' : '');
+        b.disabled = partnerFormMode === 'profile';
         b.textContent = trade;
         b.addEventListener('click', () => {
           if (partnerSelectedTrades.has(trade)) {
@@ -2392,6 +2691,7 @@
             b.classList.add('selected');
           }
           setError('partnerTradesErr', '');
+          updatePartnerAdminOptions();
           validatePartner();
         });
         partnerTradesEl.appendChild(b);
@@ -2399,39 +2699,250 @@
     }
     renderPartnerTrades();
 
+    function renderPartnerAvailability() {
+      partnerWeekdaysEl.innerHTML = '';
+      PARTNER_WEEKDAYS.forEach(day => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'availability-pill' + (partnerSelectedDays.has(day) ? ' selected' : '');
+        b.textContent = day;
+        b.addEventListener('click', () => {
+          if (partnerSelectedDays.has(day)) {
+            partnerSelectedDays.delete(day);
+            b.classList.remove('selected');
+          } else {
+            partnerSelectedDays.add(day);
+            b.classList.add('selected');
+          }
+          setError('partnerAvailabilityErr', '');
+          validatePartner();
+        });
+        partnerWeekdaysEl.appendChild(b);
+      });
+
+      partnerTimeSlotsEl.innerHTML = '';
+      PARTNER_TIME_SLOTS.forEach(slot => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'availability-pill' + (partnerSelectedTimeSlots.has(slot) ? ' selected' : '');
+        b.textContent = slot;
+        b.addEventListener('click', () => {
+          if (partnerSelectedTimeSlots.has(slot)) {
+            partnerSelectedTimeSlots.delete(slot);
+            b.classList.remove('selected');
+          } else {
+            partnerSelectedTimeSlots.add(slot);
+            b.classList.add('selected');
+          }
+          setError('partnerAvailabilityErr', '');
+          validatePartner();
+        });
+        partnerTimeSlotsEl.appendChild(b);
+      });
+    }
+    renderPartnerAvailability();
+
+    function formatPartnerDocSize(size) {
+      return `${(size / 1024 / 1024).toFixed(1)} MB`;
+    }
+
+    function partnerDocTotalSize(files = partnerVerificationDocs) {
+      return files.reduce((sum, file) => sum + (file.size || 0), 0);
+    }
+
+    function isAllowedPartnerDoc(file) {
+      const name = (file.name || '').toLowerCase();
+      return file.type.startsWith('image/') || file.type === 'application/pdf' || /\.(jpe?g|png|webp|gif|pdf)$/.test(name);
+    }
+
+    function renderPartnerDocs() {
+      partnerDocsListEl.innerHTML = '';
+      const hasSavedDocs = partnerSavedDocs.length > 0;
+      partnerDocsDrop.style.display = hasSavedDocs ? 'none' : '';
+      if (hasSavedDocs) {
+        partnerSavedDocs.forEach((doc, idx) => {
+          const row = document.createElement('div');
+          row.className = 'partner-doc-item';
+          const name = doc.filename || doc.stored_filename || `Document ${idx + 1}`;
+          row.innerHTML = `<span>${escapeHtml(name)}${doc.size ? ` - ${formatPartnerDocSize(doc.size)}` : ''}</span>`;
+          const preview = document.createElement('button');
+          preview.type = 'button';
+          preview.className = 'preview';
+          preview.textContent = 'Preview';
+          preview.disabled = !doc.url;
+          preview.addEventListener('click', () => {
+            if (doc.url) window.open(doc.url, '_blank', 'noopener');
+          });
+          row.appendChild(preview);
+          partnerDocsListEl.appendChild(row);
+        });
+        return;
+      }
+      partnerVerificationDocs.forEach((file, idx) => {
+        const row = document.createElement('div');
+        row.className = 'partner-doc-item';
+        row.innerHTML = `<span>${escapeHtml(file.name)} - ${formatPartnerDocSize(file.size || 0)}</span>`;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'x';
+        remove.setAttribute('aria-label', `Remove ${file.name}`);
+        remove.addEventListener('click', () => {
+          partnerVerificationDocs.splice(idx, 1);
+          partnerDocsDrop.classList.remove('invalid');
+          setError('partnerDocsErr', '');
+          renderPartnerDocs();
+        });
+        row.appendChild(remove);
+        partnerDocsListEl.appendChild(row);
+      });
+    }
+
+    function addPartnerDocs(fileList) {
+      if (partnerSavedDocs.length) return;
+      const incoming = Array.from(fileList || []);
+      let message = '';
+      for (const file of incoming) {
+        if (!isAllowedPartnerDoc(file)) {
+          message = 'Upload images or PDFs only';
+          continue;
+        }
+        const duplicate = partnerVerificationDocs.some(existing =>
+          existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified
+        );
+        if (duplicate) continue;
+        const nextTotal = partnerDocTotalSize() + (file.size || 0);
+        if (nextTotal > PARTNER_DOC_MAX_TOTAL) {
+          message = 'Documents must be 10 MB total or less';
+          continue;
+        }
+        partnerVerificationDocs.push(file);
+      }
+      partnerDocsDrop.classList.toggle('invalid', !!message);
+      setError('partnerDocsErr', message);
+      renderPartnerDocs();
+    }
+
+    partnerDocsDrop.addEventListener('click', () => partnerDocs.click());
+    partnerDocs.addEventListener('change', e => {
+      addPartnerDocs(e.target.files);
+      partnerDocs.value = '';
+    });
+    ['dragenter','dragover'].forEach(ev => partnerDocsDrop.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      partnerDocsDrop.classList.add('drag');
+    }));
+    ['dragleave','dragend'].forEach(ev => partnerDocsDrop.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      partnerDocsDrop.classList.remove('drag');
+    }));
+    partnerDocsDrop.addEventListener('drop', e => {
+      e.preventDefault(); e.stopPropagation();
+      partnerDocsDrop.classList.remove('drag');
+      addPartnerDocs(e.dataTransfer.files);
+    });
+
     async function loadPartnerAdmins() {
-      partnerAdmin.innerHTML = '<option value="">Assign a supervising admin</option>';
       try {
         const res = await fetch('/partner/admins');
         const data = await res.json();
-        const admins = data.admins || [];
-        if (!admins.length) {
-          const opt = document.createElement('option');
-          opt.value = 'Community Admin';
-          opt.textContent = 'Community Admin';
-          partnerAdmin.appendChild(opt);
-          return;
-        }
-        admins.forEach(admin => {
-          const opt = document.createElement('option');
-          opt.value = admin.id || admin.full_name || '';
-          opt.textContent = admin.area ? `${admin.full_name} - ${admin.area}` : admin.full_name;
-          partnerAdmin.appendChild(opt);
-        });
+        partnerAdmins = data.admins || [];
       } catch {
-        const opt = document.createElement('option');
-        opt.value = 'Community Admin';
-        opt.textContent = 'Community Admin';
-        partnerAdmin.appendChild(opt);
+        partnerAdmins = [];
+      }
+      updatePartnerAdminOptions();
+    }
+
+    function matchingPartnerAdmins() {
+      const selected = Array.from(partnerSelectedTrades).map(c => c.toLowerCase());
+      if (!selected.length) return [];
+      const q = partnerAdminSearch.value.trim().toLowerCase();
+      return partnerAdmins.filter(admin => {
+        const cats = (admin.categories || []).map(c => String(c).toLowerCase());
+        const categoryMatch = cats.some(c => selected.includes(c));
+        if (!categoryMatch) return false;
+        if (!q) return true;
+        const hay = [
+          admin.full_name || '',
+          admin.area || '',
+          (admin.categories || []).join(' '),
+        ].join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    function partnerAdminDisplay(admin) {
+      if (!admin) return 'Assign a supervising admin';
+      return admin.area
+        ? `${admin.full_name || admin.id} - ${admin.area}`
+        : (admin.full_name || admin.id || 'Selected admin');
+    }
+
+    function updatePartnerAdminOptions() {
+      const previous = partnerAdmin.value;
+      const hasCategory = partnerSelectedTrades.size > 0;
+      partnerAdminTrigger.disabled = !hasCategory;
+      partnerAdminOptions.innerHTML = '';
+
+      if (!hasCategory) {
+        partnerAdmin.value = '';
+        partnerAdminLabel.textContent = 'Select at least one category first';
+        partnerAdminMenu.hidden = true;
+        partnerAdminSearch.value = '';
+        partnerAdminTrigger.classList.remove('invalid');
+        setError('partnerAdminErr', '');
+        return;
+      }
+
+      const matches = matchingPartnerAdmins();
+      if (!matches.length) {
+        partnerAdminOptions.innerHTML = '<div class="partner-admin-empty">No matching admins found</div>';
+        partnerAdmin.value = '';
+        partnerAdminLabel.textContent = 'No matching admins found';
+        validatePartner();
+        return;
+      }
+
+      matches.forEach(admin => {
+        const opt = document.createElement('button');
+        opt.type = 'button';
+        opt.className = 'partner-admin-option' + (admin.id === previous ? ' selected' : '');
+        const cats = (admin.categories || []).join(', ');
+        opt.innerHTML = `
+          <strong>${escapeHtml(admin.full_name || admin.id || 'Admin')}</strong>
+          ${admin.area ? `<div>${escapeHtml(admin.area)}</div>` : ''}
+          ${cats ? `<div style="color:var(--muted);font-size:12px;">${escapeHtml(cats)}</div>` : ''}
+        `;
+        opt.addEventListener('click', () => {
+          partnerAdmin.value = admin.id || '';
+          partnerAdminLabel.textContent = partnerAdminDisplay(admin);
+          partnerAdminMenu.hidden = true;
+          partnerAdminTrigger.classList.remove('invalid');
+          setError('partnerAdminErr', '');
+          validatePartner();
+        });
+        partnerAdminOptions.appendChild(opt);
+      });
+
+      const selectedStillVisible = matches.some(a => a.id === previous);
+      if (selectedStillVisible) {
+        partnerAdminLabel.textContent = partnerAdminDisplay(matches.find(a => a.id === previous));
+        partnerAdmin.value = previous;
+      } else {
+        partnerAdmin.value = '';
+        partnerAdminLabel.textContent = 'Assign a supervising admin';
       }
     }
 
     function isPartnerValid() {
       const a = parseInt(partnerAge.value, 10);
+      const y = parseInt(partnerExperience.value, 10);
       return NAME_RE.test(partnerFullName.value.trim())
           && Number.isFinite(a) && a >= 1 && a <= 120
+          && Number.isFinite(y) && y >= 0 && y <= 80
           && EMAIL_RE.test(partnerEmail.value.trim())
           && partnerSelectedTrades.size > 0
+          && partnerSelectedDays.size > 0
+          && partnerSelectedTimeSlots.size > 0
           && !!partnerAdmin.value;
     }
 
@@ -2446,6 +2957,11 @@
         if (partnerAge.classList.contains('invalid')) setError('partnerAgeErr', 'Age 1-120');
         ok = false;
       } else { setError('partnerAgeErr', ''); setInvalid('partnerAge', false); }
+      const y = parseInt(partnerExperience.value, 10);
+      if (!Number.isFinite(y) || y < 0 || y > 80) {
+        if (partnerExperience.classList.contains('invalid')) setError('partnerExperienceErr', 'Experience 0-80 years');
+        ok = false;
+      } else { setError('partnerExperienceErr', ''); setInvalid('partnerExperience', false); }
       if (!EMAIL_RE.test(partnerEmail.value.trim())) {
         if (partnerEmail.classList.contains('invalid')) setError('partnerEmailErr', 'Enter a valid email');
         ok = false;
@@ -2453,44 +2969,117 @@
       if (partnerSelectedTrades.size === 0) {
         ok = false;
       } else setError('partnerTradesErr', '');
-      if (!partnerAdmin.value) {
-        if (partnerAdmin.classList.contains('invalid')) setError('partnerAdminErr', 'Assign a supervising admin');
+      if (partnerSelectedDays.size === 0 || partnerSelectedTimeSlots.size === 0) {
         ok = false;
-      } else { setError('partnerAdminErr', ''); partnerAdmin.classList.remove('invalid'); }
+      } else setError('partnerAvailabilityErr', '');
+      if (!partnerAdmin.value) {
+        if (partnerAdminTrigger.classList.contains('invalid')) setError('partnerAdminErr', 'Assign a supervising admin');
+        ok = false;
+      } else { setError('partnerAdminErr', ''); partnerAdminTrigger.classList.remove('invalid'); }
       createPartnerBtn.disabled = !isPartnerValid();
       return ok;
     }
 
-    [partnerFullName, partnerAge, partnerEmail].forEach(el => {
+    partnerExperience.addEventListener('input', () => {
+      partnerExperience.value = partnerExperience.value.replace(/[^\d]/g, '');
+    });
+
+    [partnerFullName, partnerAge, partnerExperience, partnerEmail].forEach(el => {
       el.addEventListener('blur', () => { el.classList.add('invalid'); validatePartner(); });
       el.addEventListener('input', () => {
         if (el.classList.contains('invalid')) validatePartner();
         createPartnerBtn.disabled = !isPartnerValid();
       });
     });
-    partnerAdmin.addEventListener('blur', () => { partnerAdmin.classList.add('invalid'); validatePartner(); });
-    partnerAdmin.addEventListener('change', validatePartner);
+    partnerAdminTrigger.addEventListener('click', () => {
+      if (partnerAdminTrigger.disabled) return;
+      partnerAdminMenu.hidden = !partnerAdminMenu.hidden;
+      if (!partnerAdminMenu.hidden) partnerAdminSearch.focus();
+    });
+    partnerAdminSearch.addEventListener('input', () => {
+      updatePartnerAdminOptions();
+      validatePartner();
+    });
+    document.addEventListener('click', e => {
+      if (!partnerAdminCombo.contains(e.target)) partnerAdminMenu.hidden = true;
+    });
+
+    function setPartnerFormMode(mode) {
+      partnerFormMode = mode;
+      const isProfile = mode === 'profile';
+      const titleEl = document.querySelector('#partnerSignupView h2');
+      const subEl = document.querySelector('#partnerSignupView .head-row p');
+      if (titleEl) titleEl.textContent = isProfile ? 'My profile' : 'Service partner sign-up';
+      if (subEl) subEl.textContent = isProfile ? 'Your registered details' : 'Resolve issues on the ground';
+      [partnerFullName, partnerAge, partnerExperience, partnerEmail].forEach(el => {
+        el.readOnly = isProfile;
+        el.classList.toggle('locked', isProfile);
+      });
+      renderPartnerTrades();
+      renderPartnerDocs();
+      createPartnerBtn.textContent = isProfile ? 'Save profile' : 'Create partner account';
+      createPartnerBtn.disabled = !isPartnerValid();
+      banner('partnerBanner', '');
+    }
+
+    function prefillPartnerProfile(partner) {
+      if (!partner) return;
+      partnerFullName.value = partner.full_name || '';
+      partnerAge.value = partner.age || '';
+      partnerExperience.value = partner.experience_years ?? partner.experience_years_at_signup ?? '';
+      partnerEmail.value = partner.email || '';
+      partnerSelectedTrades = new Set(partner.categories || partner.trades || []);
+      const availability = partner.availability || {};
+      partnerSelectedDays = new Set(availability.weekdays || []);
+      partnerSelectedTimeSlots = new Set(availability.time_slots || (availability.time_slot ? [availability.time_slot] : []));
+      partnerSavedDocs = Array.isArray(partner.verification_documents) ? partner.verification_documents.slice() : [];
+      partnerVerificationDocs = [];
+      partnerDocs.value = '';
+      partnerDocsDrop.classList.remove('drag', 'invalid');
+      partnerAdminSearch.value = '';
+      partnerAdmin.value = partner.supervising_admin || '';
+      partnerAdminLabel.textContent = partner.supervising_admin || 'Assign a supervising admin';
+      renderPartnerTrades();
+      renderPartnerAvailability();
+      renderPartnerDocs();
+      updatePartnerAdminOptions();
+      ['partnerFullName','partnerAge','partnerExperience','partnerEmail'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
+      setError('partnerTradesErr', '');
+      setError('partnerDocsErr', '');
+      setError('partnerAvailabilityErr', '');
+      setError('partnerAdminErr', '');
+    }
 
     createPartnerBtn.addEventListener('click', async (e) => {
-      [partnerFullName, partnerAge, partnerEmail, partnerAdmin].forEach(el => el.classList.add('invalid'));
+      [partnerFullName, partnerAge, partnerExperience, partnerEmail].forEach(el => el.classList.add('invalid'));
+      partnerAdminTrigger.classList.add('invalid');
       validatePartner();
       if (!isPartnerValid()) {
-        if (partnerSelectedTrades.size === 0) setError('partnerTradesErr', 'Pick at least one service');
+        if (partnerSelectedTrades.size === 0) setError('partnerTradesErr', 'Pick at least one category');
+        if (partnerSelectedDays.size === 0) setError('partnerAvailabilityErr', 'Pick at least one weekday');
+        else if (partnerSelectedTimeSlots.size === 0) setError('partnerAvailabilityErr', 'Pick at least one time slot');
         banner('partnerBanner', 'Please fill all required fields', 'error');
         return;
       }
       banner('partnerBanner', '');
       const btn = e.currentTarget;
-      await withBusy(btn, 'Creating...', async () => {
-        const res = await fetch('/partner/signup', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            full_name: partnerFullName.value.trim(),
-            age: parseInt(partnerAge.value, 10),
-            email: partnerEmail.value.trim(),
-            trades: Array.from(partnerSelectedTrades),
-            supervising_admin: partnerAdmin.value,
-          })
+      const isProfile = partnerFormMode === 'profile';
+      await withBusy(btn, isProfile ? 'Saving...' : 'Creating...', async () => {
+        const fd = new FormData();
+        fd.append('full_name', partnerFullName.value.trim());
+        fd.append('age', String(parseInt(partnerAge.value, 10)));
+        fd.append('experience_years', String(parseInt(partnerExperience.value, 10)));
+        fd.append('email', partnerEmail.value.trim());
+        fd.append('categories', JSON.stringify(Array.from(partnerSelectedTrades)));
+        fd.append('availability', JSON.stringify({
+          weekdays: Array.from(partnerSelectedDays),
+          time_slots: Array.from(partnerSelectedTimeSlots),
+        }));
+        fd.append('supervising_admin', partnerAdmin.value);
+        partnerVerificationDocs.forEach(file => fd.append('verification_docs', file));
+        const res = await fetch(isProfile ? '/partner/profile' : '/partner/signup', {
+          method: 'POST',
+          body: fd,
         });
         const data = await res.json();
         if (!res.ok) {
@@ -2498,25 +3087,48 @@
             const map = {
               full_name: 'partnerFullName',
               age: 'partnerAge',
+              experience_years: 'partnerExperience',
               email: 'partnerEmail',
               trades: 'partnerTrades',
+              categories: 'partnerTrades',
+              availability: 'partnerAvailability',
+              time_slot: 'partnerAvailability',
+              time_slots: 'partnerAvailability',
+              verification_docs: 'partnerDocs',
               supervising_admin: 'partnerAdmin',
             };
             Object.entries(data.errors).forEach(([k, v]) => {
               const id = map[k];
               if (id) {
                 setError(id + 'Err', v);
-                if (id !== 'partnerTrades') setInvalid(id, true);
+                if (id === 'partnerAdmin') partnerAdminTrigger.classList.add('invalid');
+                else if (id === 'partnerDocs') partnerDocsDrop.classList.add('invalid');
+                else if (id !== 'partnerTrades' && id !== 'partnerAvailability') setInvalid(id, true);
               }
             });
           }
-          banner('partnerBanner', data.error || 'Sign-up failed', 'error');
+          banner('partnerBanner', data.error || (isProfile ? 'Save failed' : 'Sign-up failed'), 'error');
           return;
         }
-        banner('partnerBanner', `Partner account created. Welcome ${data.first_name}!`, 'ok');
+        currentPartner = data.partner || currentPartner;
+        banner('partnerBanner', isProfile ? 'Profile updated' : `Partner account created. Welcome ${data.first_name}!`, 'ok');
         renderComingSoon('partner');
-        setTimeout(() => showView('comingSoon', data.first_name), 600);
+        const label = (data.first_name || (currentPartner?.full_name || '').split(' ')[0] || whoText.textContent.replace(/^Verified:\s*/, ''));
+        setTimeout(() => showView('comingSoon', label), 600);
       });
+    });
+
+    document.getElementById('partnerProfileBtn').addEventListener('click', async () => {
+      try {
+        const r = await fetch('/session');
+        const s = await r.json();
+        if (s.partner) currentPartner = s.partner;
+      } catch {}
+      await loadPartnerAdmins();
+      if (currentPartner) prefillPartnerProfile(currentPartner);
+      setPartnerFormMode('profile');
+      const lbl = whoText.textContent.replace(/^Verified:\s*/, '');
+      showView('partnerSignup', lbl);
     });
 
     // Home zones
@@ -3152,6 +3764,29 @@
         return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
       } catch { return ''; }
     }
+    function issueTitleFor(it) {
+      return it.title || it.category || 'Issue';
+    }
+    function findIssueDenial(report, issue) {
+      const title = issueTitleFor(issue);
+      return (report.denied_issues || []).find(d => d.issue_title === title) || null;
+    }
+    function issueStatusHtml(report, issue, opts = {}) {
+      const denial = findIssueDenial(report, issue);
+      if (!denial) return '<span class="status-tag">Wait for admin approval</span>';
+      const reason = denial.reason || 'No reason provided';
+      const who = denial.admin_name || 'admin';
+      const when = denial.ts ? ` · ${fmtReportDate(denial.ts)}` : '';
+      const note = opts.note
+        ? `<div class="deny-chip issue-deny">Denied by ${escapeHtml(who)}${when}<span class="reason">Reason: ${escapeHtml(reason)}</span></div>`
+        : '';
+      return `<span class="status-tag denied" title="Denied by ${escapeAttr(who)}${escapeAttr(when)}. Reason: ${escapeAttr(reason)}">Denied: <span class="reason-text">${escapeHtml(reason)}</span></span>${note}`;
+    }
+    function reportStatusLabel(report) {
+      const count = (report.denied_issues || []).length;
+      if (!count) return report.status_label || 'Waiting for approval from admin';
+      return `${count} issue${count === 1 ? '' : 's'} denied by admin`;
+    }
 
     function applyReportFilters() {
       let list = allReports.slice();
@@ -3186,15 +3821,16 @@
             const src = it.annotated_url || it.media_url;
             thumb = `<img src="${escapeHtml(src)}" alt="">`;
           }
+          const statusHtml = issueStatusHtml(r, it);
           issuesHtml += `<div class="report-issue">
             <div class="thumb">${thumb}</div>
             <div class="info">
               <div class="row-1">
-                <span class="title-text">${escapeHtml(it.title || it.category || 'Issue')}</span>
+                <span class="title-text">${escapeHtml(issueTitleFor(it))}</span>
                 <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
                 <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
                 <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
-                <span class="status-tag">Wait for admin approval</span>
+                ${statusHtml}
               </div>
               ${it.location ? `<div class="loc-text">📍 ${escapeHtml(it.location)}</div>` : ''}
               ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
@@ -3250,7 +3886,7 @@
 
     function openReportDetail(r) {
       const timeline = (r.timeline && r.timeline.length) ? r.timeline : defaultTimeline(r.created_at);
-      const statusLabel = r.status_label || 'Waiting for approval from admin';
+      const statusLabel = reportStatusLabel(r);
       let issuesHtml = '';
       (r.issues || []).forEach(it => {
         const sev = (it.severity || 'medium').toLowerCase();
@@ -3261,15 +3897,16 @@
           const src = it.annotated_url || it.media_url;
           thumb = `<img src="${escapeHtml(src)}" alt="">`;
         }
+        const statusHtml = issueStatusHtml(r, it, { note: true });
         issuesHtml += `<div class="report-issue">
           <div class="thumb" style="width:140px;height:90px;">${thumb}</div>
           <div class="info">
             <div class="row-1">
-              <span class="title-text">${escapeHtml(it.title || it.category || 'Issue')}</span>
+              <span class="title-text">${escapeHtml(issueTitleFor(it))}</span>
               <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
               <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
               <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
-              <span class="status-tag">Wait for admin approval</span>
+              ${statusHtml}
             </div>
             ${it.location ? `<div class="loc-text">📍 ${escapeHtml(it.location)}</div>` : ''}
             ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
@@ -3718,14 +4355,16 @@
           } else if (it.media_url || it.annotated_url) {
             thumb = `<img src="${escapeHtml(it.annotated_url || it.media_url)}" alt="">`;
           }
+          const statusHtml = issueStatusHtml(r, it);
           issuesHtml += `<div class="ai-card">
             <div class="thumb-sm">${thumb}</div>
             <div class="ai-info">
               <div class="row1">
-                <span class="ai-title">${escapeHtml(it.title || it.category || 'Issue')}</span>
+                <span class="ai-title">${escapeHtml(issueTitleFor(it))}</span>
                 <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
                 <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
                 <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
+                ${statusHtml}
               </div>
               ${it.location ? `<div class="loc">📍 ${escapeHtml(it.location)}</div>` : ''}
               ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
@@ -3840,15 +4479,13 @@
 
     function renderAdminDetail(r) {
       const timeline = (r.timeline && r.timeline.length) ? r.timeline : defaultTimeline(r.created_at);
-      const statusLabel = r.status_label || 'Waiting for approval from admin';
+      const statusLabel = reportStatusLabel(r);
       const thumbsDone = !!r.thumbs_up_by_admin;
-      const deniedTitles = new Set(((r.denied_issues || []).map(d => d.issue_title)));
 
       let issuesHtml = '';
       (r.issues || []).forEach((it, idx) => {
         const sev = (it.severity || 'medium').toLowerCase();
-        const issueTitle = it.title || it.category || 'Issue';
-        const issueKey = issueTitle;
+        const issueTitle = issueTitleFor(it);
         let thumb = '<div style="color:var(--muted-2)">no media</div>';
         if (it.media_kind === 'video' && it.media_url) {
           thumb = `<video src="${escapeHtml(it.media_url)}" controls playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
@@ -3856,7 +4493,8 @@
           thumb = `<img src="${escapeHtml(it.annotated_url || it.media_url)}" alt="">`;
         }
         const ts = it.created_at ? fmtReportDate(it.created_at) : fmtReportDate(r.created_at);
-        const alreadyDenied = deniedTitles.has(issueTitle);
+        const alreadyDenied = !!findIssueDenial(r, it);
+        const statusHtml = issueStatusHtml(r, it, { note: true });
         // If already denied previously, hide approve, show deny-turned-Approve
         const approveHtml = alreadyDenied
           ? '<button class="ad-btn approve hidden" data-act="approve">Approve</button>'
@@ -3872,6 +4510,7 @@
               <span class="cat-tag">${escapeHtml(it.category || 'Uncategorized')}</span>
               <span class="sev-tag ${sev}">${escapeHtml(sev)}</span>
               <span class="pts-badge ${sev}">+${it.points ?? pointsFor(sev)} pts</span>
+              ${statusHtml}
             </div>
             <div class="loc">📍 ${escapeHtml(it.location || '—')} · 🗓 ${escapeHtml(ts)}</div>
             ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
@@ -3964,14 +4603,7 @@
               return;
             }
             r.denied_issues = data.denied_issues || r.denied_issues || [];
-            if (approveBtn) approveBtn.classList.add('hidden');
-            if (actionBtn) {
-              actionBtn.classList.remove('deny');
-              actionBtn.classList.add('approve');
-              actionBtn.textContent = 'Approve';
-              actionBtn.dataset.act = 'post-deny-approve';
-            }
-            refreshAdminTimeline(r);
+            renderAdminDetail(r);
           } catch (e) {
             banner('adminDetailBanner', e.message, 'error');
           }
@@ -4278,13 +4910,28 @@
       ['fullName','age','email','address'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
       setFormMode('signup');
       if (typeof setAdminFormMode === 'function') setAdminFormMode('signup');
+      if (typeof setPartnerFormMode === 'function') setPartnerFormMode('signup');
       // Partner signup
-      ['partnerFullName','partnerAge','partnerEmail'].forEach(id => document.getElementById(id).value = '');
-      ['partnerFullName','partnerAge','partnerEmail'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
+      ['partnerFullName','partnerAge','partnerExperience','partnerEmail'].forEach(id => document.getElementById(id).value = '');
+      ['partnerFullName','partnerAge','partnerExperience','partnerEmail'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
       partnerSelectedTrades = new Set(); renderPartnerTrades();
-      partnerAdmin.innerHTML = '<option value="">Assign a supervising admin</option>';
-      partnerAdmin.classList.remove('invalid');
-      setError('partnerTradesErr',''); setError('partnerAdminErr','');
+      partnerVerificationDocs = [];
+      partnerSavedDocs = [];
+      currentPartner = null;
+      partnerDocs.value = '';
+      partnerDocsDrop.classList.remove('drag', 'invalid');
+      renderPartnerDocs();
+      partnerSelectedDays = new Set();
+      partnerSelectedTimeSlots = new Set();
+      renderPartnerAvailability();
+      partnerAdminSearch.value = '';
+      partnerAdmin.value = '';
+      partnerAdminLabel.textContent = 'Select at least one category first';
+      partnerAdminMenu.hidden = true;
+      partnerAdminOptions.innerHTML = '';
+      partnerAdminTrigger.disabled = true;
+      partnerAdminTrigger.classList.remove('invalid');
+      setError('partnerTradesErr',''); setError('partnerDocsErr',''); setError('partnerAvailabilityErr',''); setError('partnerAdminErr','');
       banner('partnerBanner', '');
       createPartnerBtn.disabled = true;
       zones = []; renderZones();
