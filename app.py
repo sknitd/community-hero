@@ -1406,6 +1406,8 @@ def admin_list_all_reports():
     with _reports_lock:
         for ph, reports in _reports_data.items():
             for r in reports:
+                if r.get("kind") == "contribution_bonus":
+                    continue
                 if r.get("phone") is None:
                     r2 = dict(r); r2["phone"] = ph
                 else:
@@ -2840,6 +2842,11 @@ def submit_report():
         return jsonify({"error": "No issues were found in the AI analysis, so this report cannot be submitted."}), 400
     if not selected_issues:
         return jsonify({"error": "Select at least one non-duplicate issue before submitting."}), 400
+    for it in selected_issues:
+        loc = (it.get("location") or "").strip()
+        if not loc:
+            title = it.get("title") or it.get("category") or "issue"
+            return jsonify({"error": f"Location is required for every selected issue (missing on '{title}')."}), 400
 
     # Award points and persist the report.
     awarded = 0
@@ -3007,6 +3014,8 @@ def _feed_items_for(phone):
     seq = 1
     for owner_phone, reports in _reports_data.items():
         for report in reports:
+            if report.get("kind") == "contribution_bonus":
+                continue
             reporter = _reporters_data.get(report.get("phone") or owner_phone, {})
             for idx, issue in enumerate(report.get("issues") or []):
                 title = _issue_title(issue)
@@ -3053,7 +3062,11 @@ def list_reports():
         return jsonify({"error": "Phone not verified"}), 401
     phone = session.get("otp_phone")
     with _reports_lock:
-        reports = [_with_issue_statuses(r) for r in _reports_data.get(phone, [])]
+        reports = [
+            _with_issue_statuses(r)
+            for r in _reports_data.get(phone, [])
+            if r.get("kind") != "contribution_bonus"
+        ]
     _backfill_admin_phones(reports)
     reports.sort(key=lambda r: r.get("created_at", 0), reverse=True)
     categories = sorted({
@@ -3149,6 +3162,253 @@ def explore_issue_tolerance():
         "user_tolerance": user_score,
         "tolerance_count": count,
     })
+
+
+# ====== Contributions: community members can add follow-up photos to an issue ======
+CONTRIBUTION_AWARD_POINTS = 10
+_pending_contributions: dict = {}  # contribution_id -> staged record
+_pending_contributions_lock = threading.Lock()
+
+CONTRIB_DIR = BASE_DIR / "static" / "contributions"
+CONTRIB_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _issue_contribution_bucket(report, issue_title):
+    contributions = report.setdefault("contributions", {})
+    bucket = contributions.setdefault(issue_title, [])
+    if not isinstance(bucket, list):
+        bucket = []
+        contributions[issue_title] = bucket
+    return bucket
+
+
+def _ai_check_contribution(image_path: Path, issue_title: str, issue_detail: str):
+    """Run Gemini on a single contribution image. Returns (ok, summary)."""
+    try:
+        ref = client.files.upload(file=str(image_path))
+        while ref.state and ref.state.name == "PROCESSING":
+            time.sleep(1)
+            ref = client.files.get(name=ref.name)
+        if ref.state and ref.state.name == "FAILED":
+            return False, "Gemini failed to process the image."
+        prompt = (
+            "You are reviewing a follow-up photo a community member uploaded "
+            f"to corroborate this previously reported civic issue:\n"
+            f'  title: "{issue_title}"\n'
+            f'  detail: "{issue_detail}"\n\n'
+            "Return ONLY valid JSON in this exact schema:\n"
+            "{\n"
+            '  "issue_visible": true,\n'
+            '  "summary": "one-sentence description of what is visible in the image"\n'
+            "}\n\n"
+            "Set issue_visible to true ONLY if the photo clearly shows a civic / "
+            "public-space problem (potholes, garbage, broken lights/tiles, "
+            "water leak, unsafe structure, etc). Set false for blank / unrelated "
+            "/ blurry photos."
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[ref, prompt],
+            config=types.GenerateContentConfig(
+                temperature=0.1,
+                response_mime_type="application/json",
+            ),
+        )
+        data = parse_json_response(response.text) or {}
+        return bool(data.get("issue_visible")), str(data.get("summary") or "").strip() or "Issue visible in image."
+    except Exception as exc:
+        return False, f"AI analysis failed: {exc}"
+
+
+@app.route("/explore/issues/contribute/analyse", methods=["POST"])
+def contribute_analyse():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    report_id = (request.form.get("report_id") or "").strip()
+    issue_title = (request.form.get("issue_title") or "").strip()
+    location = (request.form.get("location") or "").strip()
+    if not report_id or not issue_title:
+        return jsonify({"error": "report_id and issue_title required"}), 400
+    if len(location) < 5:
+        return jsonify({"error": "Detect or enter a location for the photo"}), 400
+    files = [f for f in request.files.getlist("media") if f and f.filename]
+    if not files:
+        return jsonify({"error": "Attach at least one image"}), 400
+    if len(files) > 5:
+        return jsonify({"error": "Up to 5 images per contribution"}), 400
+
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Issue not found"}), 404
+    issue = _find_issue_in_report(report, issue_title)
+    if not issue:
+        return jsonify({"error": "Issue not found in report"}), 404
+
+    expected_loc = (issue.get("location") or "").strip()
+    if not expected_loc or not _location_overlap(expected_loc, location, min_words=1):
+        return jsonify({
+            "ok": False,
+            "error": "Location mismatch — move to the issue's location to upload pics.",
+            "expected_location": expected_loc,
+        }), 400
+
+    contribution_id = uuid.uuid4().hex[:12]
+    staging_dir = CONTRIB_DIR / contribution_id
+    staging_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_records = []
+    for f in files:
+        ext = (f.mimetype or "").lower()
+        if ext and not ext.startswith("image/"):
+            continue
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", f.filename)[:120] or "photo.jpg"
+        raw_path = staging_dir / safe_name
+        f.save(raw_path)
+        # size limit
+        try:
+            if raw_path.stat().st_size > 20 * 1024 * 1024:
+                raw_path.unlink(missing_ok=True)
+                return jsonify({"error": f"{safe_name} exceeds 20 MB"}), 400
+        except OSError:
+            pass
+        # downscale + re-save as jpg for the URL
+        img = cv2.imread(str(raw_path))
+        if img is None:
+            continue
+        h, w = img.shape[:2]
+        if max(h, w) > 1400:
+            scale = 1400 / max(h, w)
+            img = cv2.resize(img, (int(w * scale), int(h * scale)))
+        out_name = f"contrib_{len(saved_records)}.jpg"
+        out_path = staging_dir / out_name
+        if not cv2.imwrite(str(out_path), img, [cv2.IMWRITE_JPEG_QUALITY, 88]):
+            continue
+        # AI analysis
+        ai_ok, ai_summary = _ai_check_contribution(out_path, issue_title, issue.get("detail") or "")
+        # annotate
+        ann_name = f"contrib_{len(saved_records)}_annotated.jpg"
+        ann_path = staging_dir / ann_name
+        annotated_url = None
+        if annotate_issue_image(out_path, issue_title, ai_summary, ann_path):
+            annotated_url = f"/static/contributions/{contribution_id}/{ann_name}"
+        saved_records.append({
+            "media_url": f"/static/contributions/{contribution_id}/{out_name}",
+            "annotated_url": annotated_url,
+            "ai_summary": ai_summary,
+            "ai_ok": ai_ok,
+        })
+
+    if not saved_records:
+        return jsonify({"error": "Could not process any of the uploaded images"}), 400
+
+    any_ok = any(r["ai_ok"] for r in saved_records)
+    payload = {
+        "contribution_id": contribution_id,
+        "report_id": report_id,
+        "issue_title": issue_title,
+        "phone": phone,
+        "location": location,
+        "media": saved_records,
+        "ts": time.time(),
+    }
+    with _pending_contributions_lock:
+        _pending_contributions[contribution_id] = payload
+
+    return jsonify({
+        "ok": True,
+        "ai_ok": any_ok,
+        "contribution_id": contribution_id,
+        "media": saved_records,
+        "message": "Issue clearly visible — you can submit." if any_ok
+                   else "No clear civic issue detected. Please re-upload a sharper photo of the issue.",
+    })
+
+
+@app.route("/explore/issues/contribute/submit", methods=["POST"])
+def contribute_submit():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    data = request.get_json(silent=True) or {}
+    contribution_id = (data.get("contribution_id") or "").strip()
+    with _pending_contributions_lock:
+        staged = _pending_contributions.get(contribution_id)
+    if not staged or staged.get("phone") != phone:
+        return jsonify({"error": "Contribution not found — re-run AI analysis"}), 404
+    if not any(r.get("ai_ok") for r in staged.get("media") or []):
+        return jsonify({"error": "AI did not detect a civic issue in any of the photos. Re-upload."}), 400
+
+    _, report = _find_report(staged["report_id"])
+    if not report:
+        return jsonify({"error": "Issue not found"}), 404
+    reporter = _reporters_data.get(phone) or {}
+    bucket = _issue_contribution_bucket(report, staged["issue_title"])
+    contribution_row = {
+        "id": contribution_id,
+        "contributor_phone": phone,
+        "contributor_name": reporter.get("full_name") or phone or "Contributor",
+        "location": staged.get("location") or "",
+        "media": staged.get("media") or [],
+        "ts": time.time(),
+        "points_awarded": CONTRIBUTION_AWARD_POINTS,
+    }
+    bucket.append(contribution_row)
+
+    # award points — bonus row attached to the contributor's own reports list
+    contributor_reports = _reports_data.setdefault(phone, [])
+    bonus = {
+        "id": f"BONUS-{contribution_id.upper()}",
+        "kind": "contribution_bonus",
+        "points": CONTRIBUTION_AWARD_POINTS,
+        "created_at": time.time(),
+        "linked_report_id": staged["report_id"],
+        "linked_issue_title": staged["issue_title"],
+        "phone": phone,
+        "issues": [],
+    }
+    contributor_reports.append(bonus)
+    with _reports_lock:
+        _save_reports()
+    with _pending_contributions_lock:
+        _pending_contributions.pop(contribution_id, None)
+    return jsonify({
+        "ok": True,
+        "points_awarded": CONTRIBUTION_AWARD_POINTS,
+        "total_points": _total_points_for(phone),
+        "contribution": contribution_row,
+    })
+
+
+@app.route("/reports/<report_id>/contributions")
+def list_contributions(report_id):
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    issue_title = (request.args.get("issue_title") or "").strip()
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Not found"}), 404
+    contributions = report.get("contributions") or {}
+    if issue_title:
+        rows = list(contributions.get(issue_title) or [])
+    else:
+        rows = []
+        for title, items in contributions.items():
+            for it in items or []:
+                rows.append({**it, "issue_title": title})
+    rows.sort(key=lambda r: r.get("ts") or 0, reverse=True)
+    # strip contributor_phone before sending out
+    public = []
+    for r in rows:
+        public.append({
+            "id": r.get("id"),
+            "contributor_name": r.get("contributor_name"),
+            "media": r.get("media") or [],
+            "location": r.get("location") or "",
+            "ts": r.get("ts") or 0,
+            "issue_title": r.get("issue_title"),
+        })
+    return jsonify({"contributions": public})
 
 
 @app.route("/rewards/catalog")
@@ -3452,6 +3712,7 @@ def explore_heroes():
     for phone, reports in all_data.items():
         if not reports:
             continue
+        real_reports = [r for r in reports if r.get("kind") != "contribution_bonus"]
         points = sum(int(r.get("points", 0)) for r in reports)
         if points <= 0:
             continue
@@ -3459,7 +3720,7 @@ def explore_heroes():
         full = reporter.get("full_name") or "Reporter"
         # primary location for this contributor
         locs = []
-        for r in reports:
+        for r in real_reports:
             for issue in r.get("issues") or []:
                 loc = (issue.get("location") or "").strip()
                 if loc:
@@ -3476,7 +3737,7 @@ def explore_heroes():
             "full_name": full,
             "area": _area_token(primary_loc),
             "city": _city_from_address(primary_loc) or _city_from_address(reporter.get("address", "")),
-            "reports": len(reports),
+            "reports": len(real_reports),
             "points": points,
         })
     leaderboard.sort(key=lambda r: (-r["points"], r["name"]))
@@ -3484,7 +3745,8 @@ def explore_heroes():
         row["rank"] = i + 1
 
     my_row = next((r for r in leaderboard if r["phone"] == me_phone), None)
-    me_reports = all_data.get(me_phone, [])
+    me_reports_all = all_data.get(me_phone, [])
+    me_reports = [r for r in me_reports_all if r.get("kind") != "contribution_bonus"]
     me_reporter = reporters_snapshot.get(me_phone, {})
     me_full = me_reporter.get("full_name") or "You"
     me_locs = []
@@ -3499,7 +3761,7 @@ def explore_heroes():
     if me_locs:
         scored = sorted(((sum(len(_area_words(loc) & _area_words(o)) for o in me_locs), loc) for loc in me_locs), reverse=True)
         me_primary = scored[0][1]
-    me_points = sum(int(r.get("points", 0)) for r in me_reports)
+    me_points = sum(int(r.get("points", 0)) for r in me_reports_all)
     me_rank = my_row["rank"] if my_row else None
     me_badges = _badges_for(me_phone, me_reports, me_rank)
     profile = {

@@ -2667,6 +2667,191 @@
       display: none; align-items: center; justify-content: center;
       padding: 20px;
     }
+    /* Issue detail (explore feed → tap card) */
+    .id-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .id-chip {
+      display: inline-flex; align-items: center; padding: 5px 12px;
+      border-radius: 999px; font-size: 12px; font-weight: 800;
+      background: #eaf0ff; color: #1f4ad6; border: 1px solid #c7d6ff;
+    }
+    .id-title { margin: 4px 0 4px; color: #0f172a; font-size: 22px; font-weight: 900; }
+    .id-desc { margin: 0 0 14px; font-size: 13.5px; color: #475569; line-height: 1.5; }
+    .id-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .id-cell {
+      background: #f1f5f9; border-radius: 12px; padding: 10px 12px;
+    }
+    .id-cell .lbl { font-size: 11px; color: #94a3b8; font-weight: 700; }
+    .id-cell .val { font-size: 14px; color: #173f75; font-weight: 800; margin-top: 2px; }
+    .id-progress-card {
+      background: #f8fafc; border-radius: 14px; padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .id-progress-card h4 { margin: 0 0 12px; font-size: 14px; color: #0f172a; }
+    .id-progress {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      position: relative;
+    }
+    .id-progress::before {
+      content: ""; position: absolute; left: 12%; right: 12%;
+      top: 14px; height: 2px; background: #e2e8f0;
+    }
+    .id-step { display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+    .id-step .dot {
+      width: 28px; height: 28px; border-radius: 999px;
+      background: #fff; border: 2px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: #94a3b8;
+      box-shadow: 0 0 0 4px #fff;
+    }
+    .id-step.done .dot { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+    .id-step.current .dot { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+    .id-step .lbl { font-size: 11.5px; font-weight: 700; color: #94a3b8; }
+    .id-step.done .lbl, .id-step.current .lbl { color: #0f172a; }
+    .id-actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-top: 10px;
+    }
+    .id-upvote, .id-addphoto {
+      border: 0; border-radius: 12px; padding: 14px 18px;
+      font-weight: 900; font-size: 15px; cursor: pointer; font-family: inherit;
+    }
+    .id-upvote { background: #173f75; color: #fff; }
+    .id-upvote[disabled] { background: #94a3b8; cursor: not-allowed; }
+    .id-addphoto { background: #eaf0ff; color: #1d4ed8; }
+    /* Contribute Add Photo flow */
+    .contrib-row { display: flex; flex-direction: column; gap: 10px; padding: 6px 2px; }
+    .contrib-drop {
+      border: 2px dashed #cbd5e1; border-radius: 12px;
+      padding: 18px; text-align: center; cursor: pointer; color: #475569;
+      background: #fafbfd;
+    }
+    .contrib-drop.has-files { border-color: #1d4ed8; background: #eff6ff; color: #1e3a8a; }
+    .contrib-thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .contrib-thumb {
+      position: relative; width: 84px; height: 84px;
+      border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0;
+    }
+    .contrib-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .contrib-thumb .rm {
+      position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+      border-radius: 999px; border: 0; background: rgba(15,23,42,0.7); color: #fff;
+      font-weight: 900; cursor: pointer;
+    }
+    .contrib-loc-row { display: flex; gap: 8px; }
+    .contrib-loc-row input {
+      flex: 1; border: 1px solid #cbd5e1; border-radius: 10px;
+      padding: 10px 12px; font-size: 14px; background: #f8fafc; color: #0f172a;
+    }
+    .contrib-loc-row .detect-btn {
+      border: 0; border-radius: 10px; padding: 0 14px;
+      background: #173f75; color: #fff; font-weight: 800; cursor: pointer;
+      font-family: inherit;
+    }
+    .contrib-banner {
+      border-radius: 10px; padding: 10px 12px; font-size: 13px;
+    }
+    .contrib-banner.err { background: #fee2e2; color: #b91c1c; }
+    .contrib-banner.ok { background: #dcfce7; color: #166534; }
+    .contrib-banner.info { background: #fef9c3; color: #854d0e; }
+    .contrib-actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;
+    }
+    .contrib-actions .btn {
+      border: 0; border-radius: 10px; padding: 12px; font-weight: 800;
+      font-size: 14px; cursor: pointer; font-family: inherit;
+    }
+    .contrib-actions .btn.primary { background: #173f75; color: #fff; }
+    .contrib-actions .btn.primary[disabled] { background: #cbd5e1; cursor: not-allowed; }
+    .contrib-actions .btn.ghost { background: #eef4ff; color: #173f75; }
+    .contrib-results { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+    .contrib-result {
+      display: grid; grid-template-columns: 110px 1fr; gap: 10px;
+      background: #f8fafc; border-radius: 10px; padding: 8px; border: 1px solid #e2e8f0;
+    }
+    .contrib-result.ok { border-color: #86efac; background: #f0fdf4; }
+    .contrib-result.fail { border-color: #fca5a5; background: #fef2f2; }
+    .contrib-result img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+    .contrib-result .meta .verdict { font-weight: 900; font-size: 12.5px; }
+    .contrib-result.ok .verdict { color: #166534; }
+    .contrib-result.fail .verdict { color: #b91c1c; }
+    .contrib-result .summary { font-size: 12px; color: #475569; margin-top: 4px; line-height: 1.4; }
+    /* Reward popup */
+    .reward-pop-back {
+      position: fixed; inset: 0; background: rgba(15,33,67,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 3000; padding: 16px;
+      animation: rewardFadeIn 0.18s ease-out;
+    }
+    .reward-pop {
+      background: #fff; border-radius: 20px; padding: 24px;
+      text-align: center; max-width: 340px; width: 100%;
+      box-shadow: 0 24px 50px rgba(15,33,67,0.3);
+      animation: rewardScaleIn 0.35s cubic-bezier(0.22,1.2,0.36,1);
+    }
+    .reward-pop .star {
+      font-size: 56px;
+      animation: rewardSpin 1.2s ease-out;
+      display: inline-block;
+    }
+    .reward-pop h3 { margin: 8px 0 4px; color: #173f75; font-size: 22px; }
+    .reward-pop p { margin: 0; color: #475569; font-size: 13px; }
+    .reward-pop .pts {
+      font-size: 36px; font-weight: 900; color: #f59e0b; margin: 6px 0;
+      animation: rewardBump 0.5s ease-out;
+    }
+    .reward-pop .btn {
+      margin-top: 14px; border: 0; border-radius: 10px;
+      padding: 10px 20px; background: #173f75; color: #fff;
+      font-weight: 800; cursor: pointer; font-family: inherit;
+    }
+    @keyframes rewardFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes rewardScaleIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes rewardSpin { from { transform: rotate(-30deg) scale(0.4); } to { transform: rotate(0) scale(1); } }
+    @keyframes rewardBump { from { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } to { transform: scale(1); opacity: 1; } }
+    /* Contributions table on report detail */
+    .contrib-table {
+      width: 100%; border-collapse: collapse; background: #fff;
+      border-radius: 12px; overflow: hidden; font-size: 12.5px;
+      box-shadow: 0 4px 10px rgba(15,33,67,0.06); margin-top: 8px;
+    }
+    .contrib-table th, .contrib-table td {
+      padding: 8px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: middle;
+    }
+    .contrib-table th {
+      background: #f1f5f9; color: #173f75; font-weight: 800;
+      text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.4px;
+    }
+    .contrib-table .ct-thumb {
+      width: 64px; height: 64px; border-radius: 8px; overflow: hidden;
+      cursor: zoom-in; background: #f1f5f9;
+    }
+    .contrib-table .ct-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .contrib-section h4 {
+      margin: 14px 0 6px; color: #173f75; font-size: 14px;
+    }
+    .contrib-empty {
+      background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px;
+      padding: 14px; color: #62769b; font-size: 12.5px; text-align: center;
+    }
+    /* Zoom preview */
+    .zoom-back {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; align-items: center; justify-content: center; z-index: 3500;
+      padding: 16px; cursor: zoom-out;
+    }
+    .zoom-back img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+    /* AI rating chip on ended-task issue card */
+    .ai-rating {
+      margin-top: 8px; padding: 8px 10px;
+      background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px;
+      font-size: 12px;
+    }
+    .ai-rating .stars { color: #f59e0b; letter-spacing: 1px; font-size: 14px; }
+    .ai-rating .verdict { font-weight: 800; color: #166534; margin-left: 6px; }
+    .ai-rating .comment { color: #475569; margin-top: 4px; line-height: 1.4; }
     .reports-modal[data-open="1"] { display: flex; }
     .reports-dialog {
       background: #fff;
@@ -3106,6 +3291,28 @@
         <button class="close" id="reportDetailClose" aria-label="Close">×</button>
       </div>
       <div class="report-detail-body" id="reportDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- Explore-feed issue detail popup -->
+  <div id="issueDetailModal" class="reports-modal" style="z-index: 2050;">
+    <div class="reports-dialog">
+      <div class="reports-head">
+        <h3 id="issueDetailHeadId" style="font-family:ui-monospace,monospace;color:#94a3b8;font-size:13px;">ID</h3>
+        <button class="close" id="issueDetailClose" aria-label="Close">×</button>
+      </div>
+      <div class="report-detail-body" id="issueDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- Add Photo (contribute media) modal -->
+  <div id="contribModal" class="reports-modal" style="z-index: 2200;">
+    <div class="reports-dialog">
+      <div class="reports-head">
+        <h3>Add Photo</h3>
+        <button class="close" id="contribClose" aria-label="Close">×</button>
+      </div>
+      <div class="report-detail-body" id="contribBody"></div>
     </div>
   </div>
 
@@ -5056,6 +5263,7 @@
         ${spActionsHtml(a)}
         ${spTaskFlowHtml(a)}
       `;
+      injectContributions(spReportBody, report.id, title);
       spReportBody.querySelectorAll('.sp-act').forEach(btn => {
         btn.addEventListener('click', e => {
           e.stopPropagation();
@@ -5932,7 +6140,7 @@
             <div class="loc-row" data-i="${i}">
               <div class="loc-btn-line">
                 <button class="loc-btn" type="button" data-i="${i}">📍 Add location</button>
-                <span style="color:var(--muted);font-size:11.5px;">optional</span>
+                <span style="color:#dc2626;font-size:11.5px;font-weight:700;">required *</span>
               </div>
               <div class="loc-input-wrap" data-i="${i}" style="display:none;">
                 <input type="text" class="loc-input" data-i="${i}" placeholder="Location" maxlength="200" />
@@ -6153,6 +6361,19 @@
         banner('reportBanner', 'Please keep every issue comment within 100 words.', 'error');
         return;
       }
+      const missingLocIdx = detectedIssues.findIndex((it, i) => issueSelected[i] && !(issueLocations[i] || '').trim());
+      if (missingLocIdx >= 0) {
+        banner('reportBanner', 'Add a location for every selected issue before submitting.', 'error');
+        const card = describeResults.querySelector(`.loc-card[data-i="${missingLocIdx}"]`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const wrap = card.querySelector('.loc-input-wrap');
+          if (wrap) wrap.style.display = '';
+          const locInput = card.querySelector('.loc-input');
+          if (locInput) locInput.focus();
+        }
+        return;
+      }
       const btn = e.currentTarget;
       await withBusy(btn, 'Submitting…', async () => {
         const fd = new FormData();
@@ -6301,6 +6522,21 @@
       renderReportsList(list);
     }
 
+    function aiRatingHtmlFromAssignment(report, issueTitle) {
+      const a = (report.assignments || {})[issueTitle] || {};
+      const ev = a.evaluation;
+      if (!ev || !a.ended_at) return '';
+      const stars = Math.max(1, Math.min(5, Number(ev.stars || 0)));
+      const filled = '★'.repeat(stars);
+      const empty = '☆'.repeat(5 - stars);
+      const verdict = stars >= 4 ? 'Good job' : (stars >= 3 ? 'Acceptable' : 'Needs attention');
+      return `<div class="ai-rating">
+        <span class="stars">${filled}<span style="color:#cbd5e1;">${empty}</span></span>
+        <span class="verdict">${verdict} · ${stars}/5</span>
+        <div class="comment">${escapeHtml(ev.comment || '')}</div>
+      </div>`;
+    }
+
     function renderReportsList(list) {
       reportsList.innerHTML = '';
       list.forEach(r => {
@@ -6333,6 +6569,7 @@
               ${it.location ? `<div class="loc-text">📍 ${escapeHtml(it.location)}</div>` : ''}
               ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
               ${it.comment ? `<div class="comment-text">"${escapeHtml(it.comment)}"</div>` : ''}
+              ${aiRatingHtmlFromAssignment(r, issueTitleFor(it))}
             </div>
           </div>`;
         });
@@ -6465,6 +6702,7 @@
             ${it.location ? `<div class="loc-text">📍 ${escapeHtml(it.location)}</div>` : ''}
             ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
             ${it.comment ? `<div class="comment-text">"${escapeHtml(it.comment)}"</div>` : ''}
+            ${aiRatingHtmlFromAssignment(r, issueTitleFor(it))}
           </div>
         </div>`;
       });
@@ -6481,6 +6719,7 @@
         ${r.description ? `<div class="desc" style="font-size:13px;color:#374151;margin:6px 0 12px;line-height:1.45;">${escapeHtml(r.description)}</div>` : ''}
         <div class="reports-list" style="padding:0;">${issuesHtml}</div>
       `;
+      injectContributions(reportDetailBody, r.id, '');
       reportDetailModal.setAttribute('data-open', '1');
       document.body.style.overflow = 'hidden';
     }
@@ -6944,6 +7183,331 @@
         </div>`;
     }
 
+    // ============ ISSUE DETAIL MODAL (Explore feed tap) ============
+    const issueDetailModal = document.getElementById('issueDetailModal');
+    const issueDetailBody = document.getElementById('issueDetailBody');
+    const issueDetailHeadId = document.getElementById('issueDetailHeadId');
+    document.getElementById('issueDetailClose').addEventListener('click', () => closeIssueDetailModal());
+    issueDetailModal.addEventListener('click', e => { if (e.target === issueDetailModal) closeIssueDetailModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && issueDetailModal.getAttribute('data-open')) closeIssueDetailModal(); });
+
+    function closeIssueDetailModal() {
+      issueDetailModal.removeAttribute('data-open');
+      document.body.style.overflow = '';
+    }
+
+    function statusStepIndex(status) {
+      const s = (status || '').toLowerCase();
+      if (s === 'resolved') return 3;
+      if (s === 'in progress') return 2;
+      if (s === 'acknowledged') return 1;
+      return 0;
+    }
+
+    function openIssueDetailModal(reportId, issueTitle) {
+      const item = exploreIssues.find(x => x.report_id === reportId && x.issue_title === issueTitle);
+      if (!item) return;
+      issueDetailHeadId.textContent = item.id || '';
+      const pri = explorePriorityLabel(item.priority || 'medium');
+      const cat = item.category || item.filter_category || 'Uncategorized';
+      const photoCount = item.media_count || 0;
+      const step = statusStepIndex(item.status);
+      const STEPS = ['Reported', 'Acknowledged', 'In Progress', 'Resolved'];
+      const progressHtml = STEPS.map((s, i) => {
+        const cls = i < step ? 'done' : (i === step ? 'current' : 'future');
+        return `<div class="id-step ${cls}"><div class="dot">${i < step ? '✓' : (i + 1)}</div><div class="lbl">${s}</div></div>`;
+      }).join('');
+      const upvoteHtml = item.can_upvote
+        ? `<button type="button" id="idUpvoteBtn" class="id-upvote ${item.voted ? 'voted' : ''}">▲ Upvote (${Math.max(0, Number(item.upvotes || 0))})</button>`
+        : `<span class="tip-wrap" data-tip="You cannot upvote your issue" tabindex="0"><button type="button" class="id-upvote" disabled aria-disabled="true">▲ Upvote (${Math.max(0, Number(item.upvotes || 0))})</button></span>`;
+      const detail = item.detail || item.description || item.summary || '';
+      issueDetailBody.innerHTML = `
+        <div class="id-chips">
+          <span class="id-chip">${escapeHtml(pri)}</span>
+          <span class="id-chip">${escapeHtml(cat)}</span>
+        </div>
+        <h2 class="id-title">${escapeHtml(item.title)}</h2>
+        <p class="id-desc">${escapeHtml(detail)}</p>
+        <div class="id-grid">
+          <div class="id-cell"><div class="lbl">📍 Location</div><div class="val">${escapeHtml(item.location || '—')}</div></div>
+          <div class="id-cell"><div class="lbl">🗂 Category</div><div class="val">${escapeHtml(cat)}</div></div>
+          <div class="id-cell"><div class="lbl">👤 Reporter</div><div class="val">${escapeHtml(item.reporter_name || 'Reporter')}</div></div>
+          <div class="id-cell"><div class="lbl">🕘 Reported</div><div class="val">${escapeHtml(exploreRelativeTime(item.created_at))}</div></div>
+          <div class="id-cell"><div class="lbl">📸 Photos</div><div class="val">${photoCount} attached</div></div>
+        </div>
+        <div class="id-progress-card">
+          <h4>Resolution Progress</h4>
+          <div class="id-progress">${progressHtml}</div>
+        </div>
+        <div class="id-actions">
+          ${upvoteHtml}
+          <button type="button" id="idAddPhotoBtn" class="id-addphoto">📸 Add Photo</button>
+        </div>`;
+      const up = document.getElementById('idUpvoteBtn');
+      if (up) {
+        up.addEventListener('click', async () => {
+          await toggleExploreUpvote(reportId, issueTitle, up);
+          up.textContent = `▲ Upvote (${Math.max(0, Number(item.upvotes || 0))})`;
+          up.classList.toggle('voted', !!item.voted);
+        });
+      }
+      document.getElementById('idAddPhotoBtn').addEventListener('click', () => openContribModal(item));
+      issueDetailModal.setAttribute('data-open', '1');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // ============ ADD PHOTO (contribute) FLOW ============
+    const contribModal = document.getElementById('contribModal');
+    const contribBody = document.getElementById('contribBody');
+    document.getElementById('contribClose').addEventListener('click', () => closeContribModal());
+    contribModal.addEventListener('click', e => { if (e.target === contribModal) closeContribModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && contribModal.getAttribute('data-open')) closeContribModal(); });
+
+    let contribState = null; // { reportId, issueTitle, item, files: File[], location, lastAnalysis, contributionId }
+
+    function closeContribModal() {
+      contribModal.removeAttribute('data-open');
+      contribState = null;
+      contribBody.innerHTML = '';
+    }
+
+    function openContribModal(item) {
+      contribState = { reportId: item.report_id, issueTitle: item.issue_title, item, files: [], location: '', lastAnalysis: null, contributionId: null };
+      contribBody.innerHTML = `
+        <div class="contrib-row">
+          <div id="contribDrop" class="contrib-drop">
+            <strong>Tap to choose images</strong><br>
+            <span style="font-size:11.5px;">JPG/PNG · up to 5 files · max 20 MB each</span>
+          </div>
+          <input type="file" id="contribFile" accept="image/*" multiple style="display:none" />
+          <div id="contribThumbs" class="contrib-thumbs"></div>
+          <div class="contrib-loc-row">
+            <input id="contribLoc" type="text" placeholder="Detected location will appear here" readonly />
+            <button type="button" class="detect-btn" id="contribDetect">📍 Detect</button>
+          </div>
+          <div id="contribBanner"></div>
+          <div class="contrib-actions">
+            <button type="button" class="btn ghost" id="contribAnalyseBtn">🔍 AI Analyse</button>
+            <button type="button" class="btn primary" id="contribSubmitBtn" disabled>Submit</button>
+          </div>
+          <div id="contribResults" class="contrib-results"></div>
+        </div>`;
+      document.getElementById('contribDrop').addEventListener('click', () => document.getElementById('contribFile').click());
+      document.getElementById('contribFile').addEventListener('change', e => addContribFiles(e.target.files));
+      document.getElementById('contribDetect').addEventListener('click', detectContribLocation);
+      document.getElementById('contribAnalyseBtn').addEventListener('click', runContribAnalyse);
+      document.getElementById('contribSubmitBtn').addEventListener('click', submitContrib);
+      contribModal.setAttribute('data-open', '1');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function addContribFiles(fileList) {
+      const arr = Array.from(fileList || []);
+      const next = contribState.files.slice();
+      for (const f of arr) {
+        if (!f.type.startsWith('image/')) continue;
+        if (f.size > 20 * 1024 * 1024) { contribBanner('Skipped — file > 20 MB: ' + f.name, 'err'); continue; }
+        if (next.length >= 5) break;
+        next.push(f);
+      }
+      contribState.files = next;
+      contribState.lastAnalysis = null;
+      contribState.contributionId = null;
+      renderContribThumbs();
+      document.getElementById('contribSubmitBtn').disabled = true;
+      document.getElementById('contribResults').innerHTML = '';
+    }
+
+    function renderContribThumbs() {
+      const wrap = document.getElementById('contribThumbs');
+      const drop = document.getElementById('contribDrop');
+      drop.classList.toggle('has-files', contribState.files.length > 0);
+      wrap.innerHTML = contribState.files.map((f, i) =>
+        `<div class="contrib-thumb"><img src="${URL.createObjectURL(f)}"><button type="button" class="rm" data-i="${i}">×</button></div>`
+      ).join('');
+      wrap.querySelectorAll('.rm').forEach(b => b.addEventListener('click', () => {
+        contribState.files.splice(Number(b.dataset.i), 1);
+        contribState.lastAnalysis = null;
+        contribState.contributionId = null;
+        document.getElementById('contribSubmitBtn').disabled = true;
+        document.getElementById('contribResults').innerHTML = '';
+        renderContribThumbs();
+      }));
+    }
+
+    function contribBanner(msg, kind) {
+      const el = document.getElementById('contribBanner');
+      if (!msg) { el.innerHTML = ''; return; }
+      el.innerHTML = `<div class="contrib-banner ${kind || 'info'}">${escapeHtml(msg)}</div>`;
+    }
+
+    async function detectContribLocation() {
+      const btn = document.getElementById('contribDetect');
+      const input = document.getElementById('contribLoc');
+      if (!navigator.geolocation) { contribBanner('Geolocation unavailable on this browser.', 'err'); return; }
+      btn.disabled = true; btn.textContent = 'Detecting…';
+      try {
+        const pos = await new Promise((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 12000 }));
+        const { latitude, longitude } = pos.coords;
+        const res = await fetch('/geocode/reverse', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: latitude, lon: longitude }),
+        });
+        const data = await res.json();
+        const addr = data.address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        input.value = addr;
+        contribState.location = addr;
+        contribBanner('Location detected.', 'ok');
+      } catch (e) {
+        contribBanner('Could not detect location — enable permissions and try again.', 'err');
+      } finally {
+        btn.disabled = false; btn.textContent = '📍 Detect';
+      }
+    }
+
+    async function runContribAnalyse() {
+      if (!contribState.files.length) { contribBanner('Attach at least one photo first.', 'err'); return; }
+      if (!contribState.location) { contribBanner('Detect your location first.', 'err'); return; }
+      const btn = document.getElementById('contribAnalyseBtn');
+      btn.disabled = true; btn.textContent = '🔍 Analysing…';
+      contribBanner('Running AI analysis…', 'info');
+      try {
+        const fd = new FormData();
+        fd.append('report_id', contribState.reportId);
+        fd.append('issue_title', contribState.issueTitle);
+        fd.append('location', contribState.location);
+        contribState.files.forEach(f => fd.append('media', f));
+        const res = await fetch('/explore/issues/contribute/analyse', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) {
+          contribBanner(data.error || 'AI analysis failed', 'err');
+          document.getElementById('contribSubmitBtn').disabled = true;
+          renderContribResults([]);
+          return;
+        }
+        contribState.contributionId = data.contribution_id;
+        contribState.lastAnalysis = data;
+        renderContribResults(data.media || []);
+        if (data.ai_ok) {
+          contribBanner(data.message || 'Issue confirmed — submit when ready.', 'ok');
+          document.getElementById('contribSubmitBtn').disabled = false;
+        } else {
+          contribBanner(data.message || 'No civic issue detected in the photo(s). Please re-upload sharper photos of the issue.', 'err');
+          document.getElementById('contribSubmitBtn').disabled = true;
+        }
+      } catch (e) {
+        contribBanner(e.message || 'AI analysis failed', 'err');
+      } finally {
+        btn.disabled = false; btn.textContent = '🔍 Re-run AI Analyse';
+      }
+    }
+
+    function renderContribResults(rows) {
+      const wrap = document.getElementById('contribResults');
+      wrap.innerHTML = rows.map(r => `
+        <div class="contrib-result ${r.ai_ok ? 'ok' : 'fail'}">
+          <div class="ct-thumb"><img src="${escapeHtml(r.annotated_url || r.media_url)}" data-full="${escapeHtml(r.annotated_url || r.media_url)}"></div>
+          <div class="meta">
+            <div class="verdict">${r.ai_ok ? '✓ Issue confirmed' : '✗ No issue detected'}</div>
+            <div class="summary">${escapeHtml(r.ai_summary || '')}</div>
+          </div>
+        </div>`).join('');
+      wrap.querySelectorAll('img').forEach(img => img.addEventListener('click', () => openZoom(img.dataset.full)));
+    }
+
+    async function submitContrib() {
+      if (!contribState.contributionId) return;
+      const btn = document.getElementById('contribSubmitBtn');
+      btn.disabled = true; btn.textContent = 'Submitting…';
+      try {
+        const res = await fetch('/explore/issues/contribute/submit', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contribution_id: contribState.contributionId }),
+        });
+        const data = await res.json();
+        if (!res.ok) { contribBanner(data.error || 'Submit failed', 'err'); btn.disabled = false; btn.textContent = 'Submit'; return; }
+        if (typeof data.total_points === 'number') {
+          setTotalPoints(data.total_points);
+          if (typeof explorePoints !== 'undefined' && explorePoints) explorePoints.textContent = data.total_points;
+        }
+        closeContribModal();
+        closeIssueDetailModal();
+        showRewardPopup(data.points_awarded || 10);
+      } catch (e) {
+        contribBanner(e.message || 'Submit failed', 'err');
+        btn.disabled = false; btn.textContent = 'Submit';
+      }
+    }
+
+    function showRewardPopup(points) {
+      const back = document.createElement('div');
+      back.className = 'reward-pop-back';
+      back.innerHTML = `
+        <div class="reward-pop">
+          <div class="star">🌟</div>
+          <h3>Thank you!</h3>
+          <div class="pts">+${points} pts</div>
+          <p>Reward points awarded for your contribution.</p>
+          <button type="button" class="btn" data-act="ok">Awesome</button>
+        </div>`;
+      document.body.appendChild(back);
+      const close = () => back.remove();
+      back.querySelector('[data-act="ok"]').addEventListener('click', close);
+      back.addEventListener('click', e => { if (e.target === back) close(); });
+      setTimeout(close, 4500);
+    }
+
+    function openZoom(src) {
+      if (!src) return;
+      const back = document.createElement('div');
+      back.className = 'zoom-back';
+      back.innerHTML = `<img src="${escapeHtml(src)}">`;
+      back.addEventListener('click', () => back.remove());
+      document.body.appendChild(back);
+    }
+
+    // ============ CONTRIBUTIONS TABLE (for report detail on 2b/3b/4b) ============
+    async function fetchContributions(reportId, issueTitle) {
+      try {
+        const url = `/reports/${encodeURIComponent(reportId)}/contributions${issueTitle ? `?issue_title=${encodeURIComponent(issueTitle)}` : ''}`;
+        const res = await fetch(url);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.contributions || [];
+      } catch { return []; }
+    }
+
+    function contribTableHtml(rows) {
+      if (!rows.length) {
+        return '<div class="contrib-empty">No follow-up media from other users yet.</div>';
+      }
+      const r = rows.map(c => {
+        const m = (c.media || [])[0] || {};
+        const src = m.annotated_url || m.media_url || '';
+        const dt = c.ts ? fmtReportDate(c.ts) : '';
+        return `<tr>
+          <td><div class="ct-thumb"><img src="${escapeHtml(src)}" data-full="${escapeHtml(src)}"></div></td>
+          <td>${escapeHtml(c.contributor_name || 'Contributor')}</td>
+          <td>${escapeHtml(dt)}</td>
+        </tr>`;
+      }).join('');
+      return `<table class="contrib-table">
+        <thead><tr><th>Media (AI annotated)</th><th>Submitted by</th><th>Date & time</th></tr></thead>
+        <tbody>${r}</tbody>
+      </table>`;
+    }
+
+    async function injectContributions(containerEl, reportId, issueTitle) {
+      const sec = document.createElement('div');
+      sec.className = 'contrib-section';
+      sec.innerHTML = `<h4>Media uploaded by other users (AI analysis)</h4><div class="contrib-loading" style="font-size:12.5px;color:#94a3b8;">Loading…</div>`;
+      containerEl.appendChild(sec);
+      const rows = await fetchContributions(reportId, issueTitle);
+      sec.innerHTML = `<h4>Media uploaded by other users (AI analysis)</h4>${contribTableHtml(rows)}`;
+      sec.querySelectorAll('.ct-thumb img').forEach(img => img.addEventListener('click', () => openZoom(img.dataset.full)));
+    }
+
     async function loadExploreIssues() {
       exploreLoaded = false;
       exploreList.innerHTML = '<div class="explore-empty"><span class="spinner" style="color:var(--muted)"></span>Loading issue feed…</div>';
@@ -7067,6 +7631,13 @@
           </button></span>`}
         </div>`;
       }).join('');
+      exploreList.querySelectorAll('.feed-card').forEach(card => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', e => {
+          if (e.target.closest('button') || e.target.closest('.tip-wrap')) return;
+          openIssueDetailModal(card.dataset.reportId, card.dataset.issueTitle);
+        });
+      });
       exploreList.querySelectorAll('[data-act="feed-upvote"]').forEach(btn => {
         btn.addEventListener('click', e => {
           e.stopPropagation();
@@ -7576,6 +8147,7 @@
               </div>
               ${it.location ? `<div class="loc">📍 ${escapeHtml(it.location)}</div>` : ''}
               ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
+              ${aiRatingHtmlFromAssignment(r, issueTitleFor(it))}
             </div>
           </div>`;
         });
@@ -7869,6 +8441,7 @@
             <div class="loc">📍 ${escapeHtml(it.location || '—')} · 🗓 ${escapeHtml(ts)}</div>
             ${it.detail ? `<div class="detail-text">${escapeHtml(it.detail)}</div>` : ''}
             ${it.comment ? `<div class="comment-text">"${escapeHtml(it.comment)}"</div>` : ''}
+            ${aiRatingHtmlFromAssignment(r, issueTitle)}
             <div class="ad-row">${approveHtml}${denyHtml}</div>
           </div>
         </div>`;
@@ -7896,6 +8469,7 @@
         <div id="adminDetailBanner" style="margin:8px 0;"></div>
         <div>${issuesHtml}</div>
       `;
+      injectContributions(adminDetailBody, r.id, '');
 
       // Wire thumbs up
       const tbtn = document.getElementById('adminThumbsBtn');
