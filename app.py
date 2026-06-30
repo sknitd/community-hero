@@ -136,14 +136,73 @@ def _build_timeline(submitted_ts: float) -> list:
     ]
 
 
-def _total_points_for(phone: str | None) -> int:
+def _earned_points_for(phone: str | None) -> int:
     if not phone:
         return 0
     with _reports_lock:
         return sum(int(r.get("points", 0)) for r in _reports_data.get(phone, []))
 
 
+def _spent_points_for(phone: str | None) -> int:
+    if not phone:
+        return 0
+    with _redemptions_lock:
+        return sum(int(r.get("points_cost", 0)) for r in _redemptions_data.get(phone, []))
+
+
+def _total_points_for(phone: str | None) -> int:
+    return max(0, _earned_points_for(phone) - _spent_points_for(phone))
+
+
 _load_reports()
+
+
+# Reward redemption persistence (phone -> list of redemption rows)
+REDEMPTIONS_FILE = BASE_DIR / "data" / "redemptions.json"
+_redemptions_lock = threading.Lock()
+_redemptions_data: dict = {}
+
+
+def _load_redemptions():
+    global _redemptions_data
+    if REDEMPTIONS_FILE.exists():
+        try:
+            with open(REDEMPTIONS_FILE) as f:
+                payload = json.load(f) or {}
+            if isinstance(payload, dict):
+                _redemptions_data = payload
+        except Exception:
+            _redemptions_data = {}
+
+
+def _save_redemptions():
+    tmp = REDEMPTIONS_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(_redemptions_data, f)
+    tmp.replace(REDEMPTIONS_FILE)
+
+
+_load_redemptions()
+
+
+REWARDS_CATALOG = [
+    {
+        "id": "amazon-250",
+        "name": "Amazon Voucher",
+        "brand": "amazon",
+        "amount_rs": 250,
+        "points_cost": 50,
+        "code": "TEST123",
+    },
+    {
+        "id": "flipkart-100",
+        "name": "Flipkart Voucher",
+        "brand": "flipkart",
+        "amount_rs": 100,
+        "points_cost": 20,
+        "code": "TEST123",
+    },
+]
 
 
 # Reporter profiles persistence (phone -> reporter)
@@ -3007,7 +3066,7 @@ def list_reports():
     })
     return jsonify({
         "reports": reports,
-        "total_points": sum(int(r.get("points", 0)) for r in reports),
+        "total_points": _total_points_for(phone),
         "categories": categories,
     })
 
@@ -3092,6 +3151,237 @@ def explore_issue_tolerance():
         "avg_tolerance": avg,
         "user_tolerance": user_score,
         "tolerance_count": count,
+    })
+
+
+@app.route("/rewards/catalog")
+def rewards_catalog():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    with _redemptions_lock:
+        mine = list(_redemptions_data.get(phone, []))
+    redeemed_ids = {r.get("voucher_id") for r in mine}
+    items = []
+    for v in REWARDS_CATALOG:
+        items.append({
+            "id": v["id"],
+            "name": v["name"],
+            "brand": v["brand"],
+            "amount_rs": v["amount_rs"],
+            "points_cost": v["points_cost"],
+            "redeemed": v["id"] in redeemed_ids,
+        })
+    mine_sorted = sorted(mine, key=lambda r: r.get("ts") or 0, reverse=True)
+    return jsonify({
+        "vouchers": items,
+        "redeemed": mine_sorted,
+        "total_points": _total_points_for(phone),
+    })
+
+
+@app.route("/rewards/redeem", methods=["POST"])
+def rewards_redeem():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    data = request.get_json(silent=True) or {}
+    voucher_id = (data.get("voucher_id") or "").strip()
+    voucher = next((v for v in REWARDS_CATALOG if v["id"] == voucher_id), None)
+    if not voucher:
+        return jsonify({"error": "Voucher not found"}), 404
+    with _redemptions_lock:
+        mine = _redemptions_data.setdefault(phone, [])
+        if any(r.get("voucher_id") == voucher_id for r in mine):
+            return jsonify({"error": "You have already redeemed this voucher. Refresh the page to redeem another."}), 400
+    available = _total_points_for(phone)
+    if available < voucher["points_cost"]:
+        return jsonify({"error": f"You need {voucher['points_cost']} points to redeem this voucher. You have {available}."}), 400
+    row = {
+        "voucher_id": voucher["id"],
+        "name": voucher["name"],
+        "brand": voucher["brand"],
+        "amount_rs": voucher["amount_rs"],
+        "points_cost": voucher["points_cost"],
+        "code": voucher["code"],
+        "ts": time.time(),
+    }
+    with _redemptions_lock:
+        _redemptions_data.setdefault(phone, []).append(row)
+        _save_redemptions()
+    return jsonify({
+        "ok": True,
+        "redeemed": row,
+        "total_points": _total_points_for(phone),
+    })
+
+
+def _month_start_ts() -> float:
+    now = datetime.now()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return month_start.timestamp()
+
+
+def _prev_month_window() -> tuple[float, float]:
+    now = datetime.now()
+    this_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_end = this_start
+    last_start = (this_start - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return last_start.timestamp(), last_end.timestamp()
+
+
+def _area_token(text: str) -> str:
+    text = (text or "").strip()
+    if not text:
+        return "Unknown"
+    parts = [p.strip() for p in text.split(",") if p.strip()]
+    if not parts:
+        return text[:40]
+    # Use the second part (locality/neighborhood) when present, else the first.
+    if len(parts) >= 2:
+        candidate = parts[1]
+    else:
+        candidate = parts[0]
+    # Strip leading numbers like "123 ".
+    candidate = re.sub(r"^\d+[\s,/-]+", "", candidate)
+    return candidate[:40] or "Unknown"
+
+
+@app.route("/explore/stats")
+def explore_stats():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    month_start = _month_start_ts()
+    prev_start, prev_end = _prev_month_window()
+    cat_counts: dict = {c: 0 for c in ADMIN_CATEGORIES}
+    cat_counts["Other"] = 0
+    ward_rows: dict = {}
+    total_issues = 0
+    resolved_count = 0
+    resolution_days_sum = 0.0
+    resolution_days_n = 0
+    prev_total = 0
+    addresses_set = set()
+
+    with _reports_lock:
+        all_reports = []
+        for owner_phone, reports in _reports_data.items():
+            for r in reports:
+                all_reports.append((owner_phone, r))
+
+        for owner_phone, report in all_reports:
+            created = float(report.get("created_at") or 0)
+            issues = report.get("issues") or []
+            for issue in issues:
+                title = _issue_title(issue)
+                loc = (issue.get("location") or "").strip()
+                if loc:
+                    addresses_set.add(loc.lower())
+                if created < prev_end and created >= prev_start:
+                    prev_total += 1
+                if created < month_start:
+                    continue
+                total_issues += 1
+                category = (issue.get("category") or "").strip()
+                if category in cat_counts:
+                    cat_counts[category] += 1
+                else:
+                    cat_counts["Other"] += 1
+                area = _area_token(loc)
+                if area not in ward_rows:
+                    ward_rows[area] = {"area": area, "resolved": 0, "open": 0}
+                assignment = (report.get("assignments") or {}).get(title) or {}
+                status, _verified = _issue_feed_status(report, issue)
+                ended_at = assignment.get("ended_at")
+                started_at = assignment.get("started_at") or created
+                if status == "Resolved" and ended_at:
+                    resolved_count += 1
+                    ward_rows[area]["resolved"] += 1
+                    try:
+                        days = max(0.0, (float(ended_at) - float(started_at)) / 86400.0)
+                        resolution_days_sum += days
+                        resolution_days_n += 1
+                    except (TypeError, ValueError):
+                        pass
+                else:
+                    ward_rows[area]["open"] += 1
+
+    citizens_total = 0
+    try:
+        with _reporters_lock:
+            citizens_total += len(_reporters_data)
+        with _admins_lock:
+            citizens_total += len(_admins_data)
+        with _partners_lock:
+            citizens_total += len(_partners_data)
+    except NameError:
+        pass
+
+    resolution_rate = round(100.0 * resolved_count / total_issues, 1) if total_issues else 0.0
+    avg_resolution_days = round(resolution_days_sum / resolution_days_n, 1) if resolution_days_n else 0.0
+    delta_pct = None
+    if prev_total:
+        delta_pct = round(100.0 * (total_issues - prev_total) / prev_total, 1)
+    elif total_issues:
+        delta_pct = 100.0
+
+    cats_payload = []
+    for name in list(cat_counts.keys()):
+        cats_payload.append({"name": name, "count": cat_counts[name]})
+
+    wards_payload = []
+    for row in ward_rows.values():
+        total = row["resolved"] + row["open"]
+        score = round(100.0 * row["resolved"] / total) if total else 0
+        wards_payload.append({
+            "area": row["area"],
+            "resolved": row["resolved"],
+            "open": row["open"],
+            "score": score,
+        })
+    wards_payload.sort(key=lambda r: (-(r["resolved"] + r["open"]), r["area"]))
+    wards_payload = wards_payload[:8]
+
+    alert = None
+    worst = None
+    for row in ward_rows.values():
+        total = row["resolved"] + row["open"]
+        if total < 2:
+            continue
+        open_ratio = row["open"] / total if total else 0
+        if worst is None or open_ratio > worst[0]:
+            worst = (open_ratio, row)
+    if worst:
+        ratio, row = worst
+        top_cat = max(cats_payload, key=lambda c: c["count"]) if cats_payload else None
+        cat_name = (top_cat or {}).get("name") or "civic issues"
+        confidence = min(95, 55 + int(ratio * 40))
+        alert = {
+            "title": "AI Predictive Alert",
+            "body": (
+                f"{row['area']} has seen a {row['open'] or 1}x backlog in {cat_name.lower()} reports this month — "
+                "trend likely to continue without intervention. Recommended: proactive inspection and prioritised assignment."
+            ),
+            "confidence": confidence,
+        }
+    else:
+        alert = {
+            "title": "AI Predictive Alert",
+            "body": "Not enough data this month to surface a confident prediction yet. Once more issues are reported, we'll flag emerging hotspots and recommended actions here.",
+            "confidence": 0,
+        }
+
+    return jsonify({
+        "total_reports": total_issues,
+        "delta_pct": delta_pct,
+        "resolution_rate": resolution_rate,
+        "avg_resolution_days": avg_resolution_days,
+        "citizens_engaged": citizens_total,
+        "addresses_covered": len(addresses_set),
+        "categories": cats_payload,
+        "wards": wards_payload,
+        "alert": alert,
+        "month_label": datetime.now().strftime("%B %Y"),
     })
 
 

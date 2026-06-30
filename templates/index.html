@@ -2109,6 +2109,189 @@
       font-size: 10px;
       font-weight: 700;
     }
+    /* Rewards */
+    .rewards-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 6px 2px 12px;
+    }
+    .rewards-head h2 { margin: 0; color: #173f75; font-size: 20px; }
+    .rewards-head p { margin: 2px 0 0; font-size: 12.5px; color: #62769b; }
+    .rewards-bal {
+      background: linear-gradient(135deg,#1d4ed8,#173f75);
+      color: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 18px rgba(23,63,117,0.18);
+    }
+    .rewards-bal .icon { font-size: 26px; }
+    .rewards-bal .num { font-size: 26px; font-weight: 900; line-height: 1; }
+    .rewards-bal .lbl { font-size: 11.5px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; }
+    .rewards-rules {
+      font-size: 12px;
+      color: #5a6b8c;
+      background: #fff7e6;
+      border: 1px solid #fde0a8;
+      border-radius: 10px;
+      padding: 8px 12px;
+    }
+    .voucher-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 6px 14px rgba(15,33,67,0.08);
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .voucher-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .voucher-logo.amazon {
+      background: #232f3e;
+      color: #ff9900;
+    }
+    .voucher-logo.flipkart {
+      background: #ffe11b;
+      color: #2874f0;
+    }
+    .voucher-logo .brand { font-size: 13px; font-weight: 900; }
+    .voucher-meta h4 { margin: 0; color: #173f75; font-size: 14.5px; }
+    .voucher-meta .amt { font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 2px; }
+    .voucher-meta .cost { font-size: 11.5px; color: #62769b; margin-top: 2px; }
+    .voucher-act .btn-redeem {
+      border: 0;
+      background: #173f75;
+      color: #fff;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .voucher-act .btn-redeem[disabled] {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+    .voucher-act .btn-revealed {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .scratch-modal-back {
+      position: fixed; inset: 0; background: rgba(15,33,67,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1200; padding: 16px;
+    }
+    .scratch-modal {
+      background: #fff; border-radius: 18px; max-width: 360px; width: 100%;
+      padding: 18px; box-shadow: 0 20px 40px rgba(15,33,67,0.3);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .scratch-modal h3 { margin: 0; color: #173f75; }
+    .scratch-modal .code-box {
+      background: #fff7e6; border: 2px dashed #f59e0b; border-radius: 12px;
+      text-align: center; padding: 18px; font-weight: 900; font-size: 24px;
+      letter-spacing: 4px; color: #b45309;
+    }
+    .scratch-modal .row { display: flex; gap: 10px; justify-content: flex-end; }
+    .scratch-modal .btn {
+      border: 0; border-radius: 10px; padding: 8px 14px;
+      font-weight: 800; cursor: pointer; font-family: inherit;
+    }
+    .scratch-modal .btn-prim { background: #173f75; color: #fff; }
+    .scratch-modal .btn-ghost { background: #eef4ff; color: #173f75; }
+    .redeemed-section h3 { margin: 8px 0 6px; color: #173f75; font-size: 15px; }
+    .redeemed-table {
+      width: 100%; border-collapse: collapse; background: #fff;
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 4px 10px rgba(15,33,67,0.06);
+      font-size: 12.5px;
+    }
+    .redeemed-table th, .redeemed-table td {
+      padding: 8px 10px; text-align: left; border-bottom: 1px solid #eef2f7;
+    }
+    .redeemed-table th {
+      background: #f1f5f9; color: #173f75; font-weight: 800;
+      text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.4px;
+    }
+    .redeemed-table td.code { font-family: ui-monospace, monospace; font-weight: 800; color: #b45309; }
+    .redeemed-empty {
+      background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px;
+      padding: 14px; color: #62769b; font-size: 12.5px; text-align: center;
+    }
+
+    /* Impact Dashboard (stats) */
+    .stats-shell {
+      display: flex; flex-direction: column; gap: 12px; padding: 2px 2px 12px;
+    }
+    .stats-head h2 { margin: 0; color: #173f75; font-size: 20px; }
+    .stats-head p { margin: 2px 0 0; font-size: 12.5px; color: #62769b; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 12px;
+      box-shadow: 0 4px 10px rgba(15,33,67,0.06);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-card .ico { font-size: 18px; }
+    .stat-card .val { font-size: 22px; font-weight: 900; color: #173f75; line-height: 1.1; }
+    .stat-card .val.green { color: #059669; }
+    .stat-card .val.amber { color: #d97706; }
+    .stat-card .val.purple { color: #7c3aed; }
+    .stat-card .lbl { font-size: 12px; color: #62769b; font-weight: 700; }
+    .stat-card .sub { font-size: 11px; color: #94a3b8; }
+    .stat-card.wide { grid-column: 1 / -1; }
+    .panel-card {
+      background: #fff; border-radius: 14px; padding: 14px;
+      box-shadow: 0 4px 10px rgba(15,33,67,0.06);
+    }
+    .panel-card h3 { margin: 0 0 10px; color: #173f75; font-size: 15px; }
+    .cat-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .cat-row .meta { display: flex; justify-content: space-between; font-size: 12px; color: #475569; }
+    .cat-row .meta .nm { color: #173f75; font-weight: 700; }
+    .cat-row .bar { height: 6px; background: #eef2f7; border-radius: 999px; overflow: hidden; }
+    .cat-row .bar > div { height: 100%; border-radius: 999px; }
+    .ward-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .ward-table th, .ward-table td { padding: 7px 6px; text-align: left; border-bottom: 1px solid #eef2f7; }
+    .ward-table th {
+      color: #94a3b8; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.4px; font-weight: 800;
+    }
+    .ward-table td.area { color: #173f75; font-weight: 800; }
+    .ward-table td.resolved { color: #059669; font-weight: 700; }
+    .ward-table td.open { color: #d97706; font-weight: 700; }
+    .ward-table .score-wrap { display: flex; align-items: center; gap: 6px; }
+    .ward-table .score-bar { width: 50px; height: 6px; background: #eef2f7; border-radius: 999px; overflow: hidden; }
+    .ward-table .score-bar > div { height: 100%; border-radius: 999px; }
+    .alert-card {
+      background: #fef9c3; border: 1px solid #fde68a; border-radius: 14px; padding: 14px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .alert-card h3 { margin: 0; color: #92400e; font-size: 14.5px; }
+    .alert-card p { margin: 0; font-size: 12.5px; color: #78350f; line-height: 1.4; }
+    .alert-card .pill {
+      align-self: flex-start; background: #fff7ed; color: #b45309; border: 1px solid #fed7aa;
+      padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800;
+    }
+
     .explore-empty {
       background: #fff;
       border: 1px dashed #cbd5e1;
@@ -3297,10 +3480,12 @@
           <h2 id="exploreSoonTitle" style="margin:0;color:#173f75;font-size:22px;">Coming soon</h2>
           <p id="exploreSoonText" style="margin:0;font-size:13px;">This section is coming soon.</p>
         </div>
+        <div id="exploreRewardsPanel" class="rewards-shell" style="display:none;"></div>
+        <div id="exploreStatsPanel" class="stats-shell" style="display:none;"></div>
       </div>
       <div class="explore-bottom">
         <button type="button" class="explore-nav active" data-tab="feed"><span class="ico">▣</span><span class="txt">Feed</span></button>
-        <button type="button" class="explore-nav" data-tab="map"><span class="ico">🗺</span><span class="txt">Map</span></button>
+        <button type="button" class="explore-nav" data-tab="rewards"><span class="ico">🎁</span><span class="txt">Rewards</span></button>
         <button type="button" class="explore-nav add" data-tab="report"><span class="ico">+</span><span class="txt">Report</span></button>
         <button type="button" class="explore-nav" data-tab="stats"><span class="ico">▥</span><span class="txt">Stats</span></button>
         <button type="button" class="explore-nav" data-tab="heroes"><span class="ico">🏆</span><span class="txt">Heroes</span></button>
@@ -6200,9 +6385,14 @@
       document.querySelectorAll('.explore-nav').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
       });
+      const rewardsPanel = document.getElementById('exploreRewardsPanel');
+      const statsPanel = document.getElementById('exploreStatsPanel');
+      exploreFeedPanel.style.display = 'none';
+      exploreSoonPanel.style.display = 'none';
+      if (rewardsPanel) rewardsPanel.style.display = 'none';
+      if (statsPanel) statsPanel.style.display = 'none';
       if (tab === 'feed') {
         exploreFeedPanel.style.display = '';
-        exploreSoonPanel.style.display = 'none';
         return;
       }
       if (tab === 'report') {
@@ -6210,16 +6400,259 @@
         restoreReportDraft();
         return;
       }
+      if (tab === 'rewards') {
+        rewardsPanel.style.display = '';
+        loadRewards();
+        return;
+      }
+      if (tab === 'stats') {
+        statsPanel.style.display = '';
+        loadImpactDashboard();
+        return;
+      }
       const meta = {
-        map: ['🗺', 'Map', 'Issue map is coming soon.'],
-        stats: ['▥', 'Stats', 'Community stats are coming soon.'],
         heroes: ['🏆', 'Heroes', 'Community heroes are coming soon.'],
       }[tab] || ['◇', 'Coming soon', 'This section is coming soon.'];
       exploreSoonIcon.textContent = meta[0];
       exploreSoonTitle.textContent = meta[1];
       exploreSoonText.textContent = meta[2];
-      exploreFeedPanel.style.display = 'none';
       exploreSoonPanel.style.display = '';
+    }
+
+    // ============ REWARDS ============
+    async function loadRewards() {
+      const panel = document.getElementById('exploreRewardsPanel');
+      panel.innerHTML = '<div class="explore-empty">Loading rewards…</div>';
+      try {
+        const res = await fetch('/rewards/catalog');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load rewards');
+        if (typeof data.total_points === 'number') {
+          setTotalPoints(data.total_points);
+          if (explorePoints) explorePoints.textContent = data.total_points;
+        }
+        renderRewards(panel, data);
+      } catch (e) {
+        panel.innerHTML = `<div class="explore-empty" style="color:var(--high);">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderRewards(panel, data) {
+      const total = Number(data.total_points || 0);
+      const anyRevealed = (data.redeemed || []).length > 0;
+      const vouchers = data.vouchers || [];
+      const redeemed = data.redeemed || [];
+      const cards = vouchers.map(v => {
+        const affordable = total >= v.points_cost;
+        const locked = !v.redeemed;
+        let action;
+        if (v.redeemed) {
+          action = `<span class="btn-revealed">Revealed ✓</span>`;
+        } else if (anyRevealed) {
+          action = `<button type="button" class="btn-redeem" disabled>Refresh to redeem</button>`;
+        } else if (!affordable) {
+          action = `<button type="button" class="btn-redeem" disabled>Need ${v.points_cost} pts</button>`;
+        } else {
+          action = `<button type="button" class="btn-redeem" data-act="redeem" data-id="${escapeAttr(v.id)}">Redeem</button>`;
+        }
+        return `
+          <div class="voucher-card">
+            <div class="voucher-logo ${escapeAttr(v.brand)}">
+              <span class="brand">${v.brand === 'amazon' ? 'amazon' : 'Flipkart'}</span>
+            </div>
+            <div class="voucher-meta">
+              <h4>${escapeHtml(v.name)}</h4>
+              <div class="amt">₹${v.amount_rs}</div>
+              <div class="cost">${locked ? `🔒 Unlock for ${v.points_cost} points` : `Unlocked · cost ${v.points_cost} pts`}</div>
+            </div>
+            <div class="voucher-act">${action}</div>
+          </div>`;
+      }).join('');
+      const tableHtml = redeemed.length ? `
+        <table class="redeemed-table">
+          <thead><tr><th>Coupon</th><th>Voucher code</th><th>Amount</th></tr></thead>
+          <tbody>
+            ${redeemed.map(r => `<tr>
+              <td>${escapeHtml(r.name || '')}</td>
+              <td class="code">${escapeHtml(r.code || '')}</td>
+              <td>₹${Number(r.amount_rs || 0)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : `<div class="redeemed-empty">No vouchers revealed yet. Redeem a card above to see it here.</div>`;
+      panel.innerHTML = `
+        <div class="rewards-head">
+          <h2>Reward Redemption</h2>
+          <p>Spend your earned points on gift vouchers.</p>
+        </div>
+        <div class="rewards-bal">
+          <div class="icon">🏆</div>
+          <div>
+            <div class="num">${total}</div>
+            <div class="lbl">Reward points</div>
+          </div>
+        </div>
+        <div class="rewards-rules">⚠ One voucher code can be revealed at a time. Refresh the page to redeem another.</div>
+        ${cards}
+        <div class="redeemed-section">
+          <h3>Revealed coupons</h3>
+          ${tableHtml}
+        </div>`;
+      panel.querySelectorAll('[data-act="redeem"]').forEach(btn => {
+        btn.addEventListener('click', () => confirmRedeem(btn.dataset.id, vouchers.find(v => v.id === btn.dataset.id)));
+      });
+    }
+
+    function confirmRedeem(voucherId, voucher) {
+      if (!voucher) return;
+      const back = document.createElement('div');
+      back.className = 'scratch-modal-back';
+      back.innerHTML = `
+        <div class="scratch-modal">
+          <h3>Redeem ${escapeHtml(voucher.name)}?</h3>
+          <p style="margin:0;font-size:13px;color:#475569;">This will deduct <b>${voucher.points_cost} points</b> from your reward balance and reveal a one-time voucher code.</p>
+          <div class="row">
+            <button type="button" class="btn btn-ghost" data-act="no">No</button>
+            <button type="button" class="btn btn-prim" data-act="yes">Yes, redeem</button>
+          </div>
+        </div>`;
+      document.body.appendChild(back);
+      back.addEventListener('click', e => { if (e.target === back) back.remove(); });
+      back.querySelector('[data-act="no"]').addEventListener('click', () => back.remove());
+      back.querySelector('[data-act="yes"]').addEventListener('click', async () => {
+        const yes = back.querySelector('[data-act="yes"]');
+        yes.disabled = true; yes.textContent = 'Redeeming…';
+        try {
+          const res = await fetch('/rewards/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ voucher_id: voucherId }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Could not redeem');
+          back.remove();
+          if (typeof data.total_points === 'number') {
+            setTotalPoints(data.total_points);
+            if (explorePoints) explorePoints.textContent = data.total_points;
+          }
+          showRevealedCode(data.redeemed);
+        } catch (e) {
+          yes.disabled = false; yes.textContent = 'Yes, redeem';
+          alert(e.message);
+        }
+      });
+    }
+
+    function showRevealedCode(redeemed) {
+      const back = document.createElement('div');
+      back.className = 'scratch-modal-back';
+      back.innerHTML = `
+        <div class="scratch-modal">
+          <h3>🎉 Voucher revealed</h3>
+          <p style="margin:0;font-size:13px;color:#475569;">${escapeHtml(redeemed.name)} worth <b>₹${Number(redeemed.amount_rs || 0)}</b></p>
+          <div class="code-box">${escapeHtml(redeemed.code)}</div>
+          <p style="margin:0;font-size:11.5px;color:#94a3b8;">Save this code — it has been added to your revealed coupons list.</p>
+          <div class="row">
+            <button type="button" class="btn btn-prim" data-act="ok">Done</button>
+          </div>
+        </div>`;
+      document.body.appendChild(back);
+      const close = () => { back.remove(); loadRewards(); };
+      back.addEventListener('click', e => { if (e.target === back) close(); });
+      back.querySelector('[data-act="ok"]').addEventListener('click', close);
+    }
+
+    // ============ IMPACT DASHBOARD ============
+    async function loadImpactDashboard() {
+      const panel = document.getElementById('exploreStatsPanel');
+      panel.innerHTML = '<div class="explore-empty">Loading impact dashboard…</div>';
+      try {
+        const res = await fetch('/explore/stats');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load stats');
+        renderImpactDashboard(panel, data);
+      } catch (e) {
+        panel.innerHTML = `<div class="explore-empty" style="color:var(--high);">${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderImpactDashboard(panel, data) {
+      const delta = data.delta_pct;
+      const deltaTxt = delta == null ? 'First active month' : `${delta >= 0 ? '+' : ''}${delta}% vs last month`;
+      const catColors = ['#dc2626','#ea580c','#0284c7','#7c3aed','#059669','#0891b2','#db2777','#94a3b8'];
+      const maxCat = Math.max(1, ...((data.categories || []).map(c => Number(c.count || 0))));
+      const catHtml = (data.categories || []).map((c, i) => {
+        const color = catColors[i % catColors.length];
+        const pct = Math.min(100, Math.round(100 * Number(c.count || 0) / maxCat));
+        return `<div class="cat-row">
+          <div class="meta"><span class="nm">${escapeHtml(c.name)}</span><span>${Number(c.count || 0)} reports</span></div>
+          <div class="bar"><div style="width:${pct}%;background:${color};"></div></div>
+        </div>`;
+      }).join('') || '<div class="redeemed-empty">No reports this month yet.</div>';
+
+      const wardsHtml = (data.wards && data.wards.length) ? `
+        <table class="ward-table">
+          <thead><tr><th>Ward</th><th>Resolved</th><th>Open</th><th>Score</th></tr></thead>
+          <tbody>
+            ${data.wards.map(w => {
+              const c = w.score >= 80 ? '#059669' : (w.score >= 60 ? '#d97706' : '#dc2626');
+              return `<tr>
+                <td class="area">${escapeHtml(w.area)}</td>
+                <td class="resolved">${w.resolved}</td>
+                <td class="open">${w.open}</td>
+                <td><div class="score-wrap"><div class="score-bar"><div style="width:${Math.max(0,Math.min(100,w.score))}%;background:${c};"></div></div><span style="color:${c};font-weight:800;">${w.score}</span></div></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>` : '<div class="redeemed-empty">No ward data yet this month.</div>';
+
+      const alert = data.alert || {};
+      const confidence = Number(alert.confidence || 0);
+      const confLabel = confidence >= 75 ? 'High' : (confidence >= 50 ? 'Medium' : 'Low');
+
+      panel.innerHTML = `
+        <div class="stats-head">
+          <h2>Impact Dashboard</h2>
+          <p>Real-time civic performance for your area · ${escapeHtml(data.month_label || '')}</p>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="ico">📋</div>
+            <div class="val">${data.total_reports || 0}</div>
+            <div class="lbl">Reports This Month</div>
+            <div class="sub">${escapeHtml(deltaTxt)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico">✅</div>
+            <div class="val green">${data.resolution_rate || 0}%</div>
+            <div class="lbl">Resolution Rate</div>
+            <div class="sub">Resolved this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico">⏱</div>
+            <div class="val amber">${data.avg_resolution_days || 0}d</div>
+            <div class="lbl">Avg Resolution</div>
+            <div class="sub">Target: &lt;7 days</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico">👥</div>
+            <div class="val purple">${data.citizens_engaged || 0}</div>
+            <div class="lbl">Citizens Engaged</div>
+            <div class="sub">Across ${data.addresses_covered || 0} addresses</div>
+          </div>
+        </div>
+        <div class="panel-card">
+          <h3>Issues by Category</h3>
+          ${catHtml}
+        </div>
+        <div class="panel-card">
+          <h3>Ward Performance</h3>
+          ${wardsHtml}
+        </div>
+        <div class="alert-card">
+          <h3>🔮 ${escapeHtml(alert.title || 'AI Predictive Alert')}</h3>
+          <p>${escapeHtml(alert.body || '')}</p>
+          <span class="pill">${confLabel} Confidence · ${confidence}%</span>
+        </div>`;
     }
 
     async function loadExploreIssues() {
