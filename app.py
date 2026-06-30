@@ -865,6 +865,56 @@ def otp_verify():
     return jsonify({"ok": False, "status": payload.get("status", "pending"), "error": "Incorrect OTP"}), 400
 
 
+@app.route("/otp/test_verify", methods=["POST"])
+def otp_test_verify():
+    data = request.get_json(silent=True) or {}
+    phone = normalize_phone(data.get("phone", ""))
+    code = (data.get("code") or "").strip()
+    if not phone:
+        return jsonify({"error": "Enter a valid 10-digit number"}), 400
+    if not re.fullmatch(r"\d+", code):
+        return jsonify({"error": "Enter the OTP code"}), 400
+    if code != "123456":
+        return jsonify({"ok": False, "error": "Incorrect test OTP — only 123456 is accepted"}), 400
+
+    session["otp_phone"] = phone
+    session["otp_verified"] = True
+    with _reporters_lock:
+        stored_reporter = _reporters_data.get(phone)
+    with _admins_lock:
+        stored_admin = _admins_data.get(phone)
+    with _partners_lock:
+        stored_partner = _partners_data.get(phone)
+    first_name = None
+    if stored_reporter:
+        session["reporter"] = stored_reporter
+        first_name = (stored_reporter.get("full_name", "").split() or [""])[0]
+    else:
+        session.pop("reporter", None)
+    if stored_admin:
+        session["admin"] = stored_admin
+        if not first_name:
+            first_name = (stored_admin.get("full_name", "").split() or [""])[0]
+    else:
+        session.pop("admin", None)
+    if stored_partner:
+        stored_partner = _with_partner_experience(stored_partner, phone)
+        session["partner"] = stored_partner
+        if not first_name:
+            first_name = (stored_partner.get("full_name", "").split() or [""])[0]
+    else:
+        session.pop("partner", None)
+    return jsonify({
+        "ok": True,
+        "status": "approved",
+        "phone": phone,
+        "reporter": stored_reporter,
+        "admin": stored_admin,
+        "partner": stored_partner,
+        "first_name": first_name,
+    })
+
+
 @app.route("/session")
 def session_state():
     phone = session.get("otp_phone")

@@ -1943,6 +1943,7 @@
           </div>
 
           <button id="sendBtn" class="btn">Send OTP</button>
+          <button id="testOtpBtn" type="button" class="btn ghost" style="margin-top: 10px;" disabled>Enter test OTP (123456)</button>
 
           <div id="otpBox" style="display:none; margin-top: 16px;">
             <div class="field">
@@ -2541,18 +2542,26 @@
     // ============ SCREEN 0: OTP ============
     const phoneInput = document.getElementById('phone');
     const sendBtn = document.getElementById('sendBtn');
+    const testOtpBtn = document.getElementById('testOtpBtn');
     const otpBox = document.getElementById('otpBox');
     const otpInput = document.getElementById('otp');
     const submitOtpBtn = document.getElementById('submitOtpBtn');
     const resendBtn = document.getElementById('resendBtn');
     const resendInfo = document.getElementById('resendInfo');
     const timerEl = document.getElementById('timer');
+    let testOtpMode = false;
+
+    function updateTestOtpEnabled() {
+      testOtpBtn.disabled = phoneInput.value.length !== 10;
+    }
 
     phoneInput.addEventListener('input', () => {
       phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
       setError('phoneErr', '');
       setInvalid('phone', false);
+      updateTestOtpEnabled();
     });
+    updateTestOtpEnabled();
     otpInput.addEventListener('input', () => {
       otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 8);
       setError('otpErr', '');
@@ -2604,15 +2613,39 @@
     resendBtn.addEventListener('click', () => sendOtp(true));
     phoneInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
 
+    testOtpBtn.addEventListener('click', () => {
+      if (phoneInput.value.length !== 10) {
+        setError('phoneErr', 'Enter a 10-digit number');
+        setInvalid('phone', true);
+        return;
+      }
+      banner('otpBanner', 'Test mode — enter 123456', 'ok');
+      testOtpMode = true;
+      otpBox.style.display = 'block';
+      phoneInput.disabled = true;
+      sendBtn.style.display = 'none';
+      testOtpBtn.style.display = 'none';
+      otpInput.value = '';
+      otpInput.focus();
+      resendInfo.style.display = 'none';
+      resendBtn.style.display = 'none';
+    });
+
     submitOtpBtn.addEventListener('click', async () => {
       if (otpInput.value.length < 4) {
         setError('otpErr', 'Enter the OTP');
         setInvalid('otp', true);
         return;
       }
+      if (testOtpMode && otpInput.value !== '123456') {
+        setError('otpErr', 'Incorrect test OTP — only 123456 is accepted');
+        setInvalid('otp', true);
+        return;
+      }
       banner('otpBanner', '');
       await withBusy(submitOtpBtn, 'Verifying…', async () => {
-        const res = await fetch('/otp/verify', {
+        const endpoint = testOtpMode ? '/otp/test_verify' : '/otp/verify';
+        const res = await fetch(endpoint, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone: phoneInput.value, code: otpInput.value })
         });
@@ -4758,14 +4791,23 @@
         }
         const ts = it.created_at ? fmtReportDate(it.created_at) : fmtReportDate(r.created_at);
         const alreadyDenied = !!findIssueDenial(r, it);
+        const alreadyApproved = (r.approved_issues || []).some(a => a.issue_title === issueTitle);
         const statusHtml = issueStatusHtml(r, it, { note: true });
-        // If already denied previously, hide approve, show deny-turned-Approve
-        const approveHtml = alreadyDenied
-          ? '<button class="ad-btn approve hidden" data-act="approve">Approve</button>'
-          : '<button class="ad-btn approve" data-act="approve">Approve</button>';
-        const denyHtml = alreadyDenied
-          ? '<button class="ad-btn approve" data-act="post-deny-approve">Approve</button>'
-          : '<button class="ad-btn deny" data-act="deny">Deny</button>';
+        // States:
+        //   approved → both buttons disabled (locked, no further action)
+        //   denied   → approve hidden, second button becomes post-deny-approve
+        //   neither  → approve + deny
+        let approveHtml, denyHtml;
+        if (alreadyApproved) {
+          approveHtml = '<button class="ad-btn approve" data-act="approve" disabled>Approved</button>';
+          denyHtml = '<button class="ad-btn deny" data-act="deny" disabled>Deny</button>';
+        } else if (alreadyDenied) {
+          approveHtml = '<button class="ad-btn approve hidden" data-act="approve">Approve</button>';
+          denyHtml = '<button class="ad-btn approve" data-act="post-deny-approve">Approve</button>';
+        } else {
+          approveHtml = '<button class="ad-btn approve" data-act="approve">Approve</button>';
+          denyHtml = '<button class="ad-btn deny" data-act="deny">Deny</button>';
+        }
         issuesHtml += `<div class="ai-card" data-idx="${idx}" data-issue-title="${escapeAttr(issueTitle)}">
           <div class="thumb-sm" style="width:140px;height:96px;">${thumb}</div>
           <div class="ai-info">
@@ -4864,6 +4906,7 @@
             r.approved_issues = data.approved_issues || r.approved_issues || [];
             r.assignments = data.assignments || r.assignments || {};
             if (data.timeline) r.timeline = data.timeline;
+            renderAdminDetail(r);
             if (data.no_partner) {
               banner('adminDetailBanner', `"${issueTitle}" approved — no matching service partner available`, 'ok');
             } else if (data.assignment) {
@@ -4873,7 +4916,6 @@
             } else {
               banner('adminDetailBanner', `"${issueTitle}" approved`, 'ok');
             }
-            refreshAdminTimeline(r);
           } catch (e) {
             banner('adminDetailBanner', e.message, 'error');
           }
@@ -5193,6 +5235,11 @@
       sendBtn.innerHTML = 'Send OTP';
       submitOtpBtn.innerHTML = 'Submit'; submitOtpBtn.disabled = false;
       resendBtn.disabled = true;
+      resendBtn.style.display = '';
+      resendInfo.style.display = '';
+      testOtpMode = false;
+      testOtpBtn.style.display = '';
+      updateTestOtpEnabled();
       banner('otpBanner', '');
       setError('phoneErr',''); setError('otpErr','');
       setInvalid('phone', false); setInvalid('otp', false);
