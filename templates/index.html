@@ -2852,6 +2852,59 @@
     .ai-rating .stars { color: #f59e0b; letter-spacing: 1px; font-size: 14px; }
     .ai-rating .verdict { font-weight: 800; color: #166534; margin-left: 6px; }
     .ai-rating .comment { color: #475569; margin-top: 4px; line-height: 1.4; }
+    /* Before/After + AI rating combined section */
+    .ba-section {
+      margin-top: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ba-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .ba-col { display: flex; flex-direction: column; gap: 6px; }
+    .ba-head {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #173f75;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .ba-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+      gap: 6px;
+    }
+    .ba-tile {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+    }
+    .ba-tile img, .ba-tile video {
+      width: 100%; height: 100%; object-fit: cover; cursor: zoom-in;
+    }
+    .ba-rating {
+      padding: 8px 10px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .ba-rating .stars { color: #f59e0b; letter-spacing: 1px; font-size: 14px; }
+    .ba-rating .verdict { font-weight: 800; color: #166534; margin-left: 6px; }
+    .ba-rating .comment { color: #475569; margin-top: 4px; line-height: 1.4; }
+    @media (max-width: 480px) {
+      .ba-cols { grid-template-columns: 1fr; }
+    }
     .reports-modal[data-open="1"] { display: flex; }
     .reports-dialog {
       background: #fff;
@@ -3896,6 +3949,19 @@
         wrap.classList.add('show-tip');
         setTimeout(() => wrap.classList.remove('show-tip'), 1800);
       }
+    });
+
+    // ============ ZOOM (delegated, works for any img/video with data-full) ============
+    document.addEventListener('click', (e) => {
+      const img = e.target.closest('img[data-full], .ba-tile img');
+      if (!img) return;
+      const src = img.dataset.full || img.src;
+      if (!src) return;
+      const back = document.createElement('div');
+      back.className = 'zoom-back';
+      back.innerHTML = `<img src="${src}">`;
+      back.addEventListener('click', () => back.remove());
+      document.body.appendChild(back);
     });
 
     // ============ VIEW SWITCHING ============
@@ -6522,18 +6588,41 @@
       renderReportsList(list);
     }
 
+    function ba_mediaTile(m) {
+      const src = escapeHtml(m.url || '');
+      if (m.kind === 'video') {
+        return `<div class="ba-tile"><video src="${src}" controls playsinline preload="metadata"></video></div>`;
+      }
+      return `<div class="ba-tile"><img src="${src}" data-full="${src}" alt=""></div>`;
+    }
+
     function aiRatingHtmlFromAssignment(report, issueTitle) {
       const a = (report.assignments || {})[issueTitle] || {};
       const ev = a.evaluation;
-      if (!ev || !a.ended_at) return '';
-      const stars = Math.max(1, Math.min(5, Number(ev.stars || 0)));
+      const before = a.before_media || [];
+      const after = a.after_media || [];
+      const hasMedia = before.length || after.length;
+      if (!ev && !a.ended_at && !hasMedia) return '';
+      const stars = Math.max(1, Math.min(5, Number((ev && ev.stars) || 0)));
+      const haveRating = !!ev && !!a.ended_at;
       const filled = '★'.repeat(stars);
       const empty = '☆'.repeat(5 - stars);
       const verdict = stars >= 4 ? 'Good job' : (stars >= 3 ? 'Acceptable' : 'Needs attention');
-      return `<div class="ai-rating">
-        <span class="stars">${filled}<span style="color:#cbd5e1;">${empty}</span></span>
-        <span class="verdict">${verdict} · ${stars}/5</span>
-        <div class="comment">${escapeHtml(ev.comment || '')}</div>
+      const beforeBlock = before.length
+        ? `<div class="ba-col"><div class="ba-head">📷 Before</div><div class="ba-grid">${before.map(ba_mediaTile).join('')}</div></div>`
+        : '';
+      const afterBlock = after.length
+        ? `<div class="ba-col"><div class="ba-head">✅ After</div><div class="ba-grid">${after.map(ba_mediaTile).join('')}</div></div>`
+        : '';
+      const ratingBlock = haveRating ? `
+        <div class="ba-rating">
+          <span class="stars">${filled}<span style="color:#cbd5e1;">${empty}</span></span>
+          <span class="verdict">${verdict} · ${stars}/5</span>
+          <div class="comment">${escapeHtml(ev.comment || '')}</div>
+        </div>` : '';
+      return `<div class="ba-section">
+        ${(beforeBlock || afterBlock) ? `<div class="ba-cols">${beforeBlock}${afterBlock}</div>` : ''}
+        ${ratingBlock}
       </div>`;
     }
 

@@ -41,6 +41,8 @@ PARTNER_DOC_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf"}
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.jinja_env.auto_reload = True
 app.secret_key = os.environ.get("FLASK_SECRET", "society-inspector-dev-secret-change-me")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
