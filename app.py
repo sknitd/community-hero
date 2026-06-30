@@ -1565,6 +1565,7 @@ def admin_approve_issue(report_id):
         approved.append({
             "issue_title": issue_title,
             "admin_name": admin.get("full_name", ""),
+            "admin_phone": session.get("otp_phone", ""),
             "ts": time.time(),
             "duration_hours": duration_hours,
         })
@@ -1870,8 +1871,9 @@ def partner_reschedule(report_id):
 
 
 def _auto_approve_denied_assignments():
-    """Background worker: when an SP denial has crossed its auto_approve_at,
-    re-run the assign flow to pick a fresh SP (excluding the original one)."""
+    """Background worker: re-run the assign flow to pick a fresh SP for
+    assignments that either (a) the SP explicitly denied, or (b) the SP
+    didn't accept/reschedule/deny by 2 hours before the scheduled slot."""
     while True:
         try:
             now = time.time()
@@ -1880,13 +1882,34 @@ def _auto_approve_denied_assignments():
                 for ph, reports in _reports_data.items():
                     for r in reports:
                         for title, a in (r.get("assignments") or {}).items():
-                            if a.get("status") != "denied":
+                            status = (a.get("status") or "pending").lower()
+                            if status == "denied":
+                                t = a.get("auto_approve_at")
+                                if t and float(t) <= now:
+                                    todo.append((r, title, a, "denied"))
                                 continue
-                            t = a.get("auto_approve_at")
-                            if not t or float(t) > now:
+                            if status == "pending":
+                                # Untouched assignment: lapse it 2h before slot
+                                sched = a.get("scheduled_for")
+                                if sched and (float(sched) - AUTO_APPROVE_LEAD_SECONDS) <= now:
+                                    todo.append((r, title, a, "lapsed"))
                                 continue
-                            todo.append((r, title, a))
-            for r, title, a in todo:
+            for r, title, a, reason in todo:
+                if reason == "lapsed":
+                    # Mark current assignment as denied due to inaction so
+                    # downstream UI treats it identically to an SP-deny and
+                    # the partner gets their slot back.
+                    a["status"] = "denied"
+                    a["denied_at"] = now
+                    a["auto_lapsed"] = True
+                    _release_partner_slot(a.get("partner_phone"), a)
+                    history = a.setdefault("history", [])
+                    history.append({
+                        "type": "auto_lapse",
+                        "sp_name": a.get("partner_name", ""),
+                        "ts": now,
+                        "reason": "SP did not respond in time",
+                    })
                 issue = _find_issue_in_report(r, title)
                 if not issue:
                     continue

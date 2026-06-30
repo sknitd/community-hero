@@ -725,6 +725,21 @@
       color: #92400e;
       background: #fef3c7;
     }
+    .call-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #10b981;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 6px;
+      margin-left: auto;
+    }
+    .call-link:hover { background: #059669; }
     .sp-row {
       display: flex;
       align-items: center;
@@ -1639,6 +1654,16 @@
       color: var(--high);
     }
     .status-tag.denied::before { content: "🚫"; }
+    .status-tag.approved   { background:#dbeafe; color:#1e3a8a; }
+    .status-tag.approved::before { content: "✅"; }
+    .status-tag.assigned   { background:#eaf0ff; color:#1f4ad6; }
+    .status-tag.assigned::before { content: "🛠"; }
+    .status-tag.accepted   { background:#d1fae5; color:#065f46; }
+    .status-tag.accepted::before { content: "✓"; }
+    .status-tag.rescheduled{ background:#ffedd5; color:#9a3412; }
+    .status-tag.rescheduled::before { content: "⟳"; }
+    .status-tag.sp-denied  { background:#fde68a; color:#7c2d12; }
+    .status-tag.sp-denied::before { content: "⚠"; }
     .status-tag .reason-text {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -3577,9 +3602,15 @@
     }
 
     function spNoteHtml(a) {
-      if (spStatusOf(a) !== 'denied') return '';
       const sched = a.scheduled_for_label || fmtReportDate(a.scheduled_for);
-      return `<div class="sp-note">⏰ Task will be auto-approved 2 hours before ${escapeHtml(sched)} (admin notified).</div>`;
+      const status = spStatusOf(a);
+      if (status === 'denied') {
+        return `<div class="sp-note">⏰ Task will be auto-reassigned 2 hours before ${escapeHtml(sched)} (admin notified).</div>`;
+      }
+      if (status === 'pending') {
+        return `<div class="sp-note">⏰ Heads up: if you don't accept, reschedule, or deny, this task will be auto-reassigned 2 hours before ${escapeHtml(sched)}.</div>`;
+      }
+      return '';
     }
 
     function buildSpCard(report, title, issue, a) {
@@ -3908,12 +3939,18 @@
         bookings.forEach(b => {
           const d = new Date((b.a.scheduled_for || 0) * 1000);
           const tm = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-          body += `<div class="booking-line">${escapeHtml(tm)} · ${escapeHtml(b.title)} · #${escapeHtml(b.report.id || '')}</div>`;
+          body += `<div class="booking-line" data-act="open-booking" data-report-id="${escapeAttr(b.report.id || '')}" data-issue-title="${escapeAttr(b.title)}" style="cursor:pointer;">${escapeHtml(tm)} · ${escapeHtml(b.title)} · #${escapeHtml(b.report.id || '')} →</div>`;
         });
       } else {
         body += `<div style="font-size:11.5px;color:var(--muted);margin-top:8px;">No bookings on this day.</div>`;
       }
       spCalDayDetail.innerHTML = body;
+      spCalDayDetail.querySelectorAll('[data-act="open-booking"]').forEach(el => {
+        el.addEventListener('click', () => {
+          closeSpCalendar();
+          openSpReportDetail(el.dataset.reportId, el.dataset.issueTitle);
+        });
+      });
     }
 
     // Home zones
@@ -4558,14 +4595,38 @@
     }
     function issueStatusHtml(report, issue, opts = {}) {
       const denial = findIssueDenial(report, issue);
-      if (!denial) return '<span class="status-tag">Wait for admin approval</span>';
-      const reason = denial.reason || 'No reason provided';
-      const who = denial.admin_name || 'admin';
-      const when = denial.ts ? ` · ${fmtReportDate(denial.ts)}` : '';
-      const note = opts.note
-        ? `<div class="deny-chip issue-deny">Denied by ${escapeHtml(who)}${when}<span class="reason">Reason: ${escapeHtml(reason)}</span></div>`
-        : '';
-      return `<span class="status-tag denied" title="Denied by ${escapeAttr(who)}${escapeAttr(when)}. Reason: ${escapeAttr(reason)}">Denied: <span class="reason-text">${escapeHtml(reason)}</span></span>${note}`;
+      if (denial) {
+        const reason = denial.reason || 'No reason provided';
+        const who = denial.admin_name || 'admin';
+        const when = denial.ts ? ` · ${fmtReportDate(denial.ts)}` : '';
+        const note = opts.note
+          ? `<div class="deny-chip issue-deny">Denied by ${escapeHtml(who)}${when}<span class="reason">Reason: ${escapeHtml(reason)}</span></div>`
+          : '';
+        return `<span class="status-tag denied" title="Denied by ${escapeAttr(who)}${escapeAttr(when)}. Reason: ${escapeAttr(reason)}">Denied: <span class="reason-text">${escapeHtml(reason)}</span></span>${note}`;
+      }
+      const title = issueTitleFor(issue);
+      const a = (report.assignments || {})[title];
+      const approved = (report.approved_issues || []).some(x => x.issue_title === title);
+      if (a) {
+        const who = a.partner_name || 'service partner';
+        const when = a.scheduled_for_label || (a.scheduled_for ? fmtReportDate(a.scheduled_for) : '');
+        const st = (a.status || 'pending').toLowerCase();
+        if (st === 'accepted') {
+          return `<span class="status-tag accepted" title="Accepted by ${escapeAttr(who)}">✓ Accepted by ${escapeHtml(who)}</span>`;
+        }
+        if (st === 'denied') {
+          return `<span class="status-tag sp-denied" title="${escapeAttr(who)} denied — task will be reassigned">SP denied · reassigning</span>`;
+        }
+        if (st === 'rescheduled') {
+          return `<span class="status-tag rescheduled" title="Rescheduled to ${escapeAttr(when)} by ${escapeAttr(who)}">⟳ Rescheduled to ${escapeHtml(when)}</span>`;
+        }
+        // pending
+        return `<span class="status-tag assigned" title="Assigned to ${escapeAttr(who)} for ${escapeAttr(when)}">Service partner assigned · ${escapeHtml(who)}</span>`;
+      }
+      if (approved) {
+        return '<span class="status-tag approved">Approved · finding service partner</span>';
+      }
+      return '<span class="status-tag">Wait for admin approval</span>';
     }
     function reportStatusLabel(report) {
       const count = (report.denied_issues || []).length;
@@ -4662,8 +4723,11 @@
         const icon = s.done ? '✓' : (s.current ? '⏳' : '·');
         const ts = s.ts ? fmtReportDate(s.ts) : '—';
         let extra = '';
+        if (s.step === 'approval' && report) {
+          extra += renderApprovalCallLinks(report);
+        }
         if (s.step === 'assigned' && report) {
-          extra = renderAssignmentChips(report, { canChange: false });
+          extra += renderAssignmentChips(report, { canChange: false });
         }
         return `<div class="tl-step ${cls}">
           <div class="tl-dot">${icon}</div>
@@ -4672,6 +4736,17 @@
           ${extra}
         </div>`;
       }).join('')}</div>`;
+    }
+
+    function renderApprovalCallLinks(report) {
+      const seen = new Map(); // phone -> name (dedupe same admin)
+      (report.approved_issues || []).forEach(a => {
+        if (a.admin_phone && !seen.has(a.admin_phone)) seen.set(a.admin_phone, a.admin_name || 'admin');
+      });
+      if (!seen.size) return '';
+      return Array.from(seen, ([phone, name]) =>
+        `<a class="call-link" href="tel:${escapeAttr(phone)}">📞 Call admin ${escapeHtml(name)} · ${escapeHtml(phone)}</a>`
+      ).join('');
     }
 
     function renderAssignmentChips(report, opts) {
@@ -4700,6 +4775,9 @@
         const changeBtn = opts.canChange
           ? `<button type="button" class="change-sp" data-act="change-sp" data-issue-title="${escapeAttr(title)}" data-issue-category="${escapeAttr(it.category || '')}">Change</button>`
           : '';
+        const callLink = (a.status === 'accepted' && a.partner_phone)
+          ? `<a class="call-link" href="tel:${escapeAttr(a.partner_phone)}">📞 Call SP ${escapeHtml(a.partner_name || '')} · ${escapeHtml(a.partner_phone)}</a>`
+          : '';
         const sub = (a.history || []).map(h => {
           const when = h.ts ? fmtReportDate(h.ts) : '';
           if (h.type === 'accept') {
@@ -4722,6 +4800,7 @@
           <span class="who">${escapeHtml(a.partner_name || 'Partner')}</span>
           <span class="when">${escapeHtml(a.scheduled_for_label || fmtReportDate(a.scheduled_for))}</span>
           ${changeBtn}
+          ${callLink}
           ${sub}
         </div>`;
       }).join('');
