@@ -2794,6 +2794,339 @@ def chat_ask():
         return jsonify({"error": f"Gemini failed: {e}"}), 500
 
 
+def _assistant_user_context(phone):
+    """Return a structured snapshot of the signed-in user used both for
+    prompting Gemini and for client-side actions (e.g. listing editable
+    reports). All values are best-effort and missing keys are fine."""
+    if not phone:
+        return {}
+    reporter = _reporters_data.get(phone) or {}
+    admin = _admins_data.get(phone) or {}
+    partner = _partners_data.get(phone) or {}
+    first_name = (reporter.get("full_name") or admin.get("full_name") or partner.get("full_name") or "").split(" ")[0]
+    earned = _earned_points_for(phone)
+    spent = _spent_points_for(phone)
+    net = max(0, earned - spent)
+    editable = []
+    pending_admin = 0
+    in_progress = 0
+    resolved = 0
+    with _reports_lock:
+        for r in _reports_data.get(phone, []):
+            if r.get("kind") == "contribution_bonus":
+                continue
+            approved = r.get("approved_issues") or []
+            denied = r.get("denied_issues") or []
+            assigned = r.get("assignments") or {}
+            if not approved and not denied and not assigned:
+                editable.append({
+                    "id": r.get("id"),
+                    "title": (r.get("description") or "")[:60] or (r.get("issues") or [{}])[0].get("title") or "Report",
+                    "ts": r.get("created_at") or 0,
+                })
+                pending_admin += 1
+            else:
+                # Roll up SP state.
+                for a in assigned.values():
+                    st = (a.get("status") or "").lower()
+                    if st == "completed" or a.get("ended_at"):
+                        resolved += 1
+                    elif st == "in_progress" or a.get("started_at"):
+                        in_progress += 1
+    # Points until next voucher.
+    voucher_targets = sorted(REWARDS_CATALOG, key=lambda v: v["points_cost"])
+    next_voucher = None
+    for v in voucher_targets:
+        if v["points_cost"] > net:
+            next_voucher = {
+                "name": v["name"],
+                "points_cost": v["points_cost"],
+                "points_to_go": v["points_cost"] - net,
+                "amount_rs": v["amount_rs"],
+            }
+            break
+    roles = []
+    if reporter: roles.append("reporter")
+    if admin: roles.append("admin")
+    if partner: roles.append("service_partner")
+    return {
+        "phone": phone,
+        "first_name": first_name,
+        "earned_points": earned,
+        "spent_points": spent,
+        "net_points": net,
+        "roles": roles,
+        "editable_reports": editable[:10],
+        "pending_admin_count": pending_admin,
+        "in_progress_count": in_progress,
+        "resolved_count": resolved,
+        "next_voucher": next_voucher,
+    }
+
+
+ASSISTANT_PRESETS = {
+    "role_select": {
+        "welcome_template": "Hello {phone}!",
+        "suggestions": [
+            {"label": "What can a Reporter do?", "kind": "qa", "topic": "reporter_role"},
+            {"label": "What does an Admin do?", "kind": "qa", "topic": "admin_role"},
+            {"label": "Who is a Service Partner?", "kind": "qa", "topic": "partner_role"},
+            {"label": "Which role should I pick?", "kind": "qa", "topic": "which_role"},
+            {"label": "How do reward points work?", "kind": "qa", "topic": "rewards_basics"},
+            {"label": "Can one phone hold multiple roles?", "kind": "qa", "topic": "multi_role"},
+        ],
+    },
+    "signup": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "Why is age needed?", "kind": "qa", "topic": "age_field"},
+            {"label": "What address should I enter?", "kind": "qa", "topic": "address_field"},
+            {"label": "How is my email used?", "kind": "qa", "topic": "email_field"},
+            {"label": "What does Detect location do?", "kind": "qa", "topic": "detect_location"},
+            {"label": "Why pick categories of concern?", "kind": "qa", "topic": "categories_field"},
+            {"label": "Is my data shared with anyone?", "kind": "qa", "topic": "privacy"},
+        ],
+    },
+    "adminSignup": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "Which area should I cover?", "kind": "qa", "topic": "admin_area"},
+            {"label": "Which categories should I pick?", "kind": "qa", "topic": "admin_categories"},
+            {"label": "What does the admin queue show?", "kind": "qa", "topic": "admin_queue"},
+            {"label": "How do I assign a Service Partner?", "kind": "qa", "topic": "assign_sp"},
+            {"label": "Can I deny an issue?", "kind": "qa", "topic": "deny_issue"},
+            {"label": "How do thumbs-up bonuses work?", "kind": "qa", "topic": "thumbs_up"},
+        ],
+    },
+    "report": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "Tips for great photos / videos", "kind": "qa", "topic": "evidence_tips"},
+            {"label": "How does AI analysis work?", "kind": "qa", "topic": "ai_analysis"},
+            {"label": "What is a duplicate issue?", "kind": "qa", "topic": "duplicate_issue"},
+            {"label": "How many points will I earn?", "kind": "qa", "topic": "points_for_severity"},
+            {"label": "Why is location required?", "kind": "qa", "topic": "location_required"},
+            {"label": "Edit one of my reports", "kind": "action", "action": {"type": "list_editable"}},
+        ],
+    },
+    "explore": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "How do upvotes help?", "kind": "qa", "topic": "upvotes"},
+            {"label": "What is a tolerance score?", "kind": "qa", "topic": "tolerance"},
+            {"label": "How do contributions work?", "kind": "qa", "topic": "contributions"},
+            {"label": "Submit a new report", "kind": "action", "action": {"type": "goto_report"}},
+            {"label": "Show me the rewards tab", "kind": "action", "action": {"type": "goto_rewards"}},
+            {"label": "Take me to the Heroes leaderboard", "kind": "action", "action": {"type": "goto_heroes"}},
+        ],
+    },
+    "explore_rewards": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "Submit one more report to earn points", "kind": "action", "action": {"type": "goto_report"}},
+            {"label": "How do I redeem a voucher?", "kind": "qa", "topic": "redeem_how"},
+            {"label": "Are voucher codes one-time?", "kind": "qa", "topic": "voucher_codes"},
+            {"label": "How are points calculated?", "kind": "qa", "topic": "points_calc"},
+            {"label": "What if I'm a few points away?", "kind": "qa", "topic": "close_to_reward"},
+            {"label": "Open the Impact Dashboard", "kind": "action", "action": {"type": "goto_stats"}},
+        ],
+    },
+    "explore_stats": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "What is Resolution Rate?", "kind": "qa", "topic": "resolution_rate"},
+            {"label": "How is Avg Resolution computed?", "kind": "qa", "topic": "avg_resolution"},
+            {"label": "What is Ward Performance score?", "kind": "qa", "topic": "ward_score"},
+            {"label": "Tell me about the AI alert", "kind": "qa", "topic": "ai_alert"},
+            {"label": "Show me the Heroes board", "kind": "action", "action": {"type": "goto_heroes"}},
+            {"label": "Back to the issue feed", "kind": "action", "action": {"type": "goto_explore"}},
+        ],
+    },
+    "explore_heroes": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "How do I earn badges?", "kind": "qa", "topic": "badges"},
+            {"label": "How are ranks calculated?", "kind": "qa", "topic": "ranking"},
+            {"label": "What is City Hero?", "kind": "qa", "topic": "city_hero"},
+            {"label": "Submit a report to climb up", "kind": "action", "action": {"type": "goto_report"}},
+            {"label": "Open Rewards", "kind": "action", "action": {"type": "goto_rewards"}},
+            {"label": "Back to feed", "kind": "action", "action": {"type": "goto_explore"}},
+        ],
+    },
+    "adminHome": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "How do I find reports in my area?", "kind": "qa", "topic": "admin_my_area"},
+            {"label": "How to assign a Service Partner?", "kind": "qa", "topic": "assign_sp"},
+            {"label": "When should I deny an issue?", "kind": "qa", "topic": "when_deny"},
+            {"label": "How do thumbs-up bonuses work?", "kind": "qa", "topic": "thumbs_up"},
+            {"label": "What does AI analysis tell me?", "kind": "qa", "topic": "admin_ai_view"},
+            {"label": "Show me the Impact Dashboard", "kind": "action", "action": {"type": "goto_stats"}},
+        ],
+    },
+    "partnerHome": {
+        "welcome_template": "Hello {first_name}!",
+        "suggestions": [
+            {"label": "How do I start a task?", "kind": "qa", "topic": "sp_start_task"},
+            {"label": "What media do I need to end a task?", "kind": "qa", "topic": "sp_end_task"},
+            {"label": "Can I reschedule a task?", "kind": "qa", "topic": "sp_reschedule"},
+            {"label": "How does AI rating work?", "kind": "qa", "topic": "ai_rating"},
+            {"label": "What if location doesn't match?", "kind": "qa", "topic": "sp_geo"},
+            {"label": "View my points", "kind": "action", "action": {"type": "goto_rewards"}},
+        ],
+    },
+}
+
+QA_FALLBACKS = {
+    "reporter_role": "Reporters log neighbourhood civic issues by uploading photos / short videos. The AI drafts issue tickets for them to pick, and they earn reward points for each verified issue.",
+    "admin_role": "Admins are the moderation layer for a specific area + chosen categories. They approve or deny each issue and assign verified Service Partners to fix what gets approved.",
+    "partner_role": "Service Partners are verified field workers who accept the assigned tasks, fix issues on the ground, and upload before/after evidence. AI then rates their work.",
+    "which_role": "Pick Reporter if you live in the area and want to flag problems. Pick Admin if you're an RWA / ward committee member overseeing an area. Pick Service Partner if you're a vendor who fixes such issues.",
+    "rewards_basics": "Every verified issue earns 5–15 reward points (depending on severity). Points can be redeemed for Amazon (₹250 / 50 pts) and Flipkart (₹100 / 20 pts) vouchers in the Rewards tab.",
+    "multi_role": "Yes — the same phone can sign up independently as Reporter, Admin, and Service Partner, each with its own profile.",
+    "age_field": "Age helps confirm you're an adult resident and shapes how the system surfaces age-appropriate volunteering / reward content.",
+    "address_field": "Use the address where you actually live or work. The Explore feed prioritises issues near your address so you see your neighbourhood first.",
+    "email_field": "Email is used only for important updates (e.g. report status, voucher receipts). It is never shared with other users.",
+    "detect_location": "Detect uses your phone's GPS + reverse-geocoding to fill in the exact address — much faster than typing it.",
+    "categories_field": "Categories tell the system which kinds of issues you care most about (Roads, Waste, Water, etc.). Reports + leaderboards in your home feed will lean towards those.",
+    "privacy": "Your phone, email, and address are stored to deliver the service — they are not shown to other users or sold. Reporter names appear publicly on issues you submit.",
+    "admin_area": "Pick the specific ward / locality you actually oversee — not the entire city. Reports only show up in your queue if they fall within that area.",
+    "admin_categories": "Select only the categories you're authorised to action. The triage queue scopes itself to these picks, so picking too broadly creates noise.",
+    "admin_queue": "The queue shows new reports, who reported them, AI summary, severity, photos, and any prior admin actions — so you can approve / deny each issue with full context.",
+    "assign_sp": "When you Approve an issue, the system suggests Service Partners filtered by category + proximity. Pick one and the SP gets the assignment in their 4b dashboard.",
+    "deny_issue": "Deny only when the issue is not actionable (duplicate / fake / out of scope). Always add a clear written reason — the reporter sees it in their timeline.",
+    "thumbs_up": "Thumbs-up gives a reporter +50 bonus points for a particularly good report. Once given, it can't be revoked.",
+    "evidence_tips": "Hold the phone steady; capture the issue and a wider shot for context; daylight beats flash; videos > 15 s let AI segment the worst frame automatically.",
+    "ai_analysis": "Gemini reads your media, drafts structured issue cards (title / category / severity), checks for duplicates against earlier reports, and annotates the visible problem.",
+    "duplicate_issue": "If your photo overlaps with a recent neighbour's report, the system flags it. You earn no fresh points but can upvote + add a tolerance score so the admin sees community demand.",
+    "points_for_severity": "Low severity = 5 pts, Medium = 10, High = 15. An admin thumbs-up can add a one-time +50 bonus.",
+    "location_required": "The admin needs the exact issue location to assign the right Service Partner. Without it, your report can't be routed.",
+    "upvotes": "Upvotes signal community demand and bubble urgent issues to the top of admins' queues.",
+    "tolerance": "Tolerance (0–100) is how bad each citizen feels the issue is. Averaging across users gives admins a fast read on real impact.",
+    "contributions": "Add Photo lets neighbours upload fresh evidence to someone else's report. AI verifies the image, awards +10 pts to the contributor, and surfaces it in the report detail.",
+    "redeem_how": "Pick a voucher card → tap Redeem → confirm Yes → reveal the code on a scratch card. The code is logged in your revealed-coupons table.",
+    "voucher_codes": "All current demo codes show as TEST123 — that's the voucher you'd paste at checkout in real life.",
+    "points_calc": "Points = earned (from reports + thumbs-up + contributions) minus spent (redeemed vouchers). Your wallet always shows the net.",
+    "close_to_reward": "Check the Rewards tab — the locked cards show exactly how many points away you are. One medium-severity report (+10 pts) is often enough to cross the line.",
+    "resolution_rate": "Resolution Rate = (# issues marked Resolved this month) ÷ (total issues this month). It resets on the 1st of every month.",
+    "avg_resolution": "Average days between a Service Partner starting the task and ending it, taken over every resolved task this month.",
+    "ward_score": "Ward score = (resolved ÷ total) × 100. A green bar means ≥ 80% resolved, amber 60–79%, red below 60%.",
+    "ai_alert": "Gemini scans wards where the open-issue ratio is highest, plus the most common category, and surfaces it with a confidence pill so admins know where to focus next.",
+    "badges": "Badges unlock automatically: First Reporter (1 report), Lens Hero (5 photo reports), Road Warrior (10 road issues), City Hero (rank ≤ 3 in city).",
+    "ranking": "Rank is ordered by total reward points (gross — not net of redemptions). Submitting more verified reports is the fastest way to climb.",
+    "city_hero": "Sit in the top 3 of the city leaderboard. The badge unlocks automatically and stays until your rank slips.",
+    "admin_my_area": "Use the Area filter at the top of the queue — toggle between 'My area' (reports inside your registered ward) and 'Other' to see overflow.",
+    "when_deny": "Deny when the AI flagged a duplicate that's actually the same issue, the photo doesn't show a real problem, or the issue is outside your jurisdiction.",
+    "admin_ai_view": "You see the AI's structured ticket (title / category / severity) plus its short description — enough to validate without watching the whole video.",
+    "sp_start_task": "Open the assigned task → Start → your live GPS must match the issue's location → upload 1+ 'before' photos → confirm to lock the start time.",
+    "sp_end_task": "End requires GPS match + 1+ 'after' photos + ticking both confirmation boxes. Gemini auto-rates the before/after pair on a 1–5 scale.",
+    "sp_reschedule": "Yes — Reschedule lets you propose a new slot with a reason. The reporter sees the new time on their timeline.",
+    "ai_rating": "Stars come from Gemini comparing your before vs after photos. 4–5 = Good job, 3 = Acceptable, ≤ 2 = Needs attention.",
+    "sp_geo": "Move to the issue's exact location and retry. If the geo-match still fails, the system will refuse start/end so check your GPS accuracy.",
+}
+
+
+def _assistant_pick_suggestions(screen, ctx):
+    preset = ASSISTANT_PRESETS.get(screen) or ASSISTANT_PRESETS["explore"]
+    suggestions = [dict(s) for s in preset["suggestions"]]
+    # Inject the personalised "edit a report" entry if there are any to edit.
+    if ctx.get("editable_reports"):
+        suggestions = [{
+            "label": f"Edit one of my {len(ctx['editable_reports'])} pending report(s)",
+            "kind": "action",
+            "action": {"type": "list_editable", "items": ctx["editable_reports"]},
+        }] + [s for s in suggestions if (s.get("action") or {}).get("type") != "list_editable"]
+    nv = ctx.get("next_voucher")
+    if nv:
+        suggestions.insert(0, {
+            "label": f"You're {nv['points_to_go']} pts away from a ₹{nv['amount_rs']} {nv['name'].split(' ')[0]} voucher — submit one more report!",
+            "kind": "action",
+            "action": {"type": "goto_report"},
+        })
+    return suggestions[:8]
+
+
+def _assistant_welcome(screen, ctx):
+    preset = ASSISTANT_PRESETS.get(screen) or ASSISTANT_PRESETS["explore"]
+    tmpl = preset["welcome_template"]
+    first = ctx.get("first_name") or "there"
+    phone = ctx.get("phone") or ""
+    return tmpl.format(first_name=first, phone=phone)
+
+
+@app.route("/assistant/turn", methods=["POST"])
+def assistant_turn():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    data = request.get_json(silent=True) or {}
+    screen = (data.get("screen") or "explore").strip()
+    message = (data.get("message") or "").strip()
+    topic = (data.get("topic") or "").strip()
+    history = data.get("history") or []
+    ctx = _assistant_user_context(phone)
+    welcome = _assistant_welcome(screen, ctx)
+    suggestions = _assistant_pick_suggestions(screen, ctx)
+
+    reply = None
+    if topic and topic in QA_FALLBACKS:
+        reply = QA_FALLBACKS[topic]
+    elif message:
+        # Free-text question — call Gemini grounded in user context.
+        ctx_lines = [
+            f"- screen: {screen}",
+            f"- user first name: {ctx.get('first_name')}",
+            f"- net reward points: {ctx.get('net_points')}",
+            f"- pending reports awaiting admin: {ctx.get('pending_admin_count')}",
+            f"- in-progress tasks: {ctx.get('in_progress_count')}",
+            f"- resolved tasks: {ctx.get('resolved_count')}",
+        ]
+        nv = ctx.get("next_voucher")
+        if nv:
+            ctx_lines.append(
+                f"- next voucher: {nv['name']} (₹{nv['amount_rs']}) at {nv['points_cost']} pts; {nv['points_to_go']} pts to go"
+            )
+        recent = []
+        for turn in history[-6:]:
+            role = "User" if turn.get("role") == "user" else "Assistant"
+            text = str(turn.get("text") or "").strip()
+            if text:
+                recent.append(f"{role}: {text}")
+        recent.append(f"User: {message}")
+        recent_text = "\n".join(recent)
+        prompt = (
+            "You are 'Helper Bot', a friendly assistant inside the Community Hero app — "
+            "a civic-issue reporting platform with three roles (Reporter, Admin, Service "
+            "Partner). Answer in 2–4 short, practical sentences. Reference the user's "
+            "current screen and points context when useful. Do not invent features. If the "
+            "user is close to redeeming a voucher, nudge them about it.\n\n"
+            "Live user context:\n" + "\n".join(ctx_lines) + "\n\n"
+            "Recent conversation:\n" + recent_text + "\nAssistant:"
+        )
+        try:
+            resp = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[prompt],
+                config=types.GenerateContentConfig(temperature=0.4),
+            )
+            reply = (resp.text or "").strip()
+        except Exception as exc:
+            reply = f"Sorry — I couldn't reach the AI just now ({exc})."
+
+    return jsonify({
+        "welcome": welcome,
+        "suggestions": suggestions,
+        "reply": reply,
+        "context": {
+            "first_name": ctx.get("first_name"),
+            "phone": ctx.get("phone"),
+            "net_points": ctx.get("net_points"),
+            "next_voucher": ctx.get("next_voucher"),
+            "editable_reports": ctx.get("editable_reports"),
+        },
+    })
+
+
 @app.route("/report", methods=["POST"])
 def submit_report():
     if not session.get("otp_verified"):

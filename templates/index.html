@@ -1244,6 +1244,105 @@
     }
     .small-dialog .field-label .req { color: var(--high); margin-left: 2px; }
 
+    /* Helper Bot — floating caped robot assistant */
+    .helper-bot {
+      position: fixed; right: 18px; bottom: 18px; z-index: 2400;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+      pointer-events: none;
+    }
+    .helper-btn {
+      width: 64px; height: 64px; border-radius: 999px; border: 0;
+      background: linear-gradient(135deg,#1d4ed8,#173f75);
+      box-shadow: 0 12px 26px rgba(23,63,117,0.32);
+      cursor: pointer; pointer-events: auto;
+      display: flex; align-items: center; justify-content: center;
+      padding: 4px;
+      animation: hbBob 3.2s ease-in-out infinite;
+    }
+    .helper-btn svg { width: 100%; height: 100%; }
+    .helper-btn:hover { transform: scale(1.05); }
+    @keyframes hbBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    .helper-hello {
+      pointer-events: auto;
+      background: #fff; border-radius: 14px; padding: 10px 14px 10px 12px;
+      box-shadow: 0 12px 26px rgba(15,33,67,0.22);
+      max-width: 220px; font-size: 13px; color: #173f75; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 8px;
+      position: relative;
+      animation: hbHelloIn 0.4s ease-out;
+    }
+    .helper-hello::after {
+      content: ""; position: absolute; right: 22px; bottom: -7px;
+      width: 0; height: 0;
+      border-left: 7px solid transparent; border-right: 7px solid transparent;
+      border-top: 8px solid #fff;
+    }
+    .helper-hello .hb-close-hello {
+      border: 0; background: #f1f5f9; color: #475569;
+      width: 22px; height: 22px; border-radius: 999px;
+      cursor: pointer; font-weight: 800;
+    }
+    @keyframes hbHelloIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .helper-panel {
+      position: fixed; right: 18px; bottom: 92px; z-index: 2401;
+      width: min(360px, calc(100vw - 36px));
+      max-height: 78vh; min-height: 320px;
+      background: #fff; border-radius: 18px;
+      box-shadow: 0 24px 50px rgba(15,33,67,0.32);
+      display: flex; flex-direction: column; overflow: hidden;
+      animation: hbPanelIn 0.22s cubic-bezier(0.22,1.2,0.36,1);
+    }
+    @keyframes hbPanelIn { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .hp-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; background: linear-gradient(135deg,#1d4ed8,#173f75); color: #fff;
+    }
+    .hp-title { display: flex; align-items: center; gap: 10px; }
+    .hp-avatar { font-size: 22px; }
+    .hp-name { font-weight: 900; font-size: 14px; }
+    .hp-sub { font-size: 11.5px; opacity: 0.85; }
+    .hp-close {
+      border: 0; background: rgba(255,255,255,0.18);
+      color: #fff; width: 28px; height: 28px; border-radius: 999px;
+      cursor: pointer; font-weight: 800;
+    }
+    .hp-body { flex: 1; overflow-y: auto; padding: 10px 12px; background: #f8fafc; }
+    .hp-suggestions {
+      display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
+    }
+    .hp-chip {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 9px 12px; font-size: 12.5px; color: #173f75; font-weight: 700;
+      cursor: pointer; text-align: left; line-height: 1.35;
+      transition: background 0.12s ease;
+    }
+    .hp-chip:hover { background: #eaf0ff; }
+    .hp-chip.action { background: #fef9c3; border-color: #fde68a; color: #92400e; }
+    .hp-chip.action:hover { background: #fde68a; }
+    .hp-messages { display: flex; flex-direction: column; gap: 8px; }
+    .hp-msg {
+      max-width: 88%; padding: 8px 12px; border-radius: 14px;
+      font-size: 13px; line-height: 1.45; word-wrap: break-word;
+    }
+    .hp-msg.user { background: #173f75; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .hp-msg.bot { background: #fff; color: #0f172a; border: 1px solid #e2e8f0; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .hp-msg.thinking { color: #64748b; font-style: italic; }
+    .hp-input {
+      padding: 10px 12px; border-top: 1px solid #e2e8f0; background: #fff;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .hp-input input {
+      flex: 1; border: 1px solid #cbd5e1; border-radius: 999px;
+      padding: 10px 14px; font-size: 13px; font-family: inherit;
+      background: #f8fafc; color: #0f172a;
+    }
+    .hp-input input:focus { outline: 2px solid #1d4ed8; outline-offset: -2px; background: #fff; }
+    .hp-input button {
+      border: 0; background: #173f75; color: #fff;
+      width: 38px; height: 38px; border-radius: 999px;
+      font-weight: 900; font-size: 16px; cursor: pointer;
+    }
+    .hp-input button:disabled { background: #cbd5e1; cursor: not-allowed; }
     /* Edit button on editable reports */
     .edit-rep-btn {
       border: 0; border-radius: 8px; padding: 5px 10px;
@@ -3964,6 +4063,61 @@
     </section>
   </div>
 
+  <!-- Helper Bot — caped robot assistant -->
+  <div id="helperBot" class="helper-bot" style="display:none;">
+    <div id="helperHello" class="helper-hello" style="display:none;">
+      <span id="helperHelloText">Hello!</span>
+      <button type="button" class="hb-close-hello" aria-label="Dismiss">×</button>
+    </div>
+    <button type="button" id="helperBtn" class="helper-btn" aria-label="Open assistant">
+      <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Cape -->
+        <path d="M22 38 Q12 52 18 70 L40 60 L62 70 Q68 52 58 38 Z" fill="#dc2626"/>
+        <path d="M22 38 Q12 52 18 70 L40 60 Z" fill="#b91c1c"/>
+        <!-- Body -->
+        <rect x="24" y="34" width="32" height="28" rx="8" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.5"/>
+        <!-- Head -->
+        <rect x="22" y="14" width="36" height="26" rx="9" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+        <!-- Antenna -->
+        <line x1="40" y1="8" x2="40" y2="14" stroke="#173f75" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="40" cy="6" r="3" fill="#f59e0b"/>
+        <!-- Eyes -->
+        <circle cx="32" cy="26" r="4" fill="#173f75"/>
+        <circle cx="48" cy="26" r="4" fill="#173f75"/>
+        <circle cx="33" cy="25" r="1.3" fill="#fff"/>
+        <circle cx="49" cy="25" r="1.3" fill="#fff"/>
+        <!-- Mouth (smile) -->
+        <path d="M32 33 Q40 38 48 33" stroke="#173f75" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Chest light -->
+        <circle cx="40" cy="48" r="4" fill="#22c55e"/>
+        <!-- Arms -->
+        <rect x="16" y="38" width="8" height="14" rx="3" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.2"/>
+        <rect x="56" y="38" width="8" height="14" rx="3" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.2"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="helperPanel" class="helper-panel" style="display:none;">
+    <div class="hp-head">
+      <div class="hp-title">
+        <span class="hp-avatar">🤖</span>
+        <div>
+          <div class="hp-name">Helper Bot</div>
+          <div class="hp-sub" id="helperPanelHello">Hi there!</div>
+        </div>
+      </div>
+      <button type="button" class="hp-close" id="helperPanelClose" aria-label="Close">×</button>
+    </div>
+    <div class="hp-body" id="helperBody">
+      <div class="hp-suggestions" id="helperSuggestions"></div>
+      <div class="hp-messages" id="helperMessages"></div>
+    </div>
+    <div class="hp-input">
+      <input id="helperInput" type="text" placeholder="Ask me anything…" maxlength="500" />
+      <button type="button" id="helperSend">↑</button>
+    </div>
+  </div>
+
   <script>
     // ============ TIP-WRAP (tap-to-show tooltip for disabled controls) ============
     document.addEventListener('click', (e) => {
@@ -4043,6 +4197,7 @@
       }
       window.scrollTo({ top: 0, behavior: 'instant' });
       if (typeof updateActionButtons === 'function') updateActionButtons();
+      if (typeof helperOnViewChange === 'function') helperOnViewChange(name);
     }
 
     function showPartnerHome(partner, label) {
@@ -4050,6 +4205,230 @@
       renderComingSoon('partner');
       showView('comingSoon', label);
       loadSpAssignments();
+    }
+
+    // ============ HELPER BOT (caped-robot assistant) ============
+    const helperBotEl = document.getElementById('helperBot');
+    const helperBtnEl = document.getElementById('helperBtn');
+    const helperHelloEl = document.getElementById('helperHello');
+    const helperHelloText = document.getElementById('helperHelloText');
+    const helperPanelEl = document.getElementById('helperPanel');
+    const helperPanelHello = document.getElementById('helperPanelHello');
+    const helperSuggestionsEl = document.getElementById('helperSuggestions');
+    const helperMessagesEl = document.getElementById('helperMessages');
+    const helperInputEl = document.getElementById('helperInput');
+    const helperSendBtn = document.getElementById('helperSend');
+    const helperCloseBtn = document.getElementById('helperPanelClose');
+    let helperHistory = [];
+    let helperCurrentScreen = null;
+    let helperHelloDismissed = false;
+    let helperBusy = false;
+
+    function helperScreenKey(viewName) {
+      const ex = document.getElementById('exploreView');
+      if (viewName === 'explore' && ex) {
+        const tab = ex.querySelector('.explore-nav.active');
+        const t = tab && tab.dataset.tab;
+        if (t === 'rewards') return 'explore_rewards';
+        if (t === 'stats') return 'explore_stats';
+        if (t === 'heroes') return 'explore_heroes';
+      }
+      if (viewName === 'comingSoon') {
+        const t = document.getElementById('csTitle');
+        if (t && /service partner/i.test(t.textContent)) return 'partnerHome';
+        return 'adminHome';
+      }
+      return viewName;
+    }
+
+    function helperOnViewChange(viewName) {
+      // OTP screen and unknown — hide.
+      if (viewName === 'otp' || !viewName) {
+        helperBotEl.style.display = 'none';
+        helperPanelEl.style.display = 'none';
+        return;
+      }
+      helperBotEl.style.display = 'flex';
+      const screen = helperScreenKey(viewName);
+      if (screen === helperCurrentScreen) {
+        // tab changes within explore still refresh suggestions
+        if (helperPanelEl.style.display === 'flex') helperFetchTurn();
+        return;
+      }
+      helperCurrentScreen = screen;
+      helperHistory = [];
+      if (helperPanelEl.style.display === 'flex') helperFetchTurn();
+      else helperFetchTurn(true);
+    }
+
+    async function helperFetchTurn(forBubbleOnly = false, message = null, topic = null) {
+      try {
+        const res = await fetch('/assistant/turn', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            screen: helperCurrentScreen || 'explore',
+            history: helperHistory,
+            message: message || '',
+            topic: topic || '',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Helper failed');
+        // Update welcome bubble + drawer header
+        const welcome = data.welcome || 'Hello!';
+        helperHelloText.textContent = welcome;
+        helperPanelHello.textContent = welcome;
+        if (!helperHelloDismissed && forBubbleOnly) {
+          helperHelloEl.style.display = '';
+          clearTimeout(window._helperHelloTimer);
+          window._helperHelloTimer = setTimeout(() => { helperHelloEl.style.display = 'none'; }, 5000);
+        }
+        renderHelperSuggestions(data.suggestions || []);
+        if (data.reply) {
+          helperPushMessage('bot', data.reply);
+        }
+        return data;
+      } catch (e) {
+        if (helperPanelEl.style.display === 'flex') helperPushMessage('bot', e.message || 'Helper Bot is offline right now.');
+      }
+    }
+
+    function renderHelperSuggestions(suggestions) {
+      helperSuggestionsEl.innerHTML = '';
+      suggestions.forEach(s => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'hp-chip' + (s.kind === 'action' ? ' action' : '');
+        b.textContent = (s.kind === 'action' ? '⚡ ' : '💬 ') + s.label;
+        b.addEventListener('click', () => onHelperSuggestionClick(s));
+        helperSuggestionsEl.appendChild(b);
+      });
+    }
+
+    function helperPushMessage(role, text) {
+      helperHistory.push({ role, text });
+      const div = document.createElement('div');
+      div.className = `hp-msg ${role}`;
+      div.textContent = text;
+      helperMessagesEl.appendChild(div);
+      helperMessagesEl.parentElement.scrollTop = helperMessagesEl.parentElement.scrollHeight;
+    }
+
+    function onHelperSuggestionClick(s) {
+      if (helperBusy) return;
+      if (s.kind === 'qa') {
+        helperPushMessage('user', s.label);
+        helperBusy = true;
+        helperFetchTurn(false, '', s.topic).finally(() => { helperBusy = false; });
+        return;
+      }
+      // Action chips
+      const a = s.action || {};
+      switch (a.type) {
+        case 'goto_report':
+          helperClose();
+          if (typeof restoreReportDraft === 'function') restoreReportDraft();
+          showView('report', whoText.textContent.replace(/^Verified:\s*/, ''));
+          break;
+        case 'goto_explore':
+          helperClose();
+          if (typeof openExploreFeed === 'function') openExploreFeed(true);
+          break;
+        case 'goto_rewards':
+          helperClose();
+          if (typeof openExploreFeed === 'function') openExploreFeed(true);
+          setTimeout(() => { if (typeof setExploreTab === 'function') setExploreTab('rewards'); }, 50);
+          break;
+        case 'goto_stats':
+          helperClose();
+          if (typeof openExploreFeed === 'function') openExploreFeed(true);
+          setTimeout(() => { if (typeof setExploreTab === 'function') setExploreTab('stats'); }, 50);
+          break;
+        case 'goto_heroes':
+          helperClose();
+          if (typeof openExploreFeed === 'function') openExploreFeed(true);
+          setTimeout(() => { if (typeof setExploreTab === 'function') setExploreTab('heroes'); }, 50);
+          break;
+        case 'list_editable':
+          helperShowEditablePicker(a.items || []);
+          break;
+        case 'open_edit_report':
+          helperOpenEdit(a.report_id);
+          break;
+      }
+    }
+
+    function helperShowEditablePicker(items) {
+      helperPushMessage('user', 'Edit one of my reports');
+      if (!items.length) {
+        helperPushMessage('bot', 'You have no reports waiting for admin approval right now.');
+        return;
+      }
+      helperPushMessage('bot', 'Pick the report you want to edit:');
+      const wrap = document.createElement('div');
+      wrap.className = 'hp-suggestions';
+      items.forEach(it => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'hp-chip action';
+        const dt = it.ts ? new Date(it.ts * 1000).toLocaleString() : '';
+        b.textContent = `✏️ #${it.id} — ${(it.title || '').slice(0, 50)}${dt ? ' · ' + dt : ''}`;
+        b.addEventListener('click', () => helperOpenEdit(it.id));
+        wrap.appendChild(b);
+      });
+      helperMessagesEl.appendChild(wrap);
+      helperMessagesEl.parentElement.scrollTop = helperMessagesEl.parentElement.scrollHeight;
+    }
+
+    async function helperOpenEdit(reportId) {
+      helperClose();
+      try {
+        const res = await fetch('/reports');
+        const data = await res.json();
+        const r = (data.reports || []).find(x => x.id === reportId);
+        if (r && typeof startEditReport === 'function') startEditReport(r);
+      } catch {}
+    }
+
+    function helperOpen() {
+      helperPanelEl.style.display = 'flex';
+      helperHelloEl.style.display = 'none';
+      helperHelloDismissed = true;
+      if (!helperMessagesEl.childElementCount) helperFetchTurn();
+      setTimeout(() => helperInputEl.focus(), 80);
+    }
+    function helperClose() {
+      helperPanelEl.style.display = 'none';
+    }
+
+    helperBtnEl.addEventListener('click', () => {
+      if (helperPanelEl.style.display === 'flex') helperClose();
+      else helperOpen();
+    });
+    helperHelloEl.querySelector('.hb-close-hello').addEventListener('click', e => {
+      e.stopPropagation();
+      helperHelloEl.style.display = 'none';
+      helperHelloDismissed = true;
+    });
+    helperCloseBtn.addEventListener('click', helperClose);
+    helperSendBtn.addEventListener('click', helperSendMessage);
+    helperInputEl.addEventListener('keydown', e => { if (e.key === 'Enter') helperSendMessage(); });
+    async function helperSendMessage() {
+      const msg = (helperInputEl.value || '').trim();
+      if (!msg || helperBusy) return;
+      helperPushMessage('user', msg);
+      helperInputEl.value = '';
+      helperBusy = true; helperSendBtn.disabled = true;
+      const thinking = document.createElement('div');
+      thinking.className = 'hp-msg bot thinking';
+      thinking.textContent = 'thinking…';
+      helperMessagesEl.appendChild(thinking);
+      helperMessagesEl.parentElement.scrollTop = helperMessagesEl.parentElement.scrollHeight;
+      try {
+        await helperFetchTurn(false, msg);
+      } finally {
+        thinking.remove();
+        helperBusy = false; helperSendBtn.disabled = false;
+      }
     }
 
     // restore session
@@ -7089,6 +7468,12 @@
       document.querySelectorAll('.explore-nav').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
       });
+      // Refresh Helper Bot context to match the new sub-screen.
+      if (typeof helperOnViewChange === 'function') {
+        // Force a re-pick by clearing the cached screen key.
+        helperCurrentScreen = null;
+        helperOnViewChange('explore');
+      }
       const rewardsPanel = document.getElementById('exploreRewardsPanel');
       const statsPanel = document.getElementById('exploreStatsPanel');
       const heroesPanel = document.getElementById('exploreHeroesPanel');
