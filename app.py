@@ -3161,7 +3161,6 @@ def rewards_catalog():
     phone = session.get("otp_phone")
     with _redemptions_lock:
         mine = list(_redemptions_data.get(phone, []))
-    redeemed_ids = {r.get("voucher_id") for r in mine}
     items = []
     for v in REWARDS_CATALOG:
         items.append({
@@ -3170,7 +3169,6 @@ def rewards_catalog():
             "brand": v["brand"],
             "amount_rs": v["amount_rs"],
             "points_cost": v["points_cost"],
-            "redeemed": v["id"] in redeemed_ids,
         })
     mine_sorted = sorted(mine, key=lambda r: r.get("ts") or 0, reverse=True)
     return jsonify({
@@ -3190,10 +3188,6 @@ def rewards_redeem():
     voucher = next((v for v in REWARDS_CATALOG if v["id"] == voucher_id), None)
     if not voucher:
         return jsonify({"error": "Voucher not found"}), 404
-    with _redemptions_lock:
-        mine = _redemptions_data.setdefault(phone, [])
-        if any(r.get("voucher_id") == voucher_id for r in mine):
-            return jsonify({"error": "You have already redeemed this voucher. Refresh the page to redeem another."}), 400
     available = _total_points_for(phone)
     if available < voucher["points_cost"]:
         return jsonify({"error": f"You need {voucher['points_cost']} points to redeem this voucher. You have {available}."}), 400
