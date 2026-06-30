@@ -18,10 +18,7 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from google import genai
 from google.genai import types
 
-GEMINI_API_KEY = os.environ.get(
-    "GEMINI_API_KEY",
-    "REDACTED_GEMINI_KEY",
-)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 # Image generation / editing model (Nano Banana 2 → fallback to Nano Banana).
 # Override with IMAGE_GEN_MODELS env, e.g. "gemini-3-pro-image-preview,gemini-2.5-flash-image"
