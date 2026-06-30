@@ -1244,6 +1244,25 @@
     }
     .small-dialog .field-label .req { color: var(--high); margin-left: 2px; }
 
+    /* Edit button on editable reports */
+    .edit-rep-btn {
+      border: 0; border-radius: 8px; padding: 5px 10px;
+      background: #fef3c7; color: #92400e; font-weight: 800;
+      font-size: 11.5px; cursor: pointer; font-family: inherit;
+      border: 1px solid #fde68a;
+    }
+    .edit-rep-btn:hover { background: #fde68a; }
+    .editing-banner {
+      background: #fff7e6; border: 1px solid #fde68a; border-radius: 10px;
+      padding: 10px 12px; margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      font-size: 13px; color: #92400e; font-weight: 700;
+    }
+    .editing-banner .cancel-edit {
+      border: 0; background: #92400e; color: #fff;
+      border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+      font-family: inherit; font-weight: 700;
+    }
     /* Bonus tag in reporter's My reports */
     .bonus-tag {
       display: inline-block;
@@ -3853,10 +3872,15 @@
           <div class="head-row">
             <div class="avatar">R</div>
             <div style="flex:1;">
-              <h2>Report an issue</h2>
-              <p>Add evidence and describe what's wrong</p>
+              <h2 id="reportHeading">Report an issue</h2>
+              <p id="reportSub">Add evidence and describe what's wrong</p>
             </div>
             <button id="exploreBtn" type="button" class="reports-btn">Explore</button>
+          </div>
+
+          <div id="editingBanner" class="editing-banner" style="display:none;">
+            <span id="editingBannerText">Editing report</span>
+            <button type="button" class="cancel-edit" id="cancelEditBtn">Cancel edit</button>
           </div>
 
           <div class="field">
@@ -4351,7 +4375,7 @@
           && address.value.trim().length >= 5;
     }
     function hasEvidence() {
-      return evidenceList.length >= 1;
+      return (evidenceList.length + (existingEvidence ? existingEvidence.length : 0)) >= 1;
     }
     function canSubmitReport() {
       return hasEvidence();
@@ -5960,6 +5984,23 @@
     }));
     function renderThumbs() {
       evidenceThumbs.innerHTML = '';
+      // Existing (server-side) evidence — only in edit mode.
+      existingEvidence.forEach((ex, i) => {
+        const node = document.createElement('div');
+        node.className = 'thumb';
+        const src = ex.url || '';
+        node.innerHTML = ex.kind === 'video'
+          ? `<video src="${src}" muted></video><button data-ex="${i}" title="Remove existing media">×</button>`
+          : `<img src="${src}" alt=""><button data-ex="${i}" title="Remove existing media">×</button>`;
+        node.querySelector('button').addEventListener('click', ev => {
+          ev.stopPropagation();
+          existingEvidence.splice(i, 1);
+          markReportMediaChanged();
+          renderThumbs();
+          updateActionButtons();
+        });
+        evidenceThumbs.appendChild(node);
+      });
       evidenceList.forEach((f, i) => {
         const url = URL.createObjectURL(f);
         const isVideo = f.type.startsWith('video/');
@@ -6116,6 +6157,10 @@
     let analysisPoller = null;
     let completedAnalysisJobId = null;
     let analysisState = 'idle'; // idle | running | done | failed
+    // ---- Edit-report mode state ----
+    let editingReportId = null;
+    let editingOriginal = null; // snapshot for cancel
+    let existingEvidence = []; // [{filename: 'foo.jpg', url: '...', kind: 'image'|'video'}]
 
     function wordCount(s) {
       const t = (s || '').trim();
@@ -6411,8 +6456,14 @@
         banner('reportBanner', 'AI analysis is still running. Please wait until it is complete.', 'error');
         return;
       }
-      if (analysisState !== 'done' || !completedAnalysisJobId) {
-        banner('reportBanner', 'Run AI analysis before submitting this report.', 'error');
+      // In edit mode, allow saving without a fresh analysis job ONLY when no
+      // new media was added (we trust the original report's analysis).
+      const inEditMode = !!editingReportId;
+      const allowExistingAnalysis = inEditMode && evidenceList.length === 0;
+      if (!allowExistingAnalysis && (analysisState !== 'done' || !completedAnalysisJobId)) {
+        banner('reportBanner', inEditMode
+          ? 'You added new media — run AI analysis again before saving changes.'
+          : 'Run AI analysis before submitting this report.', 'error');
         return;
       }
       if (!detectedIssues.length) {
@@ -6441,10 +6492,18 @@
         return;
       }
       const btn = e.currentTarget;
-      await withBusy(btn, 'Submitting…', async () => {
+      const busyLabel = inEditMode ? 'Saving…' : 'Submitting…';
+      await withBusy(btn, busyLabel, async () => {
         const fd = new FormData();
         fd.append('description', description.value.trim());
-        fd.append('analysis_job_id', completedAnalysisJobId || '');
+        if (inEditMode) {
+          fd.append('keep_evidence', JSON.stringify(existingEvidence.map(x => x.filename)));
+          if (evidenceList.length) {
+            fd.append('analysis_job_id', completedAnalysisJobId || '');
+          }
+        } else {
+          fd.append('analysis_job_id', completedAnalysisJobId || '');
+        }
         evidenceList.forEach(f => fd.append('evidence', f));
         const selected = [];
         detectedIssues.forEach((it, i) => {
@@ -6457,9 +6516,17 @@
           }
         });
         fd.append('selected_issues', JSON.stringify(selected));
-        const res = await fetch('/report', { method: 'POST', body: fd });
+        const url = inEditMode ? `/reports/${encodeURIComponent(editingReportId)}/edit` : '/report';
+        const res = await fetch(url, { method: 'POST', body: fd });
         const data = await res.json();
-        if (!res.ok) { banner('reportBanner', data.error || 'Submit failed', 'error'); return; }
+        if (!res.ok) { banner('reportBanner', data.error || 'Save failed', 'error'); return; }
+        if (inEditMode) {
+          banner('reportBanner', `Report #${data.report_id} updated ✓`, 'ok');
+          if (typeof data.total_points === 'number') setTotalPoints(data.total_points);
+          exitEditMode();
+          if (typeof openReportsModal === 'function') openReportsModal();
+          return;
+        }
         const issuePart = data.issue_count > 0 ? `, ${data.issue_count} issue${data.issue_count===1?'':'s'}` : '';
         const ptsPart = data.points_awarded > 0 ? ` · +${data.points_awarded} pts 🪙` : '';
         let msg = `Report submitted ✓ (#${data.report_id}, ${data.evidence_count} file${data.evidence_count===1?'':'s'}${issuePart})${ptsPart}`;
@@ -6596,6 +6663,107 @@
       return `<div class="ba-tile"><img src="${src}" data-full="${src}" alt=""></div>`;
     }
 
+    // ============ EDIT REPORT FLOW ============
+    function startEditReport(report) {
+      if (!report || !report.editable) return;
+      editingReportId = report.id;
+      editingOriginal = report;
+      // Close the My Reports modal if open.
+      const rm = document.getElementById('reportsModal');
+      if (rm) rm.removeAttribute('data-open');
+      document.body.style.overflow = '';
+
+      const banner = document.getElementById('editingBanner');
+      const bannerText = document.getElementById('editingBannerText');
+      const heading = document.getElementById('reportHeading');
+      const sub = document.getElementById('reportSub');
+      const submitBtn = document.getElementById('submitReportBtn');
+      banner.style.display = '';
+      bannerText.textContent = `Editing report #${report.id || ''}`;
+      heading.textContent = 'Edit report';
+      sub.textContent = 'Make changes — re-run AI analysis if you add new media.';
+      submitBtn.textContent = 'Save changes';
+
+      // Pre-populate form state.
+      description.value = report.description || '';
+      evidenceList = [];
+      existingEvidence = (report.evidence_files || []).map(name => {
+        const url = `/uploads/reports/${encodeURIComponent(report.id || '')}/${encodeURIComponent(name)}`;
+        const kind = /\.(mp4|mov|webm|m4v|avi|mkv)$/i.test(name) ? 'video' : 'image';
+        return { filename: name, url, kind };
+      });
+      detectedIssues = (report.issues || []).map(it => ({ ...it }));
+      issueSelected = detectedIssues.map(() => true);
+      issueComments = detectedIssues.map(it => it.comment || '');
+      issueLocations = detectedIssues.map(it => it.location || '');
+      analysisJobId = null;
+      analysisState = 'done';
+      completedAnalysisJobId = report.analysis_job_id || 'existing';
+
+      // Render the issue panel using the same renderer as fresh submissions.
+      renderDescribeResults({ summary: '', suggested_action: '', issues: detectedIssues });
+      // Restore each issue's selected/comment/location state into the DOM.
+      detectedIssues.forEach((_, i) => {
+        const card = describeResults.querySelector(`.loc-card[data-i="${i}"]`);
+        if (!card) return;
+        const cb = card.querySelector('.issue-check input');
+        if (cb) cb.checked = !!issueSelected[i];
+        const ta = card.querySelector('textarea.issue-comment');
+        if (ta) ta.value = issueComments[i] || '';
+        const locWrap = card.querySelector('.loc-input-wrap');
+        const locInput = card.querySelector('.loc-input');
+        if (locInput && issueLocations[i]) {
+          locInput.value = issueLocations[i];
+          if (locWrap) locWrap.style.display = '';
+        }
+      });
+      renderThumbs();
+      updateActionButtons();
+      showView('report', whoText.textContent.replace(/^Verified:\s*/, ''));
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    function exitEditMode() {
+      editingReportId = null;
+      editingOriginal = null;
+      existingEvidence = [];
+      evidenceList = [];
+      detectedIssues = []; issueSelected = []; issueComments = []; issueLocations = [];
+      analysisState = 'idle';
+      completedAnalysisJobId = null;
+      description.value = '';
+      const banner = document.getElementById('editingBanner');
+      const heading = document.getElementById('reportHeading');
+      const sub = document.getElementById('reportSub');
+      const submitBtn = document.getElementById('submitReportBtn');
+      if (banner) banner.style.display = 'none';
+      if (heading) heading.textContent = 'Report an issue';
+      if (sub) sub.textContent = "Add evidence and describe what's wrong";
+      if (submitBtn) submitBtn.textContent = 'Submit report';
+      renderThumbs();
+      describeResults.classList.remove('has-content');
+      describeResults.textContent = 'AI analysis results will appear here';
+      updateActionButtons();
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const cancel = document.getElementById('cancelEditBtn');
+      if (cancel) cancel.addEventListener('click', () => {
+        exitEditMode();
+        if (typeof openReportsModal === 'function') openReportsModal();
+      });
+    });
+    // DOMContentLoaded may already have fired since the script is inline at body end.
+    setTimeout(() => {
+      const cancel = document.getElementById('cancelEditBtn');
+      if (cancel && !cancel.dataset.wired) {
+        cancel.dataset.wired = '1';
+        cancel.addEventListener('click', () => {
+          exitEditMode();
+          if (typeof openReportsModal === 'function') openReportsModal();
+        });
+      }
+    }, 0);
+
     function aiRatingHtmlFromAssignment(report, issueTitle) {
       const a = (report.assignments || {})[issueTitle] || {};
       const ev = a.evaluation;
@@ -6665,17 +6833,30 @@
         if (!issuesHtml) return; // hide reports whose issues are all filtered out
         const bonusTag = r.thumbs_up_by_admin
           ? `<span class="bonus-tag">👍 +${r.thumbs_up_by_admin.points || 50} by admin</span>` : '';
+        const editBtn = r.editable
+          ? `<button type="button" class="edit-rep-btn" data-rid="${escapeAttr(r.id || '')}">✏️ Edit</button>`
+          : '';
         card.innerHTML = `
           <div class="top">
             <div>
               <div class="date">${fmtReportDate(r.created_at)}</div>
               <div class="id">#${escapeHtml(r.id || '')}</div>
             </div>
-            <span class="pts">+${r.points || 0} pts${bonusTag}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${editBtn}
+              <span class="pts">+${r.points || 0} pts${bonusTag}</span>
+            </div>
           </div>
           ${r.description ? `<div class="desc">${escapeHtml(r.description)}</div>` : ''}
           ${issuesHtml}
         `;
+        const editEl = card.querySelector('.edit-rep-btn');
+        if (editEl) {
+          editEl.addEventListener('click', e => {
+            e.stopPropagation();
+            startEditReport(r);
+          });
+        }
         card.addEventListener('click', () => openReportDetail(r));
         reportsList.appendChild(card);
       });

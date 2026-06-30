@@ -2894,6 +2894,124 @@ def submit_report():
     })
 
 
+@app.route("/uploads/reports/<report_id>/<path:filename>")
+def serve_report_evidence(report_id, filename):
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    _, report = _find_report(report_id)
+    if not report:
+        return jsonify({"error": "Not found"}), 404
+    # Allow owner reporter, admins, and any partner assigned to the report.
+    is_owner = report.get("phone") == phone
+    is_admin = bool(session.get("admin"))
+    is_partner = any(a.get("partner_phone") == phone for a in (report.get("assignments") or {}).values())
+    if not (is_owner or is_admin or is_partner):
+        return jsonify({"error": "Not authorized"}), 403
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", filename)[:120]
+    return send_from_directory(UPLOAD_DIR / "reports" / report_id, safe)
+
+
+@app.route("/reports/<report_id>/edit", methods=["POST"])
+def edit_report(report_id):
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    with _reports_lock:
+        owner_reports = _reports_data.get(phone, [])
+        report = next((r for r in owner_reports if r.get("id") == report_id and r.get("kind") != "contribution_bonus"), None)
+    if not report:
+        return jsonify({"error": "Report not found"}), 404
+    if (report.get("approved_issues") or []) or (report.get("denied_issues") or []) or (report.get("assignments") or {}):
+        return jsonify({"error": "This report has already been actioned by an admin and cannot be edited."}), 409
+
+    description = (request.form.get("description") or "").strip()
+    analysis_job_id = (request.form.get("analysis_job_id") or "").strip()
+    selected_issues_raw = request.form.get("selected_issues") or "[]"
+    keep_evidence_raw = request.form.get("keep_evidence") or "[]"
+    try:
+        selected_issues = json.loads(selected_issues_raw)
+        if not isinstance(selected_issues, list):
+            selected_issues = []
+    except json.JSONDecodeError:
+        selected_issues = []
+    try:
+        keep_evidence = json.loads(keep_evidence_raw)
+        if not isinstance(keep_evidence, list):
+            keep_evidence = []
+    except json.JSONDecodeError:
+        keep_evidence = []
+
+    if not selected_issues:
+        return jsonify({"error": "Select at least one issue before saving."}), 400
+    for it in selected_issues:
+        loc = (it.get("location") or "").strip()
+        if not loc:
+            title = it.get("title") or it.get("category") or "issue"
+            return jsonify({"error": f"Location is required for every selected issue (missing on '{title}')."}), 400
+
+    # Persist new uploaded evidence (in addition to retained existing files).
+    new_files = [f for f in request.files.getlist("evidence") if f and f.filename]
+    evidence_dir = UPLOAD_DIR / "reports" / report_id
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    saved_new = []
+    for f in new_files[:20]:
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", f.filename)[:120]
+        f.save(evidence_dir / safe_name)
+        saved_new.append(safe_name)
+
+    # Compute the final evidence list: retained existing names + newly saved names.
+    original = list(report.get("evidence_files") or [])
+    kept = [name for name in original if name in set(keep_evidence)]
+    final_evidence = kept + saved_new
+    # Remove evidence files that the user dropped.
+    for name in original:
+        if name not in set(kept):
+            try:
+                (evidence_dir / name).unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    # If any new media was added, the user must have re-run analysis (we
+    # cannot trust prior analysis once the evidence set changed).
+    if saved_new:
+        if not analysis_job_id:
+            return jsonify({"error": "Run AI analysis again after adding new media."}), 400
+        with _analysis_lock:
+            job = _analysis_jobs.get(analysis_job_id)
+        if not job or job.get("phone") != phone or job.get("status") != "done":
+            return jsonify({"error": "Run AI analysis again after adding new media."}), 400
+
+    awarded = 0
+    enriched_issues = []
+    for it in selected_issues:
+        pts = 0 if it.get("is_duplicate") else _points_for(it.get("severity"))
+        awarded += pts
+        enriched = dict(it)
+        enriched["points"] = pts
+        enriched_issues.append(enriched)
+
+    with _reports_lock:
+        report["description"] = description
+        report["evidence_files"] = final_evidence
+        report["evidence_count"] = len(final_evidence)
+        report["issues"] = enriched_issues
+        report["points"] = awarded
+        if analysis_job_id:
+            report["analysis_job_id"] = analysis_job_id
+        report["edited_at"] = time.time()
+        _save_reports()
+
+    return jsonify({
+        "ok": True,
+        "report_id": report_id,
+        "evidence_count": len(final_evidence),
+        "issue_count": len(enriched_issues),
+        "points_awarded": awarded,
+        "total_points": _total_points_for(phone),
+    })
+
+
 def _backfill_admin_phones(reports):
     """For reporter views: ensure approved_issues entries carry an
     admin_phone so the UI can render a tel: link. Looks up the admin by
@@ -3070,6 +3188,11 @@ def list_reports():
             if r.get("kind") != "contribution_bonus"
         ]
     _backfill_admin_phones(reports)
+    for r in reports:
+        approved = r.get("approved_issues") or []
+        denied = r.get("denied_issues") or []
+        assigned = r.get("assignments") or {}
+        r["editable"] = not approved and not denied and not assigned
     reports.sort(key=lambda r: r.get("created_at", 0), reverse=True)
     categories = sorted({
         (i.get("category") or "").strip()
