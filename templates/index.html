@@ -740,6 +740,183 @@
       margin-left: auto;
     }
     .call-link:hover { background: #059669; }
+
+    /* Task workflow */
+    .task-field-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 14px 0 6px;
+      letter-spacing: .03em;
+    }
+    .task-drop {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      background: #f9fafb;
+      transition: border-color .15s, background .15s;
+    }
+    .task-drop.drag { border-color: var(--primary); background: var(--primary-soft); }
+    .task-drop.invalid { border-color: var(--high); background: #fff5f5; }
+    .task-drop input[type=file] { display: none; }
+    .task-drop-cta { font-size: 13px; font-weight: 700; color: var(--text); }
+    .task-drop-hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+    .task-file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .task-file-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .task-file-row .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .task-file-row .sz { color: var(--muted); font-size: 11px; }
+    .task-file-row button {
+      background: transparent; border: 0; color: var(--high); cursor: pointer;
+      font-size: 16px; font-family: inherit; padding: 0 4px;
+    }
+    .task-check {
+      display: flex; gap: 8px; align-items: flex-start;
+      font-size: 12.5px; line-height: 1.4;
+      color: var(--text);
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .task-check input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
+    .task-check em { font-style: normal; font-weight: 700; }
+    .task-issue-info {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .task-issue-thumb {
+      width: 120px;
+      height: 80px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      overflow: hidden;
+      flex: 0 0 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-2);
+      font-size: 11px;
+    }
+    .task-issue-thumb img,
+    .task-issue-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .task-issue-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Side-by-side media on SP card */
+    .sp-media-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sp-media-cell {
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f3f4f6;
+      aspect-ratio: 4 / 3;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .sp-media-cell img, .sp-media-cell video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .sp-media-cell .lbl {
+      position: absolute; top: 4px; left: 4px;
+      background: rgba(0,0,0,.65); color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 999px;
+      letter-spacing: .04em;
+    }
+    .sp-rating {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .sp-rating .stars {
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: #f59e0b;
+    }
+    .sp-rating .stars .empty { color: #e5e7eb; }
+    .sp-rating .label { font-size: 12.5px; color: var(--muted); }
+    .sp-eval-comment {
+      font-size: 12.5px;
+      color: var(--text);
+      background: #f9fafb;
+      border-left: 3px solid var(--primary);
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* Evaluation overlay */
+    .eval-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,17,21,.78);
+      z-index: 3000;
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .eval-overlay[data-open="1"] { display: flex; }
+    .eval-overlay .close {
+      position: absolute; top: 18px; right: 22px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.15); color: #fff;
+      border: 0; font-size: 18px; cursor: pointer; font-family: inherit;
+    }
+    .eval-overlay .close:hover { background: rgba(255,255,255,.25); }
+    .eval-card {
+      background: #fff;
+      border-radius: 18px;
+      max-width: 460px;
+      width: 100%;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,.4);
+    }
+    .eval-spinner {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 4px solid #e5e7eb;
+      border-top-color: var(--primary);
+      margin: 0 auto 14px;
+      animation: eval-spin 1s linear infinite;
+    }
+    @keyframes eval-spin { to { transform: rotate(360deg); } }
+    .eval-title { font-weight: 800; font-size: 16px; }
+    .eval-sub { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.5; }
+    .eval-card .stars { font-size: 30px; letter-spacing: 4px; color: #f59e0b; margin: 8px 0 12px; }
+    .eval-card .stars .empty { color: #e5e7eb; }
+    .eval-card .comment {
+      text-align: left;
+      font-size: 13px; line-height: 1.5;
+      background: #f9fafb;
+      border-left: 3px solid var(--primary);
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-top: 6px;
+    }
     .sp-row {
       display: flex;
       align-items: center;
@@ -781,6 +958,71 @@
 
     /* SP home */
     .sp-home-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .sp-task-tools {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    .sp-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--input-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+    }
+    .sp-search:focus-within {
+      background: #fff;
+      border-color: var(--primary);
+    }
+    .sp-search span {
+      color: var(--muted);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .sp-search input {
+      border: 0;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      min-width: 0;
+      color: var(--text);
+      font: inherit;
+      font-size: 13.5px;
+    }
+    .sp-filter-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .sp-filter-row::-webkit-scrollbar { display: none; }
+    .sp-filter-btn {
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .sp-filter-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+    }
+    .sp-filter-summary {
+      min-height: 16px;
+      color: var(--muted);
+      font-size: 11.5px;
+      font-weight: 600;
+    }
     .sp-assignments-list { display:flex; flex-direction:column; gap:10px; }
     .sp-empty {
       text-align:center;
@@ -831,6 +1073,8 @@
     .sp-tag.accepted { background:#d1fae5; color:#065f46; }
     .sp-tag.denied   { background:#fee2e2; color:#991b1b; }
     .sp-tag.rescheduled { background:#ffedd5; color:#9a3412; }
+    .sp-tag.in_progress { background:#dbeafe; color:#1d4ed8; }
+    .sp-tag.completed { background:#dcfce7; color:#166534; }
     .sp-actions {
       display:flex;
       gap:8px;
@@ -2036,6 +2280,84 @@
     </div>
   </div>
 
+  <!-- Start task modal -->
+  <div id="startTaskModal" class="reports-modal" style="z-index: 2300;">
+    <div class="reports-dialog">
+      <div class="reports-head">
+        <h3>Start task</h3>
+        <button class="close" id="startTaskClose" aria-label="Close">×</button>
+      </div>
+      <div class="report-detail-body" id="startTaskBody">
+        <div id="startTaskIssueInfo"></div>
+        <div class="task-field-label">Before starting <span style="color:var(--high);">*</span></div>
+        <div class="task-drop" id="startTaskDrop">
+          <input id="startTaskFiles" type="file" multiple accept="image/*,video/*" />
+          <div class="task-drop-cta">📷 Tap or drop images/videos here</div>
+          <div class="task-drop-hint">Up to 100 MB total. Mandatory.</div>
+        </div>
+        <div id="startTaskFileList" class="task-file-list"></div>
+        <div class="task-field-label">Current location <span style="color:var(--high);">*</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="startTaskLocation" type="text" placeholder="Detect or enter your location"
+                 style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--input-bg);outline:none;font-family:inherit;" />
+          <button id="startTaskDetectBtn" type="button" class="reports-btn">📍 Detect</button>
+        </div>
+        <div id="startTaskLocStatus" style="font-size:11.5px;color:var(--muted);margin-top:4px;"></div>
+        <label class="task-check"><input type="checkbox" id="startTaskCheck1" /> <span></span><b>I confirm</b> I have the society's permission to begin this task.</label>
+        <label class="task-check"><input type="checkbox" id="startTaskCheck2" /> <span></span><b>I confirm</b> the task is carried out under <em><span id="startTaskAdminName">the supervising admin</span></em>'s supervision.</label>
+        <div id="startTaskBanner" style="margin-top:8px;"></div>
+        <div class="actions">
+          <button class="cancel" id="startTaskCancel">Cancel</button>
+          <button class="ok" id="startTaskSubmit" disabled>Start task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- End task modal -->
+  <div id="endTaskModal" class="reports-modal" style="z-index: 2300;">
+    <div class="reports-dialog">
+      <div class="reports-head">
+        <h3>End task</h3>
+        <button class="close" id="endTaskClose" aria-label="Close">×</button>
+      </div>
+      <div class="report-detail-body" id="endTaskBody">
+        <div id="endTaskIssueInfo"></div>
+        <div class="task-field-label">After ending <span style="color:var(--high);">*</span></div>
+        <div class="task-drop" id="endTaskDrop">
+          <input id="endTaskFiles" type="file" multiple accept="image/*,video/*" />
+          <div class="task-drop-cta">📷 Tap or drop images/videos here</div>
+          <div class="task-drop-hint">Up to 100 MB total. Mandatory.</div>
+        </div>
+        <div id="endTaskFileList" class="task-file-list"></div>
+        <div class="task-field-label">Current location <span style="color:var(--high);">*</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="endTaskLocation" type="text" placeholder="Detect or enter your location"
+                 style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--input-bg);outline:none;font-family:inherit;" />
+          <button id="endTaskDetectBtn" type="button" class="reports-btn">📍 Detect</button>
+        </div>
+        <div id="endTaskLocStatus" style="font-size:11.5px;color:var(--muted);margin-top:4px;"></div>
+        <label class="task-check"><input type="checkbox" id="endTaskCheck1" /> <span></span><b>I confirm</b> the task ended under the supervision of Admin <em><span id="endTaskAdminName">the supervising admin</span></em>.</label>
+        <label class="task-check"><input type="checkbox" id="endTaskCheck2" /> <span></span><b>I confirm</b> I am clicking End task only because the task has actually ended.</label>
+        <div id="endTaskBanner" style="margin-top:8px;"></div>
+        <div class="actions">
+          <button class="cancel" id="endTaskCancel">Cancel</button>
+          <button class="ok" id="endTaskSubmit" disabled>End task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evaluation overlay -->
+  <div id="evalOverlay" class="eval-overlay">
+    <button class="close" id="evalOverlayClose" aria-label="Close">×</button>
+    <div class="eval-card" id="evalCard">
+      <div class="eval-spinner"></div>
+      <div class="eval-title">AI evaluation in progress…</div>
+      <div class="eval-sub">Comparing before vs after media against the issue context.</div>
+    </div>
+  </div>
+
   <!-- SP calendar modal -->
   <div id="spCalendarModal" class="reports-modal" style="z-index: 2200;">
     <div class="reports-dialog">
@@ -2452,6 +2774,20 @@
                 <h2 style="margin:0;font-size:18px;font-weight:800;">Welcome, <span id="spHomeName">Partner</span></h2>
                 <p style="margin:2px 0 0;color:var(--muted);font-size:13px;">Your assigned issues are listed below.</p>
               </div>
+            </div>
+            <div class="sp-task-tools">
+              <label class="sp-search" for="spTaskSearch">
+                <span>⌕</span>
+                <input id="spTaskSearch" type="search" placeholder="Search by task, reporter, category, location, status..." autocomplete="off" />
+              </label>
+              <div class="sp-filter-row" role="group" aria-label="Task filters">
+                <button type="button" class="sp-filter-btn active" data-sp-filter="all">All tasks</button>
+                <button type="button" class="sp-filter-btn" data-sp-filter="upcoming">Upcoming tasks</button>
+                <button type="button" class="sp-filter-btn" data-sp-filter="running">Running tasks</button>
+                <button type="button" class="sp-filter-btn" data-sp-filter="completed">Completed tasks</button>
+                <button type="button" class="sp-filter-btn" data-sp-filter="declined">Declined tasks</button>
+              </div>
+              <div id="spFilterSummary" class="sp-filter-summary"></div>
             </div>
             <div id="spAssignmentsList" class="sp-assignments-list"></div>
           </div>
@@ -3527,6 +3863,25 @@
     const WEEKDAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     let spAssignments = []; // raw rows from /partner/assigned_reports
     let spAssignmentLookup = {}; // id|title -> { report, issueTitle, assignment, issue }
+    let spTaskFilter = 'all';
+    let spTaskSearch = '';
+    const spTaskSearchInput = document.getElementById('spTaskSearch');
+    const spFilterSummary = document.getElementById('spFilterSummary');
+    const spFilterButtons = Array.from(document.querySelectorAll('.sp-filter-btn'));
+
+    if (spTaskSearchInput) {
+      spTaskSearchInput.addEventListener('input', () => {
+        spTaskSearch = spTaskSearchInput.value.trim().toLowerCase();
+        renderSpAssignments();
+      });
+    }
+    spFilterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        spTaskFilter = btn.dataset.spFilter || 'all';
+        spFilterButtons.forEach(b => b.classList.toggle('active', b === btn));
+        renderSpAssignments();
+      });
+    });
 
     async function loadSpAssignments() {
       const listEl = document.getElementById('spAssignmentsList');
@@ -3548,33 +3903,129 @@
     function renderSpAssignments() {
       const listEl = document.getElementById('spAssignmentsList');
       spAssignmentLookup = {};
-      if (!spAssignments.length) {
+      const rows = spAssignmentRows();
+      if (!rows.length) {
         listEl.innerHTML = '<div class="sp-empty">No assigned issues yet.<br/>You\'ll see new work here as admins approve reports.</div>';
+        if (spFilterSummary) spFilterSummary.textContent = '';
         return;
       }
+      rows.forEach(({ report, title, issue, assignment }) => {
+        spAssignmentLookup[`${report.id}|${title}`] = { report, issueTitle: title, assignment, issue };
+      });
+      const filtered = rows.filter(row => spMatchesTaskFilter(row.assignment))
+        .filter(row => spMatchesTaskSearch(row));
       listEl.innerHTML = '';
+      filtered.forEach(({ report, title, issue, assignment }) => {
+        listEl.appendChild(buildSpCard(report, title, issue, assignment));
+      });
+      if (spFilterSummary) {
+        const label = spFilterLabel(spTaskFilter).toLowerCase();
+        const word = filtered.length === 1 ? 'task' : 'tasks';
+        spFilterSummary.textContent = `${filtered.length} of ${rows.length} ${word} shown${spTaskFilter === 'all' ? '' : ` · ${label}`}${spTaskSearch ? ` · "${spTaskSearch}"` : ''}`;
+      }
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="sp-empty">No tasks match this search or filter.</div>';
+      }
+    }
+
+    function spAssignmentRows() {
+      const rows = [];
       spAssignments.forEach(report => {
         const my = report.my_assignments || {};
         Object.keys(my).forEach(title => {
-          const a = my[title];
+          const assignment = my[title];
           const issue = (report.issues || []).find(it => issueTitleFor(it) === title) || {};
-          spAssignmentLookup[`${report.id}|${title}`] = { report, issueTitle: title, assignment: a, issue };
-          listEl.appendChild(buildSpCard(report, title, issue, a));
+          rows.push({ report, title, issue, assignment });
         });
       });
+      return rows;
+    }
+
+    function spTaskBucket(a) {
+      const status = spStatusOf(a);
+      if (status === 'denied') return 'declined';
+      if (status === 'completed' || (a && a.ended_at)) return 'completed';
+      if (status === 'in_progress' || spTaskHasStarted(a)) return 'running';
+      return 'upcoming';
+    }
+
+    function spMatchesTaskFilter(a) {
+      return spTaskFilter === 'all' || spTaskBucket(a) === spTaskFilter;
+    }
+
+    function spFilterLabel(filter) {
+      return ({
+        all: 'All tasks',
+        upcoming: 'Upcoming tasks',
+        running: 'Running tasks',
+        completed: 'Completed tasks',
+        declined: 'Declined tasks',
+      })[filter] || 'All tasks';
+    }
+
+    function spMatchesTaskSearch(row) {
+      if (!spTaskSearch) return true;
+      return spTaskSearchText(row).includes(spTaskSearch);
+    }
+
+    function spTaskSearchText({ report, title, issue, assignment }) {
+      const a = assignment || {};
+      const history = (a.history || []).map(h => [
+        h.type, h.sp_name, h.reason, h.old_scheduled_for_label, h.new_scheduled_for_label, fmtReportDate(h.ts),
+      ].join(' ')).join(' ');
+      const media = []
+        .concat(a.before_media || [], a.after_media || [])
+        .map(m => [m.filename, m.kind, m.url].join(' '))
+        .join(' ');
+      return [
+        title,
+        spFilterLabel(spTaskBucket(a)),
+        spStatusOf(a),
+        issue.title,
+        issue.category,
+        issue.detail,
+        issue.comment,
+        issue.location,
+        issue.severity,
+        report.id,
+        report.phone,
+        report.reporter_name,
+        report.reporter_address,
+        report.description,
+        report.status_label,
+        a.partner_name,
+        a.partner_phone,
+        a.admin_name,
+        a.scheduled_for_label,
+        fmtReportDate(a.scheduled_for),
+        fmtReportDate(a.started_at),
+        fmtReportDate(a.ended_at),
+        a.started_location,
+        a.ended_location,
+        a.evaluation && a.evaluation.comment,
+        history,
+        media,
+      ].filter(Boolean).join(' ').toLowerCase();
     }
 
     function spStatusOf(a) {
-      const s = (a && a.status) || 'pending';
+      const s = String((a && a.status) || 'pending').trim().toLowerCase();
       return s;
+    }
+
+    function spTaskHasStarted(a) {
+      return !!(a && (a.started_at || (a.before_media || []).length || a.ended_at || (a.after_media || []).length));
     }
 
     function spActionsHtml(a) {
       const status = spStatusOf(a);
       const rcount = parseInt(a.reschedule_count || 0, 10) || 0;
+      // Once the SP has crossed accept (or moved into start/end), the
+      // accept/reschedule/deny row is no longer applicable.
+      if (spTaskHasStarted(a) || ['accepted', 'denied', 'in_progress', 'completed'].includes(status)) {
+        return '';
+      }
       let acceptHidden = false, denyHidden = false, rescheduleHidden = false;
-      if (status === 'accepted') { acceptHidden = true; denyHidden = true; rescheduleHidden = true; }
-      if (status === 'denied') { acceptHidden = true; denyHidden = true; rescheduleHidden = true; }
       if (status === 'rescheduled') { acceptHidden = true; /* deny still allowed, reschedule capped */ }
       if (rcount >= 3) rescheduleHidden = true;
       return `
@@ -3587,8 +4038,89 @@
 
     function spTagHtml(a) {
       const status = spStatusOf(a);
-      const labelMap = { pending: 'Pending', accepted: 'Accepted', denied: 'Denied', rescheduled: 'Rescheduled' };
+      const labelMap = {
+        pending: 'Pending', accepted: 'Accepted', denied: 'Denied',
+        rescheduled: 'Rescheduled', in_progress: 'In progress', completed: 'Completed',
+      };
       return `<span class="sp-tag ${status}">${labelMap[status] || status}</span>`;
+    }
+
+    function spAdminNameFor(report, title) {
+      const a = (report.approved_issues || []).find(x => x.issue_title === title);
+      return (a && a.admin_name) || 'the supervising admin';
+    }
+
+    function spTaskFlowHtml(a) {
+      const status = spStatusOf(a);
+      if (status === 'accepted') {
+        return '<div class="sp-actions"><button type="button" class="sp-act accept" data-act="start-task">▶ Start task</button></div>';
+      }
+      if (status === 'in_progress') {
+        const startedAt = a.started_at ? fmtReportDate(a.started_at) : '';
+        return `<div class="sp-meta" style="margin-top:6px;color:#065f46;font-weight:700;">▶ Task started · ${escapeHtml(startedAt)}</div>
+          <div class="sp-actions"><button type="button" class="sp-act deny" data-act="end-task">■ End task</button></div>`;
+      }
+      if (status === 'completed') {
+        const startedAt = a.started_at ? fmtReportDate(a.started_at) : '';
+        const endedAt   = a.ended_at   ? fmtReportDate(a.ended_at)   : '';
+        return `<div class="sp-meta" style="margin-top:6px;color:#065f46;font-weight:700;">✓ Task complete · ${escapeHtml(endedAt)}</div>
+          <div class="sp-meta">Started: ${escapeHtml(startedAt)}</div>`;
+      }
+      return '';
+    }
+
+    function spStarsHtml(stars) {
+      const s = Math.max(0, Math.min(5, parseInt(stars || 0, 10)));
+      let out = '';
+      for (let i = 1; i <= 5; i++) out += i <= s ? '★' : '<span class="empty">★</span>';
+      return out;
+    }
+
+    function spRatingHtml(a) {
+      const e = a && a.evaluation;
+      if (!e) return '';
+      return `<div class="sp-rating">
+        <span class="stars">${spStarsHtml(e.stars)}</span>
+        <span class="label">AI rating · ${e.stars || 0}/5</span>
+      </div>
+      ${e.comment ? `<div class="sp-eval-comment">${escapeHtml(e.comment)}</div>` : ''}`;
+    }
+
+    function spMediaThumb(item) {
+      if (!item || !item.url) return '';
+      if (item.kind === 'video' || /\.(mp4|mov|webm|m4v)$/i.test(item.url)) {
+        return `<video src="${escapeHtml(item.url)}" muted preload="metadata"></video>`;
+      }
+      return `<img src="${escapeHtml(item.url)}" alt="">`;
+    }
+
+    function spIssueMediaThumb(issue) {
+      if (issue.media_kind === 'video' && issue.media_url) {
+        return `<video src="${escapeHtml(issue.media_url)}" muted preload="metadata"></video>`;
+      }
+      if (issue.annotated_url || issue.media_url) {
+        return `<img src="${escapeHtml(issue.annotated_url || issue.media_url)}" alt="">`;
+      }
+      return '';
+    }
+
+    function spMediaPanelHtml(issue, a) {
+      const status = spStatusOf(a);
+      const before = (a.before_media || [])[0];
+      const after  = (a.after_media  || [])[0];
+      if (status === 'in_progress') {
+        return `<div class="sp-media-row">
+          <div class="sp-media-cell"><span class="lbl">ORIGINAL</span>${spIssueMediaThumb(issue) || '<span style="color:var(--muted-2);font-size:11px;">no media</span>'}</div>
+          <div class="sp-media-cell"><span class="lbl">BEFORE START</span>${spMediaThumb(before) || '<span style="color:var(--muted-2);font-size:11px;">no media</span>'}</div>
+        </div>`;
+      }
+      if (status === 'completed') {
+        return `<div class="sp-media-row">
+          <div class="sp-media-cell"><span class="lbl">BEFORE</span>${spMediaThumb(before) || '<span style="color:var(--muted-2);font-size:11px;">no media</span>'}</div>
+          <div class="sp-media-cell"><span class="lbl">AFTER</span>${spMediaThumb(after) || '<span style="color:var(--muted-2);font-size:11px;">no media</span>'}</div>
+        </div>`;
+      }
+      return '';
     }
 
     function spThumbHtml(issue) {
@@ -3630,7 +4162,10 @@
           </div>
         </div>
         ${spNoteHtml(a)}
+        ${spMediaPanelHtml(issue, a)}
+        ${spRatingHtml(a)}
         ${spActionsHtml(a)}
+        ${spTaskFlowHtml(a)}
       `;
       // Card click → detail (but ignore clicks on action buttons)
       card.addEventListener('click', e => {
@@ -3662,6 +4197,12 @@
         const yes = await confirmDialog(`Are you sure to reschedule "${issueTitle}"?`);
         if (!yes) return;
         openRescheduleModal(reportId, issueTitle);
+      } else if (act === 'start-task') {
+        openStartTaskModal(reportId, issueTitle);
+      } else if (act === 'end-task') {
+        const yes = await confirmDialog(`Are you sure to end "${issueTitle}"?`);
+        if (!yes) return;
+        openEndTaskModal(reportId, issueTitle);
       }
     }
 
@@ -3742,8 +4283,11 @@
         ${issue.detail ? `<div class="detail-text" style="margin-bottom:10px;">${escapeHtml(issue.detail)}</div>` : ''}
         ${issue.comment ? `<div class="comment-text" style="margin-bottom:10px;">"${escapeHtml(issue.comment)}"</div>` : ''}
         ${mediaHtml}
+        ${spMediaPanelHtml(issue, a)}
+        ${spRatingHtml(a)}
         ${spNoteHtml(a)}
         ${spActionsHtml(a)}
+        ${spTaskFlowHtml(a)}
       `;
       spReportBody.querySelectorAll('.sp-act').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -3829,6 +4373,209 @@
       rescheduleSubmit.disabled = false;
       if (ok) closeRescheduleModal();
     });
+
+    // ============ START / END TASK MODALS ============
+    const TASK_MEDIA_MAX_TOTAL = 100 * 1024 * 1024;
+
+    function makeTaskForm(prefix, opts) {
+      // prefix = "startTask" | "endTask"
+      const modal     = document.getElementById(prefix + 'Modal');
+      const closeBtn  = document.getElementById(prefix + 'Close');
+      const cancelBtn = document.getElementById(prefix + 'Cancel');
+      const submitBtn = document.getElementById(prefix + 'Submit');
+      const fileInput = document.getElementById(prefix + 'Files');
+      const dropZone  = document.getElementById(prefix + 'Drop');
+      const fileList  = document.getElementById(prefix + 'FileList');
+      const locInput  = document.getElementById(prefix + 'Location');
+      const detectBtn = document.getElementById(prefix + 'DetectBtn');
+      const locStatus = document.getElementById(prefix + 'LocStatus');
+      const check1    = document.getElementById(prefix + 'Check1');
+      const check2    = document.getElementById(prefix + 'Check2');
+      const info      = document.getElementById(prefix + 'IssueInfo');
+      let files = [];
+      let ctx = null;
+
+      function validate() {
+        const ok = files.length > 0 && locInput.value.trim().length >= 5 && check1.checked && check2.checked;
+        submitBtn.disabled = !ok;
+      }
+
+      function renderFiles() {
+        fileList.innerHTML = files.map((f, i) =>
+          `<div class="task-file-row"><span class="nm">${escapeHtml(f.name)}</span><span class="sz">${(f.size/1024/1024).toFixed(1)} MB</span><button data-i="${i}" aria-label="remove">×</button></div>`
+        ).join('');
+        fileList.querySelectorAll('button').forEach(b => {
+          b.addEventListener('click', () => { files.splice(+b.dataset.i, 1); renderFiles(); validate(); });
+        });
+      }
+
+      function addFiles(list) {
+        const incoming = Array.from(list || []);
+        let total = files.reduce((s, f) => s + f.size, 0);
+        for (const f of incoming) {
+          if (!f) continue;
+          const isImg = f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(f.name);
+          const isVid = f.type.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(f.name);
+          if (!isImg && !isVid) { alert('Only images and videos allowed: ' + f.name); continue; }
+          if (total + f.size > TASK_MEDIA_MAX_TOTAL) { alert('100 MB total limit exceeded'); break; }
+          total += f.size;
+          files.push(f);
+        }
+        renderFiles();
+        validate();
+      }
+
+      dropZone.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', e => { addFiles(e.target.files); fileInput.value = ''; });
+      ['dragover','dragenter'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('drag'); }));
+      ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('drag'); }));
+      dropZone.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+      [locInput, check1, check2].forEach(el => el.addEventListener('input', validate));
+      [check1, check2].forEach(el => el.addEventListener('change', validate));
+
+      detectBtn.addEventListener('click', async () => {
+        if (!navigator.geolocation) { locStatus.textContent = 'Geolocation not supported'; return; }
+        locStatus.textContent = 'Detecting…';
+        navigator.geolocation.getCurrentPosition(async pos => {
+          try {
+            const res = await fetch('/geocode/reverse', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude })
+            });
+            const data = await res.json();
+            if (res.ok && data.address) { locInput.value = data.address; locStatus.textContent = '✓ Detected'; validate(); }
+            else { locStatus.textContent = data.error || 'Could not detect'; }
+          } catch (e) { locStatus.textContent = e.message; }
+        }, err => { locStatus.textContent = 'Permission denied'; });
+      });
+
+      function close() { modal.removeAttribute('data-open'); document.body.style.overflow = ''; files = []; ctx = null; }
+      closeBtn.addEventListener('click', close);
+      cancelBtn.addEventListener('click', close);
+      modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+      function open(newCtx) {
+        ctx = newCtx;
+        files = [];
+        fileList.innerHTML = '';
+        locInput.value = '';
+        locStatus.textContent = '';
+        check1.checked = false;
+        check2.checked = false;
+        banner(prefix + 'Banner', '');
+        const adminName = spAdminNameFor(ctx.report, ctx.issueTitle);
+        const adminEl = document.getElementById(prefix + 'AdminName');
+        if (adminEl) adminEl.textContent = adminName;
+        // Issue info block: show original media + brief details
+        info.innerHTML = `
+          <div class="task-issue-info">
+            <div class="task-issue-thumb">${spIssueMediaThumb(ctx.issue) || '<span>no media</span>'}</div>
+            <div class="task-issue-text">
+              <div style="font-weight:800;font-size:14px;">${escapeHtml(ctx.issueTitle)}</div>
+              <div class="sp-meta">${escapeHtml(ctx.issue.category || 'Uncategorized')}</div>
+              ${ctx.issue.location ? `<div class="sp-meta">📍 ${escapeHtml(ctx.issue.location)}</div>` : ''}
+            </div>
+          </div>
+          ${ctx.issue.detail ? `<div class="sp-meta" style="margin-top:6px;">${escapeHtml(ctx.issue.detail)}</div>` : ''}
+        `;
+        modal.setAttribute('data-open', '1');
+        document.body.style.overflow = 'hidden';
+        validate();
+      }
+
+      submitBtn.addEventListener('click', async () => {
+        if (!ctx) return;
+        const confirmMsg = (opts.confirmFmt || (t => `Are you sure?`))(ctx.issueTitle);
+        const yes = await confirmDialog(confirmMsg);
+        if (!yes) return;
+        submitBtn.disabled = true;
+        try {
+          const fd = new FormData();
+          fd.append('issue_title', ctx.issueTitle);
+          fd.append('location', locInput.value.trim());
+          opts.checkFields.forEach(([name, el]) => fd.append(name, el.checked ? '1' : '0'));
+          files.forEach(f => fd.append(opts.fileField, f));
+          if (opts.onPreSubmit) opts.onPreSubmit();
+          const res = await fetch(`/partner/assignment/${encodeURIComponent(ctx.reportId)}/${opts.action}`, {
+            method: 'POST', body: fd,
+          });
+          const data = await res.json();
+          if (opts.onPostSubmit) opts.onPostSubmit(res.ok, data);
+          if (!res.ok) {
+            banner(prefix + 'Banner', data.error || 'Failed', 'error');
+            return;
+          }
+          close();
+          await loadSpAssignments();
+        } catch (e) {
+          banner(prefix + 'Banner', e.message, 'error');
+        } finally {
+          validate();
+        }
+      });
+
+      return { open, close, get checkFields() { return [check1, check2]; } };
+    }
+
+    // Evaluation overlay
+    const evalOverlay = document.getElementById('evalOverlay');
+    const evalCard = document.getElementById('evalCard');
+    function openEvalOverlay() {
+      evalCard.innerHTML = `
+        <div class="eval-spinner"></div>
+        <div class="eval-title">AI evaluation in progress…</div>
+        <div class="eval-sub">Comparing before vs after media against the issue context.</div>
+      `;
+      evalOverlay.setAttribute('data-open', '1');
+    }
+    function closeEvalOverlay() { evalOverlay.removeAttribute('data-open'); }
+    document.getElementById('evalOverlayClose').addEventListener('click', closeEvalOverlay);
+    function showEvalResult(evaluation) {
+      const s = parseInt(evaluation.stars || 0, 10);
+      let stars = '';
+      for (let i = 1; i <= 5; i++) stars += i <= s ? '★' : '<span class="empty">★</span>';
+      evalCard.innerHTML = `
+        <div class="eval-title">AI evaluation</div>
+        <div class="stars">${stars}</div>
+        <div class="eval-sub">${s}/5 stars</div>
+        ${evaluation.comment ? `<div class="comment">${escapeHtml(evaluation.comment)}</div>` : ''}
+      `;
+    }
+
+    const startTask = makeTaskForm('startTask', {
+      action: 'start_task',
+      fileField: 'before_media',
+      confirmFmt: t => `Are you sure to start "${t}"?`,
+      checkFields: [
+        ['confirm_society_permission', document.getElementById('startTaskCheck1')],
+        ['confirm_admin_supervision',  document.getElementById('startTaskCheck2')],
+      ],
+    });
+    const endTask = makeTaskForm('endTask', {
+      action: 'end_task',
+      fileField: 'after_media',
+      confirmFmt: t => `Are you sure to end "${t}"?`,
+      checkFields: [
+        ['confirm_admin_supervision_end', document.getElementById('endTaskCheck1')],
+        ['confirm_task_complete',         document.getElementById('endTaskCheck2')],
+      ],
+      onPreSubmit: openEvalOverlay,
+      onPostSubmit: (ok, data) => {
+        if (ok && data.evaluation) showEvalResult(data.evaluation);
+        else if (!ok) closeEvalOverlay();
+      },
+    });
+
+    function openStartTaskModal(reportId, issueTitle) {
+      const ctx = spAssignmentLookup[`${reportId}|${issueTitle}`];
+      if (!ctx) return;
+      startTask.open({ reportId, issueTitle, ...ctx });
+    }
+    function openEndTaskModal(reportId, issueTitle) {
+      const ctx = spAssignmentLookup[`${reportId}|${issueTitle}`];
+      if (!ctx) return;
+      endTask.open({ reportId, issueTitle, ...ctx });
+    }
 
     // ============ SP CALENDAR ============
     const spCalendarModal = document.getElementById('spCalendarModal');
@@ -4717,27 +5464,6 @@
       ];
     }
 
-    function renderTimeline(steps, report) {
-      return `<div class="timeline">${steps.map(s => {
-        const cls = s.done ? 'done' : (s.current ? 'current' : 'future');
-        const icon = s.done ? '✓' : (s.current ? '⏳' : '·');
-        const ts = s.ts ? fmtReportDate(s.ts) : '—';
-        let extra = '';
-        if (s.step === 'approval' && report) {
-          extra += renderApprovalCallLinks(report);
-        }
-        if (s.step === 'assigned' && report) {
-          extra += renderAssignmentChips(report, { canChange: false });
-        }
-        return `<div class="tl-step ${cls}">
-          <div class="tl-dot">${icon}</div>
-          <div class="tl-title">${escapeHtml(s.label || s.step)}</div>
-          <div class="tl-time">${ts}</div>
-          ${extra}
-        </div>`;
-      }).join('')}</div>`;
-    }
-
     function renderApprovalCallLinks(report) {
       const seen = new Map(); // phone -> name (dedupe same admin)
       (report.approved_issues || []).forEach(a => {
@@ -5360,6 +6086,9 @@
               <span class="reason">Reason: ${escapeHtml(d.reason || '')}</span>
             </div>`;
           });
+          if (!opts.adminMode) {
+            extra += renderApprovalCallLinks(report);
+          }
         }
         if (s.step === 'assigned' && report) {
           extra += renderAssignmentChips(report, { canChange: !!opts.adminMode });

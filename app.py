@@ -1870,6 +1870,227 @@ def partner_reschedule(report_id):
     return jsonify({"ok": True, "assignment": assignment, "status_label": report.get("status_label", "")})
 
 
+TASK_MEDIA_MAX_TOTAL = 100 * 1024 * 1024  # 100 MB per phase
+TASK_MEDIA_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".mov", ".webm", ".m4v"}
+
+
+def _location_overlap(a, b, min_words=2):
+    aw = _area_words(a)
+    bw = _area_words(b)
+    if not aw or not bw:
+        return False
+    return len(aw & bw) >= min_words
+
+
+def _task_slug(s):
+    return re.sub(r"[^A-Za-z0-9_-]", "_", s or "")[:60] or "task"
+
+
+def _save_task_media(report_id, issue_title, phase, files):
+    issue_slug = _task_slug(issue_title)
+    dest_rel = Path("task_media") / report_id / issue_slug / phase
+    dest_abs = FRAMES_DIR.parent / dest_rel  # static/task_media/...
+    dest_abs.mkdir(parents=True, exist_ok=True)
+    saved = []
+    total = 0
+    for f in files:
+        if not f or not f.filename:
+            continue
+        ext = Path(f.filename).suffix.lower()
+        if ext not in TASK_MEDIA_EXTS:
+            return None, f"Unsupported file type: {f.filename}"
+        size = _filestorage_size(f)
+        total += size
+        if total > TASK_MEDIA_MAX_TOTAL:
+            return None, "Files exceed 100 MB total"
+        safe_name = f"{uuid.uuid4().hex[:8]}_{re.sub(r'[^A-Za-z0-9._-]', '_', f.filename)[:80]}"
+        out = dest_abs / safe_name
+        f.save(out)
+        kind = "video" if ext in {".mp4", ".mov", ".webm", ".m4v"} else "image"
+        saved.append({
+            "url": f"/static/{dest_rel.as_posix()}/{safe_name}",
+            "filename": f.filename,
+            "kind": kind,
+            "size": size,
+        })
+    if not saved:
+        return None, "Attach at least one file"
+    return saved, ""
+
+
+def _ai_evaluate_task(issue, before_media, after_media):
+    """Use Gemini multimodal to score the fix on 1-5 stars and return a
+    short comment. Best-effort — falls back to a neutral score if the
+    call fails."""
+    fallback = {"stars": 3, "comment": "Unable to auto-evaluate; please review manually."}
+    try:
+        parts = [
+            "You are evaluating a residential-society task completion.\n"
+            f"Issue title: {issue.get('title') or ''}\n"
+            f"Issue category: {issue.get('category') or ''}\n"
+            f"Issue detail: {issue.get('detail') or ''}\n\n"
+            "Below are 'before' images (taken by the service partner before "
+            "starting work) followed by 'after' images (taken after the work "
+            "ended). Compare them and judge how well the issue was resolved.\n"
+            "Return ONLY a JSON object: "
+            '{"stars": <int 1-5>, "comment": "1-3 sentences"}. '
+            "If the 'after' images appear to be from a different location "
+            "than the 'before' images, explicitly call that out in the "
+            "comment and lower the stars accordingly."
+        ]
+
+        def attach(label, items):
+            chunks = [f"\n--- {label} ---"]
+            for m in items[:6]:
+                p = _url_to_path(m.get("url"))
+                if not p or not p.exists():
+                    continue
+                if m.get("kind") == "image":
+                    try:
+                        with open(p, "rb") as fh:
+                            chunks.append(types.Part.from_bytes(data=fh.read(), mime_type="image/jpeg"))
+                    except Exception:
+                        continue
+            return chunks
+
+        contents = [parts[0]] + attach("BEFORE", before_media) + attach("AFTER", after_media)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                response_mime_type="application/json",
+            ),
+        )
+        data = parse_json_response(response.text)
+        stars = int(data.get("stars") or 3)
+        stars = max(1, min(5, stars))
+        comment = str(data.get("comment") or "").strip()[:600] or fallback["comment"]
+        return {"stars": stars, "comment": comment}
+    except Exception:
+        return fallback
+
+
+@app.route("/partner/assignment/<report_id>/start_task", methods=["POST"])
+def partner_start_task(report_id):
+    if not session.get("partner"):
+        return jsonify({"error": "Service partner only"}), 403
+    phone = session.get("otp_phone")
+    partner = session.get("partner") or {}
+    issue_title = (request.form.get("issue_title") or "").strip()
+    location = (request.form.get("location") or "").strip()
+    if not issue_title:
+        return jsonify({"error": "issue_title required"}), 400
+    if len(location) < 5:
+        return jsonify({"error": "Detect or enter your current location"}), 400
+    confirm1 = request.form.get("confirm_society_permission") in ("1", "true", "on", "yes")
+    confirm2 = request.form.get("confirm_admin_supervision") in ("1", "true", "on", "yes")
+    if not (confirm1 and confirm2):
+        return jsonify({"error": "Please tick both confirmation checkboxes"}), 400
+    files = [f for f in request.files.getlist("before_media") if f and f.filename]
+    if not files:
+        return jsonify({"error": "Attach at least one 'before starting' file"}), 400
+
+    _, report, issue, assignment = _find_assignment_pair(report_id, issue_title, phone)
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+    if (assignment.get("status") or "").lower() not in {"accepted", "rescheduled"}:
+        return jsonify({"error": "Accept the task before starting"}), 400
+    if assignment.get("started_at"):
+        return jsonify({"error": "Task already started"}), 400
+
+    expected_loc = (issue or {}).get("location") or ""
+    if expected_loc and not _location_overlap(expected_loc, location):
+        return jsonify({"error": "Enter correct location of the issue (does not match)"}), 400
+
+    saved, err = _save_task_media(report_id, issue_title, "before", files)
+    if err:
+        return jsonify({"error": err}), 400
+
+    now = time.time()
+    assignment["started_at"] = now
+    assignment["started_location"] = location
+    assignment["before_media"] = saved
+    assignment["status"] = "in_progress"
+    _apply_assignment_history(report, assignment, {
+        "type": "start_task", "sp_name": partner.get("full_name", ""), "ts": now,
+    })
+    # advance timeline
+    for step in report.get("timeline") or []:
+        if step.get("step") == "started":
+            step["done"] = True
+            step["current"] = False
+            step["ts"] = now
+    with _reports_lock:
+        _save_reports()
+    return jsonify({"ok": True, "assignment": assignment, "status_label": report.get("status_label", "")})
+
+
+@app.route("/partner/assignment/<report_id>/end_task", methods=["POST"])
+def partner_end_task(report_id):
+    if not session.get("partner"):
+        return jsonify({"error": "Service partner only"}), 403
+    phone = session.get("otp_phone")
+    partner = session.get("partner") or {}
+    issue_title = (request.form.get("issue_title") or "").strip()
+    location = (request.form.get("location") or "").strip()
+    if not issue_title:
+        return jsonify({"error": "issue_title required"}), 400
+    if len(location) < 5:
+        return jsonify({"error": "Detect or enter your current location"}), 400
+    confirm1 = request.form.get("confirm_admin_supervision_end") in ("1", "true", "on", "yes")
+    confirm2 = request.form.get("confirm_task_complete") in ("1", "true", "on", "yes")
+    if not (confirm1 and confirm2):
+        return jsonify({"error": "Please tick both confirmation checkboxes"}), 400
+    files = [f for f in request.files.getlist("after_media") if f and f.filename]
+    if not files:
+        return jsonify({"error": "Attach at least one 'after ending' file"}), 400
+
+    _, report, issue, assignment = _find_assignment_pair(report_id, issue_title, phone)
+    if not assignment:
+        return jsonify({"error": "Assignment not found"}), 404
+    if not assignment.get("started_at"):
+        return jsonify({"error": "Start the task before ending"}), 400
+    if assignment.get("ended_at"):
+        return jsonify({"error": "Task already ended"}), 400
+
+    expected_loc = (issue or {}).get("location") or assignment.get("started_location") or ""
+    if expected_loc and not _location_overlap(expected_loc, location):
+        return jsonify({"error": "Enter correct location of the issue (does not match)"}), 400
+
+    saved, err = _save_task_media(report_id, issue_title, "after", files)
+    if err:
+        return jsonify({"error": err}), 400
+
+    now = time.time()
+    assignment["ended_at"] = now
+    assignment["ended_location"] = location
+    assignment["after_media"] = saved
+    assignment["status"] = "completed"
+    _apply_assignment_history(report, assignment, {
+        "type": "end_task", "sp_name": partner.get("full_name", ""), "ts": now,
+    })
+    for step in report.get("timeline") or []:
+        if step.get("step") == "completed":
+            step["done"] = True
+            step["current"] = False
+            step["ts"] = now
+
+    # Run AI evaluation synchronously — typical request finishes in 5-15s.
+    evaluation = _ai_evaluate_task(issue or {}, assignment.get("before_media") or [], saved)
+    evaluation["ts"] = now
+    assignment["evaluation"] = evaluation
+
+    with _reports_lock:
+        _save_reports()
+    return jsonify({
+        "ok": True,
+        "assignment": assignment,
+        "evaluation": evaluation,
+        "status_label": report.get("status_label", ""),
+    })
+
+
 def _auto_approve_denied_assignments():
     """Background worker: re-run the assign flow to pick a fresh SP for
     assignments that either (a) the SP explicitly denied, or (b) the SP
@@ -2560,6 +2781,28 @@ def submit_report():
     })
 
 
+def _backfill_admin_phones(reports):
+    """For reporter views: ensure approved_issues entries carry an
+    admin_phone so the UI can render a tel: link. Looks up the admin by
+    name from the admins store and patches in-place on the returned dict
+    (the originals stay untouched)."""
+    with _admins_lock:
+        name_to_phone = {
+            (a.get("full_name") or "").strip().lower(): ph
+            for ph, a in _admins_data.items()
+            if (a.get("full_name") or "").strip()
+        }
+    if not name_to_phone:
+        return
+    for r in reports:
+        for a in r.get("approved_issues") or []:
+            if a.get("admin_phone"):
+                continue
+            ph = name_to_phone.get((a.get("admin_name") or "").strip().lower())
+            if ph:
+                a["admin_phone"] = ph
+
+
 @app.route("/reports")
 def list_reports():
     if not session.get("otp_verified"):
@@ -2567,6 +2810,7 @@ def list_reports():
     phone = session.get("otp_phone")
     with _reports_lock:
         reports = [_with_issue_statuses(r) for r in _reports_data.get(phone, [])]
+    _backfill_admin_phones(reports)
     reports.sort(key=lambda r: r.get("created_at", 0), reverse=True)
     categories = sorted({
         (i.get("category") or "").strip()
@@ -2639,4 +2883,8 @@ def analyze():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "5053")),
+        debug=os.environ.get("FLASK_DEBUG") == "1",
+    )
