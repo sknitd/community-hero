@@ -3,5 +3,7 @@ __pycache__/
 *.pyc
 uploads/
 static/frames/
+static/task_media/
 *.log
 .DS_Store
+.claude/
