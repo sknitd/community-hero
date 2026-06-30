@@ -125,6 +125,110 @@
 
     /* Admin sign-up theme */
     .card.admin-card::before { background: linear-gradient(90deg, #6d28d9, #a78bfa); }
+    .card.partner-card {
+      border-radius: 20px;
+      box-shadow: 0 18px 42px rgba(15,23,42,.12);
+    }
+    .card.partner-card::before { height: 5px; background: #f08a24; }
+    .partner-card .card-body { padding: 24px 20px 26px; }
+    .partner-card .head-row { align-items: center; margin-bottom: 20px; }
+    .partner-card .role-avatar.partner {
+      width: 54px;
+      height: 54px;
+      border-radius: 12px;
+      background: #fff4e4;
+      color: #e87715;
+      font-size: 22px;
+    }
+    .partner-card .head-row h2 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+    .partner-card .head-row p {
+      font-size: 15px;
+      color: #66708a;
+    }
+    .partner-card .label {
+      font-size: 15px;
+      color: #303b51;
+    }
+    .partner-card .input,
+    .partner-select {
+      background: #fff;
+      border: 1.5px solid #dfe4ec;
+      border-radius: 13px;
+      padding: 14px 16px;
+      font-size: 16px;
+      color: #3d495f;
+      min-height: 54px;
+    }
+    .partner-card .input::placeholder { color: #9aa7bc; }
+    .partner-card .input:focus,
+    .partner-select:focus {
+      border-color: #f08a24;
+      background: #fff;
+    }
+    .partner-card .input.invalid,
+    .partner-select.invalid {
+      border-color: var(--high);
+      background: #fff5f5;
+    }
+    .partner-trade-sub {
+      color: #9aa7bc;
+      font-size: 15px;
+      margin: 0 0 12px;
+    }
+    .partner-trades {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 10px;
+    }
+    .partner-trade-pill {
+      background: #fff;
+      border: 1.5px solid #dfe4ec;
+      color: #415069;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 42px;
+    }
+    .partner-trade-pill:hover { border-color: #f3b36a; }
+    .partner-trade-pill.selected {
+      background: #fff4e4;
+      border-color: #f08a24;
+      color: #df7415;
+    }
+    .partner-select-wrap { position: relative; }
+    .partner-select {
+      appearance: none;
+      width: 100%;
+      padding-right: 48px;
+      font-family: inherit;
+    }
+    .partner-select-wrap::after {
+      content: "";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border-right: 3px solid #42506a;
+      border-bottom: 3px solid #42506a;
+      transform: translateY(-65%) rotate(45deg);
+      pointer-events: none;
+    }
+    .btn.partner {
+      background: #f08a24;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 18px;
+      margin-top: 8px;
+    }
+    .btn.partner:hover:not(:disabled) { background: #df7415; }
 
     /* === ADMIN HOME (Screen 3b) === */
     .admin-filters {
@@ -473,6 +577,11 @@
       border-color: #6d28d9;
       color: #fff;
     }
+    .cat-pill:disabled {
+      cursor: default;
+      pointer-events: none;
+    }
+    .cat-pill:disabled:not(.selected) { opacity: .6; }
 
     .area-input-wrap { position: relative; }
     .area-row { display: flex; gap: 8px; }
@@ -1083,8 +1192,20 @@
       font-size: 10.5px;
       font-weight: 700;
       margin-left: 6px;
+      max-width: 280px;
     }
     .status-tag::before { content: "⏳"; font-size: 11px; }
+    .status-tag.denied {
+      background: #fee2e2;
+      color: var(--high);
+    }
+    .status-tag.denied::before { content: "🚫"; }
+    .status-tag .reason-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 240px;
+    }
 
     /* Report detail / timeline */
     .report-detail-body {
@@ -1503,6 +1624,7 @@
       <span class="verified-pill" id="whoText"></span>
       <span class="points-pill" id="pointsPill" style="display:none;">🪙 <span id="pointsValue">0</span></span>
       <button id="profileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
+      <button id="adminProfileBtn" type="button" class="reports-btn" style="display:none;">👤 My profile</button>
       <button id="reportsBtn" type="button" class="reports-btn" style="display:none;">📋 My reports</button>
       <button id="logoutBtn">Logout</button>
     </div>
@@ -1686,6 +1808,61 @@
       </div>
     </section>
 
+    <!-- ============ SCREEN 4a: SERVICE PARTNER SIGN-UP ============ -->
+    <section id="partnerSignupView" class="view">
+      <div class="card partner-card">
+        <div class="card-body">
+          <div class="head-row">
+            <div class="role-avatar partner">S</div>
+            <div style="flex:1;">
+              <h2>Service partner sign-up</h2>
+              <p>Resolve issues on the ground</p>
+            </div>
+            <button id="partnerBackBtn" type="button" class="reports-btn">← Back</button>
+          </div>
+
+          <div class="field">
+            <label class="label" for="partnerFullName">Full name</label>
+            <input id="partnerFullName" class="input" type="text" placeholder="e.g. Suresh Patil" autocomplete="name" />
+            <div class="err" id="partnerFullNameErr"></div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="partnerAge">Age</label>
+              <input id="partnerAge" class="input" type="number" min="1" max="120" placeholder="37" />
+              <div class="err" id="partnerAgeErr"></div>
+            </div>
+            <div class="field">
+              <label class="label" for="partnerEmail">Email</label>
+              <input id="partnerEmail" class="input" type="email" placeholder="name@email.com" autocomplete="email" />
+              <div class="err" id="partnerEmailErr"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">Service partner for</div>
+            <p class="partner-trade-sub">Select the trades you provide</p>
+            <div id="partnerTrades" class="partner-trades"></div>
+            <div class="err" id="partnerTradesErr"></div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="partnerAdmin">Supervising admin</label>
+            <div class="partner-select-wrap">
+              <select id="partnerAdmin" class="partner-select">
+                <option value="">Assign a supervising admin</option>
+              </select>
+            </div>
+            <div class="err" id="partnerAdminErr"></div>
+          </div>
+
+          <div id="partnerBanner"></div>
+          <button id="createPartnerBtn" class="btn partner" disabled>Create partner account</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ COMING SOON (Service Partner) ============ -->
     <section id="comingSoonView" class="view">
       <div class="card">
@@ -1835,6 +2012,7 @@
       roleSelect: document.getElementById('roleSelectView'),
       adminSignup: document.getElementById('adminSignupView'),
       adminHome: document.getElementById('adminHomeView'),
+      partnerSignup: document.getElementById('partnerSignupView'),
       comingSoon: document.getElementById('comingSoonView'),
       signup: document.getElementById('signupView'),
       report: document.getElementById('reportView'),
@@ -1844,19 +2022,24 @@
 
     function showView(name, headerLabel) {
       Object.entries(views).forEach(([k, el]) => el.classList.toggle('active', k === name));
+      document.getElementById('brandLabel').textContent = name === 'partnerSignup' ? 'SERVICE PARTNER' : 'COMMUNITY HERO';
       const reportsBtn = document.getElementById('reportsBtn');
       const profileBtn = document.getElementById('profileBtn');
+      const adminProfileBtn = document.getElementById('adminProfileBtn');
       if (headerLabel) {
         whoBox.classList.add('show');
         whoText.textContent = 'Verified: ' + headerLabel;
         const isReporterScreen = (name === 'report');
+        const isAdminHome = (name === 'adminHome');
         reportsBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
         profileBtn.style.display = isReporterScreen ? 'inline-flex' : 'none';
+        adminProfileBtn.style.display = isAdminHome ? 'inline-flex' : 'none';
         if (!isReporterScreen) document.getElementById('pointsPill').style.display = 'none';
       } else {
         whoBox.classList.remove('show');
         reportsBtn.style.display = 'none';
         profileBtn.style.display = 'none';
+        adminProfileBtn.style.display = 'none';
         document.getElementById('pointsPill').style.display = 'none';
       }
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1873,6 +2056,9 @@
         currentAdmin = s.admin;
         showView('adminHome', s.first_name || s.phone);
         loadAdminReports();
+      } else if (s.verified && s.partner) {
+        renderComingSoon('partner');
+        showView('comingSoon', s.first_name || s.phone);
       } else if (s.verified) {
         prefillSignupPhone(s.phone);
         showView('roleSelect', s.phone);
@@ -1959,8 +2145,8 @@
       } else if (selectedRole === 'admin') {
         showView('adminSignup', label);
       } else {
-        renderComingSoon(selectedRole);
-        showView('comingSoon', label);
+        loadPartnerAdmins();
+        showView('partnerSignup', label);
       }
     });
 
@@ -1982,6 +2168,13 @@
     document.getElementById('comingSoonBackBtn').addEventListener('click', () => {
       setRoleSelection(null);
       const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
+      showView('roleSelect', phone || '');
+    });
+
+    document.getElementById('partnerBackBtn').addEventListener('click', () => {
+      banner('partnerBanner', '');
+      const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
+      setRoleSelection(null);
       showView('roleSelect', phone || '');
     });
 
@@ -2076,6 +2269,9 @@
         } else if (data.admin) {
           currentAdmin = data.admin;
           setTimeout(() => { showView('adminHome', data.first_name || data.phone); loadAdminReports(); }, 350);
+        } else if (data.partner) {
+          renderComingSoon('partner');
+          setTimeout(() => showView('comingSoon', data.first_name || data.phone), 350);
         } else {
           setFormMode('signup');
           setTimeout(() => showView('roleSelect', data.phone), 350);
@@ -2164,6 +2360,162 @@
       el.addEventListener('input', () => {
         if (el.classList.contains('invalid')) validateSignup();
         updateActionButtons();
+      });
+    });
+
+    // ============ SCREEN 4a: SERVICE PARTNER SIGN-UP ============
+    const PARTNER_TRADES = [
+      'Plumber', 'Electrician', 'Labour', 'Carpenter',
+      'Waste Collector', 'Mason', 'Gardener', 'Sanitation',
+    ];
+    const partnerFullName = document.getElementById('partnerFullName');
+    const partnerAge = document.getElementById('partnerAge');
+    const partnerEmail = document.getElementById('partnerEmail');
+    const partnerTradesEl = document.getElementById('partnerTrades');
+    const partnerAdmin = document.getElementById('partnerAdmin');
+    const createPartnerBtn = document.getElementById('createPartnerBtn');
+    let partnerSelectedTrades = new Set();
+
+    function renderPartnerTrades() {
+      partnerTradesEl.innerHTML = '';
+      PARTNER_TRADES.forEach(trade => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'partner-trade-pill' + (partnerSelectedTrades.has(trade) ? ' selected' : '');
+        b.textContent = trade;
+        b.addEventListener('click', () => {
+          if (partnerSelectedTrades.has(trade)) {
+            partnerSelectedTrades.delete(trade);
+            b.classList.remove('selected');
+          } else {
+            partnerSelectedTrades.add(trade);
+            b.classList.add('selected');
+          }
+          setError('partnerTradesErr', '');
+          validatePartner();
+        });
+        partnerTradesEl.appendChild(b);
+      });
+    }
+    renderPartnerTrades();
+
+    async function loadPartnerAdmins() {
+      partnerAdmin.innerHTML = '<option value="">Assign a supervising admin</option>';
+      try {
+        const res = await fetch('/partner/admins');
+        const data = await res.json();
+        const admins = data.admins || [];
+        if (!admins.length) {
+          const opt = document.createElement('option');
+          opt.value = 'Community Admin';
+          opt.textContent = 'Community Admin';
+          partnerAdmin.appendChild(opt);
+          return;
+        }
+        admins.forEach(admin => {
+          const opt = document.createElement('option');
+          opt.value = admin.id || admin.full_name || '';
+          opt.textContent = admin.area ? `${admin.full_name} - ${admin.area}` : admin.full_name;
+          partnerAdmin.appendChild(opt);
+        });
+      } catch {
+        const opt = document.createElement('option');
+        opt.value = 'Community Admin';
+        opt.textContent = 'Community Admin';
+        partnerAdmin.appendChild(opt);
+      }
+    }
+
+    function isPartnerValid() {
+      const a = parseInt(partnerAge.value, 10);
+      return NAME_RE.test(partnerFullName.value.trim())
+          && Number.isFinite(a) && a >= 1 && a <= 120
+          && EMAIL_RE.test(partnerEmail.value.trim())
+          && partnerSelectedTrades.size > 0
+          && !!partnerAdmin.value;
+    }
+
+    function validatePartner() {
+      let ok = true;
+      if (!NAME_RE.test(partnerFullName.value.trim())) {
+        if (partnerFullName.classList.contains('invalid')) setError('partnerFullNameErr', 'Enter a valid full name');
+        ok = false;
+      } else { setError('partnerFullNameErr', ''); setInvalid('partnerFullName', false); }
+      const a = parseInt(partnerAge.value, 10);
+      if (!Number.isFinite(a) || a < 1 || a > 120) {
+        if (partnerAge.classList.contains('invalid')) setError('partnerAgeErr', 'Age 1-120');
+        ok = false;
+      } else { setError('partnerAgeErr', ''); setInvalid('partnerAge', false); }
+      if (!EMAIL_RE.test(partnerEmail.value.trim())) {
+        if (partnerEmail.classList.contains('invalid')) setError('partnerEmailErr', 'Enter a valid email');
+        ok = false;
+      } else { setError('partnerEmailErr', ''); setInvalid('partnerEmail', false); }
+      if (partnerSelectedTrades.size === 0) {
+        ok = false;
+      } else setError('partnerTradesErr', '');
+      if (!partnerAdmin.value) {
+        if (partnerAdmin.classList.contains('invalid')) setError('partnerAdminErr', 'Assign a supervising admin');
+        ok = false;
+      } else { setError('partnerAdminErr', ''); partnerAdmin.classList.remove('invalid'); }
+      createPartnerBtn.disabled = !isPartnerValid();
+      return ok;
+    }
+
+    [partnerFullName, partnerAge, partnerEmail].forEach(el => {
+      el.addEventListener('blur', () => { el.classList.add('invalid'); validatePartner(); });
+      el.addEventListener('input', () => {
+        if (el.classList.contains('invalid')) validatePartner();
+        createPartnerBtn.disabled = !isPartnerValid();
+      });
+    });
+    partnerAdmin.addEventListener('blur', () => { partnerAdmin.classList.add('invalid'); validatePartner(); });
+    partnerAdmin.addEventListener('change', validatePartner);
+
+    createPartnerBtn.addEventListener('click', async (e) => {
+      [partnerFullName, partnerAge, partnerEmail, partnerAdmin].forEach(el => el.classList.add('invalid'));
+      validatePartner();
+      if (!isPartnerValid()) {
+        if (partnerSelectedTrades.size === 0) setError('partnerTradesErr', 'Pick at least one service');
+        banner('partnerBanner', 'Please fill all required fields', 'error');
+        return;
+      }
+      banner('partnerBanner', '');
+      const btn = e.currentTarget;
+      await withBusy(btn, 'Creating...', async () => {
+        const res = await fetch('/partner/signup', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            full_name: partnerFullName.value.trim(),
+            age: parseInt(partnerAge.value, 10),
+            email: partnerEmail.value.trim(),
+            trades: Array.from(partnerSelectedTrades),
+            supervising_admin: partnerAdmin.value,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.errors) {
+            const map = {
+              full_name: 'partnerFullName',
+              age: 'partnerAge',
+              email: 'partnerEmail',
+              trades: 'partnerTrades',
+              supervising_admin: 'partnerAdmin',
+            };
+            Object.entries(data.errors).forEach(([k, v]) => {
+              const id = map[k];
+              if (id) {
+                setError(id + 'Err', v);
+                if (id !== 'partnerTrades') setInvalid(id, true);
+              }
+            });
+          }
+          banner('partnerBanner', data.error || 'Sign-up failed', 'error');
+          return;
+        }
+        banner('partnerBanner', `Partner account created. Welcome ${data.first_name}!`, 'ok');
+        renderComingSoon('partner');
+        setTimeout(() => showView('comingSoon', data.first_name), 600);
       });
     });
 
@@ -3856,9 +4208,55 @@
 
     adminBackBtn.addEventListener('click', () => {
       banner('adminBanner', '');
+      if (adminFormMode === 'profile') {
+        const lbl = whoText.textContent.replace(/^Verified:\s*/, '');
+        setAdminFormMode('signup');
+        showView('adminHome', lbl);
+        return;
+      }
       const phone = document.getElementById('signupPhone').value || document.getElementById('phone').value;
       setRoleSelection(null);
       showView('roleSelect', phone || '');
+    });
+
+    // === Admin profile mode (read-only view of the sign-up form) ===
+    let adminFormMode = 'signup'; // 'signup' | 'profile'
+    function setAdminFormMode(mode) {
+      adminFormMode = mode;
+      const isProfile = mode === 'profile';
+      const titleEl = document.querySelector('#adminSignupView h2');
+      const subEl = document.querySelector('#adminSignupView .head-row p');
+      if (titleEl) titleEl.textContent = isProfile ? 'My profile' : 'Admin sign-up';
+      if (subEl) subEl.textContent = isProfile ? 'Your registered details' : 'Oversee zones & assignments';
+      [adminFullName, adminAge, adminEmail, adminArea].forEach(el => {
+        el.readOnly = isProfile;
+        el.classList.toggle('locked', isProfile);
+      });
+      adminAutoDetectBtn.style.display = isProfile ? 'none' : '';
+      if (isProfile) { areaSuggestions.hidden = true; areaSuggestions.innerHTML = ''; }
+      adminCategoriesEl.querySelectorAll('.cat-pill').forEach(b => { b.disabled = isProfile; });
+      createAdminBtn.style.display = isProfile ? 'none' : '';
+      banner('adminBanner', '');
+    }
+    function prefillAdminProfile(admin) {
+      if (!admin) return;
+      adminFullName.value = admin.full_name || '';
+      adminAge.value = admin.age || '';
+      adminEmail.value = admin.email || '';
+      adminArea.value = admin.area || '';
+      adminSelectedCats = new Set(admin.categories || []);
+      renderAdminCategories();
+    }
+    document.getElementById('adminProfileBtn').addEventListener('click', async () => {
+      try {
+        const r = await fetch('/session');
+        const s = await r.json();
+        if (s.admin) currentAdmin = s.admin;
+      } catch {}
+      if (currentAdmin) prefillAdminProfile(currentAdmin);
+      setAdminFormMode('profile');
+      const lbl = whoText.textContent.replace(/^Verified:\s*/, '');
+      showView('adminSignup', lbl);
     });
 
     // ============ RESET ============
@@ -3879,6 +4277,16 @@
       ['fullName','age','email','address','signupPhone'].forEach(id => document.getElementById(id).value = '');
       ['fullName','age','email','address'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
       setFormMode('signup');
+      if (typeof setAdminFormMode === 'function') setAdminFormMode('signup');
+      // Partner signup
+      ['partnerFullName','partnerAge','partnerEmail'].forEach(id => document.getElementById(id).value = '');
+      ['partnerFullName','partnerAge','partnerEmail'].forEach(id => { setError(id+'Err',''); setInvalid(id, false); });
+      partnerSelectedTrades = new Set(); renderPartnerTrades();
+      partnerAdmin.innerHTML = '<option value="">Assign a supervising admin</option>';
+      partnerAdmin.classList.remove('invalid');
+      setError('partnerTradesErr',''); setError('partnerAdminErr','');
+      banner('partnerBanner', '');
+      createPartnerBtn.disabled = true;
       zones = []; renderZones();
       document.getElementById('customZoneRow').style.display = 'none';
       document.getElementById('customZoneInput').value = '';

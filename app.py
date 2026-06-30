@@ -199,6 +199,34 @@ def _save_admins():
 _load_admins()
 
 
+# Service partner profiles persistence (phone -> partner)
+PARTNERS_FILE = BASE_DIR / "data" / "service_partners.json"
+_partners_lock = threading.Lock()
+_partners_data: dict = {}
+
+
+def _load_partners():
+    global _partners_data
+    if PARTNERS_FILE.exists():
+        try:
+            with open(PARTNERS_FILE) as f:
+                payload = json.load(f) or {}
+            if isinstance(payload, dict):
+                _partners_data = payload
+        except Exception:
+            _partners_data = {}
+
+
+def _save_partners():
+    tmp = PARTNERS_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(_partners_data, f)
+    tmp.replace(PARTNERS_FILE)
+
+
+_load_partners()
+
+
 def _url_to_path(url):
     if not url or not isinstance(url, str) or not url.startswith("/static/"):
         return None
@@ -516,6 +544,8 @@ def otp_verify():
             stored_reporter = _reporters_data.get(phone)
         with _admins_lock:
             stored_admin = _admins_data.get(phone)
+        with _partners_lock:
+            stored_partner = _partners_data.get(phone)
         first_name = None
         if stored_reporter:
             session["reporter"] = stored_reporter
@@ -528,12 +558,19 @@ def otp_verify():
                 first_name = (stored_admin.get("full_name", "").split() or [""])[0]
         else:
             session.pop("admin", None)
+        if stored_partner:
+            session["partner"] = stored_partner
+            if not first_name:
+                first_name = (stored_partner.get("full_name", "").split() or [""])[0]
+        else:
+            session.pop("partner", None)
         return jsonify({
             "ok": True,
             "status": "approved",
             "phone": phone,
             "reporter": stored_reporter,
             "admin": stored_admin,
+            "partner": stored_partner,
             "first_name": first_name,
         })
 
@@ -545,6 +582,7 @@ def session_state():
     phone = session.get("otp_phone")
     reporter = session.get("reporter")
     admin = session.get("admin")
+    partner = session.get("partner")
     # Backfill from persistent stores if the session got stale (e.g. user
     # logged in before profile-restore was wired into /otp/verify, or the
     # admin/reporter was created in another tab).
@@ -561,16 +599,25 @@ def session_state():
             if stored_a:
                 session["admin"] = stored_a
                 admin = stored_a
+        if not partner:
+            with _partners_lock:
+                stored_p = _partners_data.get(phone)
+            if stored_p:
+                session["partner"] = stored_p
+                partner = stored_p
     first_name = None
     if reporter:
         first_name = (reporter.get("full_name", "").split() or [""])[0]
     elif admin:
         first_name = (admin.get("full_name", "").split() or [""])[0]
+    elif partner:
+        first_name = (partner.get("full_name", "").split() or [""])[0]
     return jsonify({
         "verified": bool(session.get("otp_verified")),
         "phone": phone,
         "reporter": reporter,
         "admin": admin,
+        "partner": partner,
         "first_name": first_name,
         "total_points": _total_points_for(phone),
     })
@@ -684,6 +731,77 @@ def admin_signup():
             _admins_data[phone] = admin
             _save_admins()
     return jsonify({"ok": True, "first_name": full_name.split()[0], "admin": admin})
+
+
+@app.route("/partner/admins")
+def partner_admins():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    with _admins_lock:
+        admins = [
+            {
+                "id": phone,
+                "full_name": admin.get("full_name", ""),
+                "area": admin.get("area", ""),
+            }
+            for phone, admin in _admins_data.items()
+        ]
+    admins.sort(key=lambda a: (a.get("full_name") or "").lower())
+    return jsonify({"admins": admins})
+
+
+@app.route("/partner/signup", methods=["POST"])
+def partner_signup():
+    if not session.get("otp_verified"):
+        return jsonify({"error": "Phone not verified"}), 401
+    phone = session.get("otp_phone")
+    data = request.get_json(silent=True) or {}
+    full_name = (data.get("full_name") or "").strip()
+    age_raw = data.get("age")
+    email = (data.get("email") or "").strip()
+    trades = data.get("trades") or []
+    supervising_admin = (data.get("supervising_admin") or "").strip()
+
+    errors = {}
+    if not NAME_RE.fullmatch(full_name):
+        errors["full_name"] = "Enter a valid full name"
+    try:
+        age = int(age_raw)
+        if not (1 <= age <= 120):
+            errors["age"] = "Age must be 1–120"
+    except (TypeError, ValueError):
+        errors["age"] = "Enter a valid age"
+        age = None
+    if not EMAIL_RE.match(email):
+        errors["email"] = "Enter a valid email"
+    if not isinstance(trades, list) or not trades:
+        errors["trades"] = "Pick at least one service"
+    if not supervising_admin:
+        errors["supervising_admin"] = "Assign a supervising admin"
+    if errors:
+        return jsonify({"errors": errors}), 400
+
+    cleaned_trades = []
+    seen = set()
+    for t in trades:
+        t = str(t).strip()[:60]
+        if t and t.lower() not in seen:
+            cleaned_trades.append(t)
+            seen.add(t.lower())
+
+    partner = {
+        "full_name": full_name,
+        "age": age,
+        "email": email,
+        "trades": cleaned_trades,
+        "supervising_admin": supervising_admin,
+    }
+    session["partner"] = partner
+    if phone:
+        with _partners_lock:
+            _partners_data[phone] = partner
+            _save_partners()
+    return jsonify({"ok": True, "first_name": full_name.split()[0], "partner": partner})
 
 
 @app.route("/admin/reports")
