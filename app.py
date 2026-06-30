@@ -30,9 +30,9 @@ IMAGE_GEN_MODELS = os.environ.get(
     "gemini-3-pro-image-preview,gemini-2.5-flash-image,gemini-2.5-flash-image-preview",
 ).split(",")
 
-TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "REDACTED_SID")
-TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "REDACTED_TOKEN")
-TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID", "REDACTED_SERVICE")
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID", "")
 
 BASE_DIR = Path(__file__).parent
 UPLOAD_DIR = BASE_DIR / "uploads"
