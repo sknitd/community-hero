@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Media admin · Community Hero</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login {
+      background: #1e293b;
+      padding: 32px;
+      border-radius: 16px;
+      width: min(360px, 100%);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .login h1 { margin: 0 0 4px; font-size: 22px; color: #f1f5f9; }
+    .login p { margin: 0 0 22px; color: #94a3b8; font-size: 13px; }
+    .login label { display: block; font-size: 12px; color: #cbd5e1; margin-bottom: 4px; }
+    .login input {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    .login input:focus { outline: 2px solid #1d4ed8; outline-offset: -2px; }
+    .login button {
+      width: 100%;
+      padding: 12px;
+      background: #1d4ed8;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .login button:hover { background: #1e40af; }
+    .err { color: #f87171; font-size: 12.5px; margin-bottom: 12px; min-height: 16px; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 22px;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar h1 { margin: 0; font-size: 16px; color: #f1f5f9; font-weight: 800; }
+    .topbar .right { display: flex; gap: 8px; align-items: center; }
+    .pill {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    .btn {
+      background: #334155;
+      color: #f1f5f9;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .btn:hover { background: #475569; }
+    .btn.danger { background: #dc2626; }
+    .btn.danger:hover { background: #b91c1c; }
+    .btn.ghost { background: transparent; border: 1px solid #475569; }
+    .btn[disabled] { background: #475569; cursor: not-allowed; opacity: 0.5; }
+
+    .actionbar {
+      display: flex; align-items: center; gap: 10px; padding: 12px 22px;
+      background: #0f172a; border-bottom: 1px solid #1e293b;
+    }
+    .actionbar .count { color: #cbd5e1; font-size: 13px; font-weight: 700; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      padding: 16px 22px 80px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .card.sel { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.25); }
+    .card .thumb {
+      aspect-ratio: 1 / 1;
+      background: #0f172a;
+      display: flex; align-items: center; justify-content: center;
+      color: #475569;
+      font-size: 11px;
+      overflow: hidden;
+    }
+    .card .thumb img, .card .thumb video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .card .meta {
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.35;
+    }
+    .card .meta .src { color: #f1f5f9; font-weight: 700; }
+    .card .meta .path { font-family: ui-monospace, monospace; font-size: 10px; word-break: break-all; }
+    .card .check {
+      position: absolute;
+      top: 8px; left: 8px;
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      background: rgba(15,23,42,0.7);
+      border: 2px solid #94a3b8;
+      display: flex; align-items: center; justify-content: center;
+      color: #f1f5f9;
+      font-size: 14px; font-weight: 900;
+    }
+    .card.sel .check { background: #f59e0b; border-color: #f59e0b; color: #0f172a; }
+
+    .empty {
+      text-align: center;
+      color: #94a3b8;
+      padding: 80px 22px;
+      font-size: 14px;
+    }
+
+    .modal-back {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 50;
+      padding: 16px;
+    }
+    .modal-back[data-open="1"] { display: flex; }
+    .modal {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 380px; width: 100%;
+      color: #f1f5f9;
+    }
+    .modal h3 { margin: 0 0 8px; font-size: 18px; }
+    .modal p { margin: 0 0 18px; color: #cbd5e1; font-size: 13.5px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+{% if not authed %}
+  <div class="login-wrap">
+    <form class="login" method="post" action="/media/login">
+      <h1>Media admin</h1>
+      <p>Sign in to manage uploaded media.</p>
+      <div class="err">{{ error or '' }}</div>
+      <label>Username</label>
+      <input type="text" name="username" autocomplete="username" required />
+      <label>Password</label>
+      <input type="password" name="password" autocomplete="current-password" required />
+      <button type="submit">Sign in</button>
+    </form>
+  </div>
+{% else %}
+  <div class="topbar">
+    <h1>📁 Media admin</h1>
+    <div class="right">
+      <span class="pill" id="totalPill">… items</span>
+      <button type="button" class="btn ghost" id="refreshBtn">↻ Refresh</button>
+      <form method="post" action="/media/logout" style="margin:0;">
+        <button type="submit" class="btn ghost">Sign out</button>
+      </form>
+    </div>
+  </div>
+  <div class="actionbar">
+    <span class="count" id="selCount">0 selected</span>
+    <span style="flex:1;"></span>
+    <button type="button" class="btn ghost" id="selectAllBtn">Select all</button>
+    <button type="button" class="btn ghost" id="clearBtn">Clear</button>
+    <button type="button" class="btn danger" id="binBtn" disabled>🗑 Delete</button>
+  </div>
+  <div class="grid" id="grid"></div>
+
+  <div class="modal-back" id="confirmModal">
+    <div class="modal">
+      <h3>Delete <span id="confirmCount">0</span> file<span id="confirmPlural">s</span>?</h3>
+      <p>This cannot be undone. The files will be removed from disk permanently.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="confirmNo">No, keep them</button>
+        <button type="button" class="btn danger" id="confirmYes">Yes, delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const totalPill = document.getElementById('totalPill');
+    const selCount = document.getElementById('selCount');
+    const binBtn = document.getElementById('binBtn');
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmCount = document.getElementById('confirmCount');
+    const confirmPlural = document.getElementById('confirmPlural');
+    let items = [];
+    let selected = new Set();
+
+    async function load() {
+      grid.innerHTML = '<div class="empty">Loading…</div>';
+      try {
+        const res = await fetch('/media/items.json');
+        const data = await res.json();
+        items = data.items || [];
+        selected.clear();
+        render();
+      } catch (e) {
+        grid.innerHTML = `<div class="empty">Could not load: ${e.message}</div>`;
+      }
+    }
+
+    function render() {
+      totalPill.textContent = `${items.length} item${items.length===1?'':'s'}`;
+      if (!items.length) {
+        grid.innerHTML = '<div class="empty">No media on disk.</div>';
+        updateBin();
+        return;
+      }
+      grid.innerHTML = items.map((it, i) => {
+        const isSel = selected.has(it.path);
+        let thumb = '<div>no preview</div>';
+        if (it.kind === 'image') thumb = `<img src="${escapeAttr(it.url)}" alt="" loading="lazy">`;
+        else if (it.kind === 'video') thumb = `<video src="${escapeAttr(it.url)}" muted preload="metadata"></video>`;
+        return `<div class="card ${isSel?'sel':''}" data-path="${escapeAttr(it.path)}" data-i="${i}">
+          <div class="check">${isSel ? '✓' : ''}</div>
+          <div class="thumb">${thumb}</div>
+          <div class="meta">
+            <div class="src">${escapeHtml(it.source)}</div>
+            <div>${formatSize(it.size)} · ${escapeHtml(it.kind || '')}</div>
+            <div class="path">${escapeHtml(it.path)}</div>
+          </div>
+        </div>`;
+      }).join('');
+      grid.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('click', () => {
+          const p = card.dataset.path;
+          if (selected.has(p)) selected.delete(p);
+          else selected.add(p);
+          render();
+        });
+      });
+      updateBin();
+    }
+
+    function updateBin() {
+      selCount.textContent = `${selected.size} selected`;
+      binBtn.disabled = selected.size === 0;
+    }
+
+    document.getElementById('selectAllBtn').addEventListener('click', () => {
+      items.forEach(it => selected.add(it.path));
+      render();
+    });
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      selected.clear();
+      render();
+    });
+    document.getElementById('refreshBtn').addEventListener('click', load);
+
+    binBtn.addEventListener('click', () => {
+      if (!selected.size) return;
+      confirmCount.textContent = selected.size;
+      confirmPlural.textContent = selected.size === 1 ? '' : 's';
+      confirmModal.setAttribute('data-open', '1');
+    });
+    document.getElementById('confirmNo').addEventListener('click', () => {
+      confirmModal.removeAttribute('data-open');
+    });
+    document.getElementById('confirmYes').addEventListener('click', async () => {
+      const paths = Array.from(selected);
+      confirmModal.removeAttribute('data-open');
+      try {
+        const res = await fetch('/media/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths }),
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Delete failed'); return; }
+        await load();
+      } catch (e) { alert(e.message); }
+    });
+
+    function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+    function escapeAttr(s){return escapeHtml(s).replace(/"/g,'&quot;');}
+    function formatSize(b){if(!b)return '0 B';const k=1024,sz=['B','KB','MB','GB'];const i=Math.floor(Math.log(b)/Math.log(k));return (b/Math.pow(k,i)).toFixed(i?1:0)+' '+sz[i];}
+
+    load();
+  </script>
+{% endif %}
+</body>
+</html>

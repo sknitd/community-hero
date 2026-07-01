@@ -2787,6 +2787,22 @@
     }
     /* Issue detail (explore feed → tap card) */
     .id-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .id-media {
+      margin: 8px 0 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0f172a;
+      max-height: 320px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .id-media img, .id-media video {
+      width: 100%; max-height: 320px; object-fit: cover; display: block; cursor: zoom-in;
+    }
+    .contrib-banner.err {
+      background: #fee2e2; color: #b91c1c;
+      border: 1px solid #fca5a5; font-weight: 700;
+      padding: 12px 14px; line-height: 1.45;
+    }
     .id-chip {
       display: inline-flex; align-items: center; padding: 5px 12px;
       border-radius: 999px; font-size: 12px; font-weight: 800;
@@ -3597,17 +3613,18 @@
             <div class="err" id="phoneErr"></div>
           </div>
 
-          <button id="sendBtn" class="btn">Send OTP</button>
-          <button id="testOtpBtn" type="button" class="btn ghost" style="margin-top: 10px;" disabled>Enter test OTP (123456)</button>
+          <button id="sendBtn" class="btn" style="display:none;">Send OTP</button>
+          <button id="testOtpBtn" type="button" class="btn" disabled>Send OTP</button>
 
           <div id="otpBox" style="display:none; margin-top: 16px;">
             <div class="field">
               <label class="label" for="otp">Enter OTP</label>
               <input id="otp" class="input otp-input" inputmode="numeric" maxlength="8" placeholder="• • • • • •" autocomplete="one-time-code" />
               <div class="err" id="otpErr"></div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Use code <strong>123456</strong> for this demo.</div>
             </div>
             <button id="submitOtpBtn" class="btn">Submit</button>
-            <div class="resend-row">
+            <div class="resend-row" style="display:none;">
               <span id="resendInfo">Resend available in <span id="timer">30</span>s</span>
               <button id="resendBtn" disabled>Resend OTP</button>
             </div>
@@ -4675,9 +4692,9 @@
       });
     }
 
-    sendBtn.addEventListener('click', () => sendOtp(false));
-    resendBtn.addEventListener('click', () => sendOtp(true));
-    phoneInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+    // Twilio real-OTP flow disabled. The visible "Send OTP" button and
+    // the phone-input Enter key both route through the test-OTP path.
+    phoneInput.addEventListener('keydown', e => { if (e.key === 'Enter') testOtpBtn.click(); });
 
     testOtpBtn.addEventListener('click', () => {
       if (phoneInput.value.length !== 10) {
@@ -4685,7 +4702,7 @@
         setInvalid('phone', true);
         return;
       }
-      banner('otpBanner', 'Test mode — enter 123456', 'ok');
+      banner('otpBanner', 'Enter code 123456 to continue', 'ok');
       testOtpMode = true;
       otpBox.style.display = 'block';
       phoneInput.disabled = true;
@@ -7895,12 +7912,22 @@
         ? `<button type="button" id="idUpvoteBtn" class="id-upvote ${item.voted ? 'voted' : ''}">▲ Upvote (${Math.max(0, Number(item.upvotes || 0))})</button>`
         : `<span class="tip-wrap" data-tip="You cannot upvote your issue" tabindex="0"><button type="button" class="id-upvote" disabled aria-disabled="true">▲ Upvote (${Math.max(0, Number(item.upvotes || 0))})</button></span>`;
       const detail = item.detail || item.description || item.summary || '';
+      let mediaHtml = '';
+      const mediaSrc = item.annotated_url || item.media_url || '';
+      if (mediaSrc) {
+        if (item.media_kind === 'video') {
+          mediaHtml = `<div class="id-media"><video src="${escapeAttr(mediaSrc)}" controls playsinline preload="metadata"></video></div>`;
+        } else {
+          mediaHtml = `<div class="id-media"><img src="${escapeAttr(mediaSrc)}" data-full="${escapeAttr(mediaSrc)}" alt="Original issue photo"></div>`;
+        }
+      }
       issueDetailBody.innerHTML = `
         <div class="id-chips">
           <span class="id-chip">${escapeHtml(pri)}</span>
           <span class="id-chip">${escapeHtml(cat)}</span>
         </div>
         <h2 class="id-title">${escapeHtml(item.title)}</h2>
+        ${mediaHtml}
         <p class="id-desc">${escapeHtml(detail)}</p>
         <div class="id-grid">
           <div class="id-cell"><div class="lbl">📍 Location</div><div class="val">${escapeHtml(item.location || '—')}</div></div>
@@ -7956,12 +7983,13 @@
           <input type="file" id="contribFile" accept="image/*" multiple style="display:none" />
           <div id="contribThumbs" class="contrib-thumbs"></div>
           <div class="contrib-loc-row">
-            <input id="contribLoc" type="text" placeholder="Detected location will appear here" readonly />
+            <input id="contribLoc" type="text" placeholder="Detect or type the location" />
             <button type="button" class="detect-btn" id="contribDetect">📍 Detect</button>
           </div>
+          ${item.location ? `<div style="font-size:11px;color:#94a3b8;margin-top:-4px;">Original issue location: <em>${escapeHtml(item.location)}</em></div>` : ''}
           <div id="contribBanner"></div>
           <div class="contrib-actions">
-            <button type="button" class="btn ghost" id="contribAnalyseBtn">🔍 AI Analyse</button>
+            <button type="button" class="btn ghost" id="contribAnalyseBtn" disabled>🔍 AI Analyse</button>
             <button type="button" class="btn primary" id="contribSubmitBtn" disabled>Submit</button>
           </div>
           <div id="contribResults" class="contrib-results"></div>
@@ -7969,6 +7997,9 @@
       document.getElementById('contribDrop').addEventListener('click', () => document.getElementById('contribFile').click());
       document.getElementById('contribFile').addEventListener('change', e => addContribFiles(e.target.files));
       document.getElementById('contribDetect').addEventListener('click', detectContribLocation);
+      document.getElementById('contribLoc').addEventListener('input', e => {
+        contribState.location = (e.target.value || '').trim();
+      });
       document.getElementById('contribAnalyseBtn').addEventListener('click', runContribAnalyse);
       document.getElementById('contribSubmitBtn').addEventListener('click', submitContrib);
       contribModal.setAttribute('data-open', '1');
@@ -8007,6 +8038,8 @@
         document.getElementById('contribResults').innerHTML = '';
         renderContribThumbs();
       }));
+      const analyseBtn = document.getElementById('contribAnalyseBtn');
+      if (analyseBtn) analyseBtn.disabled = contribState.files.length < 1;
     }
 
     function contribBanner(msg, kind) {
@@ -9529,12 +9562,14 @@
       phoneInput.value = ''; phoneInput.disabled = false;
       otpInput.value = '';
       otpBox.style.display = 'none';
-      sendBtn.style.display = ''; sendBtn.disabled = false;
+      // Twilio button stays permanently hidden.
+      sendBtn.style.display = 'none';
+      sendBtn.disabled = false;
       sendBtn.innerHTML = 'Send OTP';
       submitOtpBtn.innerHTML = 'Submit'; submitOtpBtn.disabled = false;
       resendBtn.disabled = true;
-      resendBtn.style.display = '';
-      resendInfo.style.display = '';
+      resendBtn.style.display = 'none';
+      resendInfo.style.display = 'none';
       testOtpMode = false;
       testOtpBtn.style.display = '';
       updateTestOtpEnabled();
